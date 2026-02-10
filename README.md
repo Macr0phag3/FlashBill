@@ -6,7 +6,7 @@
 
 （本项目属于 vibe coding 的一个项目，基于 Antigravity 以及内置的 LLM 开发，配套的文章见: [🚧 施工中]
 
-~~有什么 bug 和 gemini 说去吧 ~~
+~~有什么 bug 和 gemini 说去吧~~
 
 ## 🤖 AI Native & Robust Testing
 
@@ -17,18 +17,33 @@
 ## ✨ 功能特性
 
 - **账单导入**：
+  <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/d7854ac8-042f-49de-9513-493934a0f6cf" />
   - 支持 **支付宝** 和 **微信** 账单文件（CSV/Excel）直接导入解析。
   - 自动识别文件格式与编码。
 
 - **智能打标**：
+  <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/6b7af1c5-3ef2-4af5-b8bb-37f75be51ff0" />
   - **规则引擎**：基于关键字/正则的自动分类规则，支持优先级排序。
+  - **划词打标**：支持划词创建自动打标规则
+    <img width="743" height="598" alt="image" src="https://github.com/user-attachments/assets/a075cf82-cc02-42c3-94e3-9b021fcc90ba" />
+    <img width="792" height="797" alt="image" src="https://github.com/user-attachments/assets/037b444b-02d5-4c61-b6b4-461e46a109fa" />
   - **AI 辅助**：集成 OpenAI API，对未知账单进行智能分类与打标，并能反向生成规则。
 
 - **统计分析**：
-  - **日历热力图**：直观展示每日消费密度。
-  - **分类/标签统计**：饼图展示支出构成。
-  - **月度趋势**：折线图追踪消费走势。
-  - **明细查询**：支持按账本、时间、类别组合筛选账单。
+  - **数据表格**：直观展示历史账单。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/47572cf5-bc8f-4feb-8dd7-b4aacc8d7278" />
+  - **时间线**：展示每日流水。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/dea71007-5d72-468e-856b-9eb7c94e1d91" />
+  - **统计图**：通过折线图的方式按时间窗口汇总消费情况，配备多种均线。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/439f5d1f-0bc4-4c6b-a746-82af809067d8" />
+  - **日历视图**：直观展示每日消费力度。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/a50bc453-e944-47f8-bea8-a220787683f6" />
+  - **分类统计**：通过饼图展示支出构成。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/4efb20bd-1438-4d11-9878-8b69d50e9ada" />
+  - **数据透视**：通过柱状图透视消费时间段的习惯。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/f5b378bb-502a-46ac-924d-e1d1ac348ae4" />
+  - **数据分析**：提供账单的组合计算功能。
+    <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/c137f1b6-7250-48b1-a299-ec830fc35084" />
 
 - **现代化 UI**：
   - 基于 Element Plus 的简洁响应式设计。
@@ -83,18 +98,7 @@ python app.py
 
 启动后访问：[http://localhost:8000](http://localhost:8000)
 
-## 📝 使用指南
-
-1.  **准备与导入**：
-    *   从支付宝/微信导出账单文件（无需解压密码）。
-    *   在网页点击“导入账单”，选择文件并上传。
-2.  **筛选与分析**：
-    *   进入“统计分析”页面查看消费概览。
-    *   使用顶部过滤器筛选特定时间段或类别的账单。
-3.  **规则与打标**：
-    *   对未分类账单使用“自动打标”应用现有规则。
-    *   支持划词创建自动打标规则
-    *   使用“AI 打标”尝试自动识别，并保存准确的规则以供日后使用。
+在支付宝/微信申请导出账单之后，上传即可触发自动打标。
 
 ## 📄 许可证
 
