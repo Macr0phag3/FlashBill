@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block bills %}
+<h2>账单列表</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>订单号</th>
+            <th>交易时间</th>
+            <th>交易对方</th>
+            <th>商品说明</th>
+            <th>金额</th>
+            <th>分类标签</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for bill in bills %}
+        <tr>
+            <td>{{ bill.bill_id }}</td>
+            <td>{{ bill.交易创建时间 }}</td>
+            <td>{{ bill.交易对方 }}</td>
+            <td>{{ bill.商品说明 }}</td>
+            <td>{{ bill.金额 }}</td>
+            <td>{{ bill.tag }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

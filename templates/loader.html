@@ -1,0 +1,91 @@
+<!-- 全局加载遮罩 (Component) -->
+<div id="page-loader" class="page-loader" style="overflow: hidden; flex-direction: column;">
+    <canvas id="matrix-canvas"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+
+    <div class="loader-content">
+        <div class=" matrix-text" style="font-weight: bold; font-size: 1.2em; color: var(--el-color-primary);">
+            $ ... 正在骇入
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const loader = document.getElementById('page-loader');
+
+        let width, height;
+        let columns = [];
+        const fontSize = 16;
+
+        // Initialize & Resize
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            const cols = Math.floor(width / fontSize);
+            const rows = Math.floor(height / fontSize);
+            columns = Array(cols).fill(0).map(() => Math.floor(Math.random() * rows)); // Randomize Y across full screen
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Matrix Characters (Katakana + Latin + Numbers)
+        const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:・.=*+-<>";
+
+        let lastDraw = 0;
+        const fps = 30; // Limit FPS for classic feel
+
+        function draw(timestamp) {
+            if (loader.style.display === 'none') return; // Stop if hidden
+
+            if (timestamp - lastDraw < 1000 / fps) {
+                requestAnimationFrame(draw);
+                return;
+            }
+            lastDraw = timestamp;
+
+            // Theme Detection
+            const isDark = document.documentElement.classList.contains('dark');
+
+            // Trail effect
+            // Dark: Black fade with minimal opacity for long trails
+            // Light: White fade
+            ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Text Color
+            // Dark: Neon Green (#0F0)
+            // Light: Dark Green (#006400) or Deep Matrix Cyan? Let's go with Dark Matrix Green.
+            ctx.fillStyle = isDark ? '#0F0' : '#004d00';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < columns.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                const x = i * fontSize;
+                const y = columns[i] * fontSize;
+
+                // Randomly draw a bright character (head of the stream)
+                // if (Math.random() > 0.98) {
+                //    ctx.fillStyle = '#FFF';
+                //    ctx.fillText(char, x, y);
+                //    ctx.fillStyle = isDark ? '#0F0' : '#004d00'; 
+                // } else {
+                ctx.fillText(char, x, y);
+                // }
+
+                if (y > height && Math.random() > 0.975) {
+                    columns[i] = 0;
+                }
+                columns[i]++;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        requestAnimationFrame(draw);
+    })();
+</script>

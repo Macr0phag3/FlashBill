@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block page_loader %}
+{% include 'loader.html' %}
+{% endblock %}
+
+{% block content %}
+
+
+<div id="app" v-cloak>
+    <el-card class="box-card">
+
+        <div class="container">
+            <!-- 筛选器，对所有tab生效 -->
+            <div class="stats-filter-container">
+                <el-form :inline="true" :model="filterForm">
+                    <div class="filter-row">
+                        <div class="filter-left">
+                            <!-- 时间筛选 -->
+                            <el-form-item>
+                                <el-select v-model="filterForm.year" placeholder="选择年份" clearable multiple collapse-tags
+                                    @change="handleFilter" style="width: 160px" popper-class="filter-dropdown">
+                                    <el-option v-for="year in yearOptions" :key="year" :label="year" :value="year">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-select v-model="filterForm.month" placeholder="选择月份" clearable multiple
+                                    collapse-tags @change="handleFilter" style="width: 150px"
+                                    popper-class="filter-dropdown">
+                                    <el-option v-for="month in monthOptions" :key="month.value" :label="month.label"
+                                        :value="month.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <!-- 账本类型筛选 -->
+                            <el-form-item>
+                                <el-select v-model="filterForm.book" placeholder="选择账本" clearable multiple collapse-tags
+                                    @change="handleFilter" style="width: 180px" popper-class="filter-dropdown">
+                                    <el-option v-for="book in bookOptions" :key="book.value" :label="book.label"
+                                        :value="book.value">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+
+                            <!-- 类别和标签筛选 -->
+                            <el-form-item>
+                                <el-select v-model="filterForm.category" placeholder="选择类别" clearable multiple
+                                    collapse-tags @change="handleCategoryChange" style="width: 190px"
+                                    popper-class="filter-dropdown">
+                                    <el-option v-for="category in categoryOptions" :key="category" :label="category"
+                                        :value="category">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-select v-model="filterForm.tag" placeholder="选择标签" clearable multiple collapse-tags
+                                    @change="handleFilter" style="width: 190px" popper-class="filter-dropdown">
+                                    <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                        </div>
+                        <div class="filter-right">
+                            <!-- 金额范围筛选 -->
+                            <el-form-item>
+                                <el-input-number v-model="filterForm.minAmount" :precision="2" :step="100"
+                                    placeholder="最小金额" @change="handleFilter" :controls="false" style="width: 90px">
+                                </el-input-number>
+                                <span class="mx-2">-</span>
+                                <el-input-number v-model="filterForm.maxAmount" :precision="2" :step="100"
+                                    placeholder="最大金额" @change="handleFilter" :controls="false" style="width: 90px">
+                                </el-input-number>
+                            </el-form-item>
+
+                            <!-- 重置按钮 -->
+                            <el-form-item>
+                                <el-button type="danger" @click="resetFilter">重置</el-button>
+                            </el-form-item>
+                        </div>
+                    </div>
+                </el-form>
+
+                <!-- 筛选标签展示区域 -->
+                <div class="filter-tags-container" v-if="filterTags.length > 0">
+                    <el-tag v-for="(tag, index) in filterTags" :key="index" closable
+                        @close="removeFilterTag(tag.type, tag.value)" style="margin-right: 8px; margin-bottom: 8px;">
+                        {% raw %}{{ tag.label }}: {{ tag.value }}{% endraw %}
+                    </el-tag>
+                </div>
+            </div>
+            <el-tabs v-model="activeTab">
+                <el-tab-pane label="数据表格" name="table">
+                    <el-table :data="tableData" style="width: 100%" border stripe v-loading="loading"
+                        height="calc(100vh - 345px)" @sort-change="handleSortChange"
+                        :default-sort="{prop: 'date', order: 'descending'}">
+                        <el-table-column type="index" label="序号" width="60" align="center"
+                            :index="(index) => (currentPage - 1) * pageSize + index + 1">
+                        </el-table-column>
+                        <el-table-column prop="date" label="日期" min-width="150" align="center" sortable="custom">
+                            <template #default="{ row }">
+                                <span v-text="row.date"></span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="amount" label="金额" min-width="100" align="center" sortable="custom">
+                            <template #default="{ row }">
+                                <span
+                                    v-bind:style="{ color: row.amount < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
+                                    <span v-text="formatAmount(row.amount)"></span>
+                                </span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="category" label="类别" min-width="80" align="center" sortable="custom">
+                        </el-table-column>
+                        <el-table-column prop="tag" label="标签" min-width="80" align="center" sortable="custom">
+                        </el-table-column>
+                        <el-table-column prop="counter_party" label="交易对方" min-width="180" align="center"
+                            sortable="custom">
+                        </el-table-column>
+                        <el-table-column prop="goods_desc" label="商品说明" min-width="180" align="center"
+                            sortable="custom">
+                        </el-table-column>
+                        <el-table-column prop="remark" label="备注" min-width="80" align="center" sortable="custom">
+                        </el-table-column>
+                        <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
+                            <template #default="{ row }">
+                                <el-tag v-if="row.book" :type="getBookTagType(row.book)" effect="light" size="small">
+                                    <span v-text="row.book"></span>
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <div class="pagination-container">
+                        <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                            :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+                            :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="时间线" name="timeline">
+                    <div class="timeline-container" style="height: calc(100vh - 323px); overflow-y: auto;"
+                        @scroll="handleScroll">
+                        <div class="timeline-wrapper">
+                            <!-- 垂直中心线 -->
+                            <div class="timeline-center-line"></div>
+
+                            <!-- 时间线内容 -->
+                            <div class="timeline-content">
+                                <div v-for="(dateGroup, date) in timelineData" :key="date" class="timeline-date-group">
+                                    <div class="timeline-date-header">
+                                        <el-tag type="" size="large">{% raw %}{{ formatDate(date) }}{% endraw %} 总支出: {%
+                                            raw %}{{ formatAmount(dateGroup.total) }}{% endraw %}</el-tag>
+                                    </div>
+                                    <div class="timeline-items">
+                                        <div v-for="item in dateGroup.items"
+                                            :key="item.date + '_' + item.amount + '_' + item.counter_party"
+                                            class="timeline-item">
+                                            <!-- 时间点标记 -->
+                                            <div class="timeline-dot"></div>
+
+                                            <!-- 卡片内容 -->
+                                            <el-card class="timeline-item-card">
+                                                <div class="timeline-item-content">
+                                                    <div class="timeline-item-header">
+                                                        <span class="timeline-time">{% raw %}{{ formatTime(item.date)
+                                                            }}{% endraw %}</span>
+                                                        <span class="timeline-amount"
+                                                            :style="{ color: Number(item.amount) < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
+                                                            {% raw %}{{ formatAmount(item.amount) }}{% endraw %}
+                                                        </span>
+                                                    </div>
+                                                    <div class="timeline-item-info">
+                                                        <div class="timeline-item-detail">
+                                                            <span class="timeline-label">交易对方:</span>
+                                                            <span class="timeline-value">{% raw %}{{ item.counter_party
+                                                                }}{% endraw %}</span>
+                                                        </div>
+                                                        <div class="timeline-item-detail">
+                                                            <span class="timeline-label">商品说明:</span>
+                                                            <span class="timeline-value">{% raw %}{{ item.goods_desc
+                                                                }}{% endraw %}</span>
+                                                        </div>
+                                                        <div class="timeline-item-detail">
+                                                            <el-tag type="" effect="light" size="small">{% raw %}{{
+                                                                item.category }}{% endraw %}</el-tag>
+                                                            <el-tag v-for="tag in (item.tag ? [item.tag] : [])"
+                                                                :key="tag" type="danger" effect="light" size="small">{%
+                                                                raw %}{{ tag }}{% endraw %}</el-tag>
+                                                            <el-tag :type="getBookTagType(item.book)" effect="light"
+                                                                size="small">{% raw %}{{ item.book }}{% endraw
+                                                                %}</el-tag>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </el-card>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="Object.keys(timelineData).length === 0" class="no-data">
+                                    暂无数据
+                                </div>
+                                <div v-else-if="isLoadingMore" class="loading-more">
+                                    加载中...
+                                </div>
+                                <div v-else-if="isAllLoaded" class="all-loaded">
+                                    已加载全部数据
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="统计图" name="chart">
+                    <div class="chart-header"
+                        style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                        <div style="font-size: 16px; font-weight: bold; margin-right: 20px;">支出统计</div>
+                        <el-select v-model="timeUnit" style="width: 80px" @change="handleTimeUnitChange">
+                            <el-option label="按天" value="day"></el-option>
+                            <el-option label="按周" value="week"></el-option>
+                            <el-option label="按月" value="month"></el-option>
+                            <el-option label="按年" value="year"></el-option>
+                        </el-select>
+                    </div>
+                    <div class="chart-container">
+                        <div id="chartContainer" style="width: 100%; height: calc(100vh - 335px)"></div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="日历视图" name="calendar">
+                    <div id="calendarScrollContainer"
+                        style="width: 100%; height: calc(100vh - 293px); overflow-y: auto;">
+                        <!-- 年份日历将动态插入到这里 -->
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="分类统计" name="pie">
+                    <div class="pie-container">
+                        <div class="pie-row">
+                            <div id="categoryPieContainer" style="width: 50%; height: calc(100vh - 293px)"></div>
+                            <div id="tagPieContainer" style="width: 50%; height: calc(100vh - 293px)"></div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="数据透视" name="pivot">
+                    <div class="pivot-container">
+                        <div class="pivot-header"
+                            style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                            <div style="font-size: 16px; font-weight: bold; margin-right: 20px;">数据透视分析</div>
+                            <el-select v-model="pivotTimeUnit" placeholder="选择时间维度" style="width: 140px"
+                                @change="handlePivotTimeUnitChange">
+                                <el-option label="按小时" value="hour"></el-option>
+                                <el-option label="按周内" value="weekday"></el-option>
+                                <el-option label="按月内" value="monthday"></el-option>
+                                <el-option label="按月份" value="yearmonth"></el-option>
+                            </el-select>
+                        </div>
+                        <div class="pivot-chart-container">
+                            <div id="pivotChartContainer" style="width: 100%; height: calc(100vh - 335px)"></div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="数据分析" name="analysis">
+                    <div class="analysis-container">
+                        <div class="analysis-content" style="display: flex; gap: 20px;">
+                            <!-- 时间跨度统计 -->
+                            <div class="time-span-container"
+                                style="flex: 1; min-width: 300px; height: calc(100vh - 293px); overflow: auto; margin: 0; padding: 0;">
+                                <el-table :data="timeSpanData" style="width: 100%; margin: 0; padding: 0;" border stripe
+                                    height="100%">
+                                    <el-table-column prop="label" label="统计项" min-width="150"
+                                        align="center"></el-table-column>
+                                    <el-table-column prop="value" label="数值" min-width="120" align="center">
+                                        <template #default="{ row }">
+                                            <span v-text="row.value"></span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                            <!-- 结果显示 - 使用表格 -->
+                            <div class="average-table-container"
+                                style="flex: 2; min-width: 500px; height: calc(100vh - 293px); overflow: auto; margin: 0; padding: 0;">
+                                <el-table :data="averageResults" style="width: 100%; margin: 0; padding: 0;" border
+                                    stripe v-loading="loading" height="100%">
+                                    <el-table-column prop="name"
+                                        :label="averageResults.length > 0 ? averageResults[0].nameLabel : '名称'"
+                                        min-width="150" align="center">
+                                        <template #default="{ row }">
+                                            <span v-text="row.name || '全部数据'"></span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="总金额" min-width="120" align="center">
+                                        <template #default="{ row }">
+                                            <span style="color: var(--el-color-success)">
+                                                <span v-text="formatAmount(row.totalValue)"></span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <!-- 动态生成筛选条件列 -->
+                                    <template v-if="averageResults.length > 0">
+                                        <el-table-column v-for="(filter, index) in averageResults[0].filters"
+                                            :key="index" :label="filter.label" min-width="100" align="center">
+                                            <template #default="{ row }">
+                                                <span v-text="filter.value"></span>
+                                            </template>
+                                        </el-table-column>
+                                    </template>
+                                    <el-table-column label="日均开销" min-width="100" align="center">
+                                        <template #default="{ row }">
+                                            <span style="color: var(--el-color-success)">
+                                                <span v-text="formatAmount(row.dayValue)"></span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="周均开销" min-width="100" align="center">
+                                        <template #default="{ row }">
+                                            <span style="color: var(--el-color-success)">
+                                                <span v-text="formatAmount(row.weekValue)"></span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="月均开销" min-width="100" align="center">
+                                        <template #default="{ row }">
+                                            <span style="color: var(--el-color-success)">
+                                                <span v-text="formatAmount(row.monthValue)"></span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="年均开销" min-width="100" align="center">
+                                        <template #default="{ row }">
+                                            <span style="color: var(--el-color-success)">
+                                                <span v-text="formatAmount(row.yearValue)"></span>
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <div v-if="averageResults.length === 0" class="no-data">
+                                    暂无数据
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+        </div>
+    </el-card>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/echarts/echarts.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/data-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-timeline.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-chart.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-calendar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-pie.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-pivot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/statistics/tab-analysis.js') }}"></script>
+
+<script>
+    const { createApp, onMounted, watch, nextTick, onBeforeUnmount } = Vue;
+    const { ElMessage } = ElementPlus;
+
+    // 中文配置
+    const zhCn = {
+        el: {
+            table: { confirmFilter: '确定', resetFilter: '清空', clearFilter: '清空', sumText: '合计', emptyText: '暂无数据' },
+            pagination: { goto: '前往', pagesize: '条/页', total: '共 {total} 条', pageClassifier: '页', page: '页', prev: '上一页', next: '下一页', currentPage: '第 {pager} 页', prevPages: '向前 {pager} 页', nextPages: '向后 {pager} 页' },
+            select: { loading: '加载中', noMatch: '无匹配数据', noData: '无数据', placeholder: '请选择' }
+        }
+    };
+
+    const app = createApp({
+        setup() {
+            // --- 核心数据管理 (Data Manager) ---
+            const {
+                allData,
+                filteredAllData,
+                rawFilteredData, // Table需要未剔除"不计入"的过滤数据？暂时使用 rawFilteredData 作为 Table 数据源
+                loading,
+                filterForm,
+                yearOptions, monthOptions, bookOptions, categoryOptions, tagOptions,
+                filterTags,
+                loadData,
+                handleFilter, handleCategoryChange, resetFilter, removeFilterTag
+            } = useStatisticsData();
+
+            // --- Tab 状态管理 ---
+            // 持久化用户最后选择的 Tab
+            const activeTab = Vue.ref(localStorage.getItem('statistics_active_tab') || 'table');
+            watch(activeTab, (newTab) => {
+                localStorage.setItem('statistics_active_tab', newTab);
+                updateActiveTab(); // 切换 Tab 时更新视图
+            });
+
+            // --- 各个 Tab 的 Composable ---
+
+            const triggerUpdateTable = () => {
+                // 1. 克隆数据
+                let data = [...rawFilteredData.value];
+
+                // 2. 执行排序
+                const key = sortBy.value;
+                const order = sortOrder.value === 'asc' ? 1 : -1;
+
+                if (key) {
+                    data.sort((a, b) => {
+                        let valA = a[key];
+                        let valB = b[key];
+
+                        // 特殊字段处理
+                        if (key === 'date') return (new Date(valA) - new Date(valB)) * order;
+                        if (key === 'amount') return (Number(valA) - Number(valB)) * order;
+
+                        // 默认字符串排序 (中文拼音排序)
+                        return String(valA).localeCompare(String(valB), 'zh-CN') * order;
+                    });
+                }
+
+                // 3. 分页切片
+                const start = (currentPage.value - 1) * pageSize.value;
+                tableData.value = data.slice(start, start + pageSize.value);
+                total.value = data.length;
+            };
+
+            const {
+                tableData,
+                currentPage, pageSize, total, sortBy, sortOrder,
+                handleSizeChange, handleCurrentChange, handleSortChange
+            } = useTableTab(triggerUpdateTable);
+
+            // 监听 rawFilteredData 变化，更新表格
+            watch(rawFilteredData, () => {
+                currentPage.value = 1; // 筛选条件变了，重置为第一页
+                triggerUpdateTable();
+            });
+
+            // 2. 时间线 (Timeline)
+            const { timelineData, isLoadingMore, isAllLoaded, handleScroll, updateTimelineData, updateTimelineDisplay } = useTimelineTab();
+
+            // 3. 统计图 (Chart)
+            const { timeUnit, initChart, updateChart, resizeChart, handleTimeUnitChange: handleChartTimeUnitChange } = useChartTab();
+
+            // 4. 日历视图 (Calendar)
+            const { initCalendarChart, updateCalendarChart, resizeCalendar } = useCalendarTab();
+
+            // 5. 分类饼图 (Pie)
+            const { initPieCharts, updatePieCharts, resizePieCharts } = usePieTab();
+
+            // 6. 数据透视 (Pivot)
+            const { pivotTimeUnit, initPivotChart, updatePivotChart, resizePivotChart, handlePivotTimeUnitChange: handlePivotTabTimeUnitChange } = usePivotTab();
+
+            // 7. 数据分析 (Analysis)
+            const { averageResults, timeSpanData, calculateTimeSpan, calculateAverage } = useAnalysisTab();
+
+            // --- 统一更新逻辑 (Consolidated Update Logic) ---
+            /**
+             * 更新当前激活 Tab 的视图
+             * 此函数是唯一的视图更新入口，消除了冗余的 switch-case
+             * 根据 activeTab 的值分发到对应的模块更新方法
+             */
+            const updateActiveTab = () => {
+                nextTick(() => {
+                    const data = filteredAllData.value; // 用于图表的数据 (已剔除"不计入")
+                    const current = activeTab.value;
+
+                    switch (current) {
+                        case 'table':
+                            triggerUpdateTable();
+                            break;
+                        case 'timeline':
+                            // Timeline 使用 rawFilteredData 还是 filteredAllData? 
+                            // 原逻辑：timeline 使用 tableFilteredData (rawFilteredData)。保留原逻辑。
+                            updateTimelineData(rawFilteredData.value);
+                            break;
+                        case 'chart':
+                            updateChart(data); // 内部会自动调用 initChart 如果需要
+                            break;
+                        case 'calendar':
+                            updateCalendarChart(data);
+                            break;
+                        case 'pie':
+                            updatePieCharts(data);
+                            break;
+                        case 'pivot':
+                            updatePivotChart(data);
+                            break;
+                        case 'analysis':
+                            calculateTimeSpan(rawFilteredData.value); // 时间跨度通常是对所有记录？
+                            calculateAverage(data, filterForm.value);
+                            break;
+                    }
+                });
+            };
+
+            // 监听筛选数据变化，自动更新当前 Tab
+            watch([filteredAllData, rawFilteredData], () => {
+                updateActiveTab();
+            }, { deep: true }); // filteredAllData is ref array, deep might be needed if array mutation, but usually replacement.
+
+            // Tab 内特定操作的回调 (如切换图表时间单位) 
+            // 我们可以直接在模板中调用 updateActiveTab，或者保留特定的 handler
+            const handleTimeUnitChange = () => updateActiveTab();
+            const handlePivotTimeUnitChange = () => updateActiveTab();
+
+            // --- 生命周期 ---
+            onMounted(() => {
+                // 初始化加载数据
+                loadData().then(() => {
+                    const loader = document.getElementById('page-loader');
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.display = 'none', 300);
+                    }
+                });
+
+                // 深色模式监听：主题变化时强制重绘图表
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((m) => {
+                        if (m.type === 'attributes' && m.attributeName === 'class') {
+                            nextTick(() => {
+                                const t = activeTab.value;
+                                if (['chart', 'calendar', 'pie', 'pivot'].includes(t)) {
+                                    // 重新初始化图表实例以应用新主题
+                                    if (t === 'chart') initChart();
+                                    if (t === 'calendar') initCalendarChart();
+                                    if (t === 'pie') initPieCharts();
+                                    if (t === 'pivot') initPivotChart();
+                                    updateActiveTab();
+                                }
+                            });
+                        }
+                    });
+                });
+                observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+                onBeforeUnmount(() => observer.disconnect());
+            });
+
+            return {
+                // Data Manager Refs
+                allData, filteredAllData, loading, filterForm,
+                yearOptions, monthOptions, bookOptions, categoryOptions, tagOptions, filterTags,
+
+                // Methods
+                handleFilter, handleCategoryChange, resetFilter, removeFilterTag,
+                handleSizeChange, handleCurrentChange, handleSortChange, // Table
+                handleScroll, // Timeline
+                handleTimeUnitChange, handlePivotTimeUnitChange, // Chart & Pivot Updates
+
+                // Tab State
+                activeTab,
+
+                // Valid for Template
+                tableData, currentPage, pageSize, total, sortBy, sortOrder, // Table
+                timelineData, isLoadingMore, isAllLoaded, // Timeline
+                timeUnit, // Chart
+                pivotTimeUnit, // Pivot
+                averageResults, timeSpanData, // Analysis
+
+                // Utils
+                formatDate, formatTime, formatAmount, getBookTagType
+            };
+        }
+    });
+
+    app.use(ElementPlus, { locale: zhCn });
+    app.mount('#app');
+</script>
+
+{% endblock %}

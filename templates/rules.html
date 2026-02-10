@@ -1,0 +1,572 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- 页面特定样式已移至 style.css -->
+{% endblock %}
+
+{% block page_loader %}
+{% include 'loader.html' %}
+{% endblock %}
+
+{% block content %}
+
+
+<!-- ==================== 规则管理界面 ==================== -->
+<div id="app" v-cloak>
+    <el-card class="mb-3">
+        <!-- 卡片头部 -->
+        <template #header>
+            <div class="d-flex justify-content-between align-items-center">
+                <span>规则管理</span>
+                <div class="button-group">
+                    <el-button type="primary" @click="addRule">添加规则</el-button>
+                    <el-button type="success" @click="saveAllRules" :loading="saving">保存规则</el-button>
+                </div>
+            </div>
+        </template>
+
+        <!-- 规则表格 -->
+        <div class="rules-table-container">
+            <el-table :data="rules" style="width: 100%" border stripe :max-height="656" @sort-change="handleSortChange"
+                :row-key="(row, index) => index">
+                <!-- 优先级列 -->
+                <el-table-column label="优先级" width="95" align="center" fixed="left" sortable="custom" prop="priority">
+                    <template #default="scope">[[ scope.row.priority ]]</template>
+                </el-table-column>
+                <!-- 操作列 -->
+                <el-table-column label="操作" width="160" align="center" fixed="left">
+                    <template #default="scope">
+                        <el-button size="small" type="primary" @click="moveRule(scope.$index, -1)"
+                            :disabled="scope.$index === 0">
+                            <el-icon>
+                                <component :is="ArrowUp" />
+                            </el-icon>
+                        </el-button>
+                        <el-button size="small" type="warning" @click="moveRule(scope.$index, 1)"
+                            :disabled="scope.$index === rules.length - 1">
+                            <el-icon>
+                                <component :is="ArrowDown" />
+                            </el-icon>
+                        </el-button>
+                        <el-button type="danger" size="small" @click="deleteRule(scope.$index)">
+                            <el-icon>
+                                <component :is="Delete" />
+                            </el-icon>
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <!-- 类别列 -->
+                <el-table-column prop="category" label="类别" width="120" align="center" sortable="custom" fixed="left">
+                    <template #default="scope">
+                        <el-select v-model="scope.row.category" size="small" style="width: 80px" clearable
+                            @change="handleCategoryChange(scope.$index)">
+                            <el-option v-for="cat in categories" :key="cat.name" :label="cat.name" :value="cat.name" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <!-- 标签列 -->
+                <el-table-column prop="tag" label="标签" width="120" align="center" sortable="custom" fixed="left">
+                    <template #default="scope">
+                        <el-select v-model="scope.row.tag" size="small" style="width: 80px" clearable
+                            @change="val => handleTagChange(val, scope.$index)">
+                            <el-option v-for="tag in getTagsForCategory(scope.row.category)" :key="tag" :label="tag"
+                                :value="tag" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <!-- 匹配字段列 -->
+                <el-table-column prop="key" label="匹配字段" width="130" align="center" sortable="custom" fixed="left">
+                    <template #default="scope">
+                        <el-select v-model="scope.row.key" size="small" style="width: 100px" clearable>
+                            <el-option v-for="f in MATCH_FIELDS" :key="f.value" :label="f.label" :value="f.value" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <!-- 匹配模式列 -->
+                <el-table-column prop="match_mode" label="匹配模式" width="100" align="center" fixed="left">
+                    <template #default="scope">
+                        <el-select v-model="scope.row.match_mode" size="small" style="width: 75px" clearable>
+                            <el-option v-for="m in MATCH_MODES" :key="m.value" :label="m.label" :value="m.value" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <!-- 时间归类列 -->
+                <el-table-column label="时间归类" width="130" align="center" fixed="left">
+                    <template #header>
+                        <span>时间归类
+                            <el-tooltip
+                                content="若标签为 -，在自动打标时<br>将根据账单时间自动归类为<br>早/午/晚餐与夜宵<br>早餐：06:00-11:30<br>午餐：11:30-13:30<br>晚餐：17:30-20:00<br>夜宵：20:00-03:00"
+                                placement="top" raw-content>
+                                <el-icon style="margin-left: 1px; cursor: pointer; color: #909399;">
+                                    <component :is="QuestionFilled" />
+                                </el-icon>
+                            </el-tooltip>
+                        </span>
+                    </template>
+                    <template #default="scope">
+                        <el-select v-model="scope.row.time_based" multiple collapse-tags collapse-tags-tooltip clearable
+                            placeholder="类型" size="small" style="width: 100px"
+                            @change="val => handleTimeBasedChange(val, scope.$index)">
+                            <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t" />
+                        </el-select>
+                    </template>
+                </el-table-column>
+                <!-- 备注列 -->
+                <el-table-column label="备注" width="120" align="center" fixed="left">
+                    <template #default="scope">
+                        <el-input v-model="scope.row.comment" size="small" placeholder="请输入备注"></el-input>
+                    </template>
+                </el-table-column>
+                <!-- 规则列 -->
+                <el-table-column label="规则" min-width="20000" align="left">
+                    <template #default="scope">
+                        <div class="rule-tags">
+                            <el-tag v-if="scope.row.rule.length > 0" type="info" effect="plain" size="small">
+                                [[ scope.row.rule.length ]] 个
+                            </el-tag>
+                            <el-button v-if="!scope.row.inputVisible" class="button-new-tag" size="small"
+                                @click="showInput(scope.$index)">+ 新增</el-button>
+                            <el-input v-if="scope.row.inputVisible" v-model="scope.row.inputValue" size="small"
+                                style="width: 120px" @keyup.enter="handleInputConfirm(scope.$index)"
+                                @blur="handleInputConfirm(scope.$index)" ref="ruleInput"></el-input>
+                            <el-tag v-for="(item, idx) in scope.row.rule" :key="idx"
+                                :type="getRuleTagType(scope.$index, item)" effect="light" closable
+                                :class="{ 'tag-deleted': isDeletedRuleItem(scope.$index, item) }"
+                                :style="isDeletedRuleItem(scope.$index, item) ? { opacity: 0.7 } : {}"
+                                @close="handleRuleTagClose(scope.$index, idx, item)">[[ item ]]</el-tag>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </el-card>
+
+    <!-- 添加规则对话框 -->
+    <el-dialog v-model="showAddRuleDialog" :title="isEditing ? '编辑规则' : '添加规则'" width="50%">
+        <el-form :model="ruleForm" label-width="100px">
+            <el-form-item label="类别">
+                <el-select v-model="ruleForm.category" placeholder="请选择类别">
+                    <el-option v-for="cat in categories" :key="cat.name" :label="cat.name"
+                        :value="cat.name"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="规则">
+                <el-input v-model="ruleForm.ruleText" type="textarea" :rows="3" placeholder="请输入规则，每行一个"></el-input>
+            </el-form-item>
+            <el-form-item label="匹配模式">
+                <el-radio-group v-model="ruleForm.match_mode">
+                    <el-radio v-for="m in MATCH_MODES" :key="m.value" :label="m.value">[[ m.label ]]</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="匹配字段">
+                <el-select v-model="ruleForm.key" placeholder="请选择匹配字段" style="width: 120px">
+                    <el-option v-for="f in MATCH_FIELDS" :key="f.value" :label="f.label" :value="f.value"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="时间归类">
+                <el-select v-model="ruleForm.time_based" multiple collapse-tags collapse-tags-tooltip placeholder="选择时段"
+                    :disabled="ruleForm.category !== '食'" style="width: 80px">
+                    <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="标签" v-if="!ruleForm.time_based.length || ruleForm.category !== '食'">
+                <el-select v-model="ruleForm.tag" placeholder="请选择标签">
+                    <el-option v-for="tag in getTagsForCategory(ruleForm.category)" :key="tag" :label="tag"
+                        :value="tag"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="备注">
+                <el-input v-model="ruleForm.comment"></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="showAddRuleDialog = false">取消</el-button>
+            <el-button type="primary" @click="saveRule">确定</el-button>
+        </template>
+    </el-dialog>
+</div>
+
+<!-- ==================== Vue 应用逻辑 ==================== -->
+<script>
+    const { createApp, ref, nextTick, onMounted } = Vue;
+    const { ElMessage } = ElementPlus;
+    const { QuestionFilled, Delete, ArrowUp, ArrowDown } = ElementPlusIconsVue;
+
+    // ==================== 常量定义 ====================
+    const MATCH_FIELDS = [
+        { label: '交易对方', value: '交易对方' },
+        { label: '商品说明', value: '商品说明' },
+        { label: '两者之一', value: 'ANY' }
+    ];
+    const TIME_OPTIONS = ['全部', '无', '早餐', '午餐', '晚餐', '夜宵'];
+    const MEAL_OPTIONS = ['早餐', '午餐', '晚餐', '夜宵'];
+    const MATCH_MODES = [
+        { label: '关键词', value: 'keyword' },
+        { label: '正则', value: 'regex' }
+    ];
+
+    // Element Plus 中文配置
+    const zhCn = {
+        name: 'zh-cn',
+        el: {
+            select: { loading: '加载中', noMatch: '无匹配数据', noData: '无数据', placeholder: '请选择' },
+            pagination: { goto: '前往', pagesize: '条/页', total: '共 {total} 条', pageClassifier: '页' },
+            messageBox: { title: '提示', confirm: '确定', cancel: '取消' },
+            table: { emptyText: '暂无数据', confirmFilter: '筛选', resetFilter: '重置', clearFilter: '全部', sumText: '合计' }
+        }
+    };
+
+    const app = createApp({
+        delimiters: ['[[', ']]'],
+        setup() {
+            // ==================== 响应式状态 ====================
+            const rules = ref([]);
+            const categories = ref([]);
+            const loading = ref(false);
+            const saving = ref(false);
+            const showAddRuleDialog = ref(false);
+            const isEditing = ref(false);
+            const ruleInput = ref(null);
+            const newRuleItems = ref(new Set()); // 追踪新增的规则项
+            const deletedRuleItems = ref(new Set()); // 追踪软删除的规则项
+
+            // 表单默认值
+            const DEFAULT_FORM = {
+                id: null, category: '', ruleText: '', key: '交易对方',
+                match_mode: 'keyword', time_based: [], tag: '', comment: ''
+            };
+            const ruleForm = ref({ ...DEFAULT_FORM });
+
+            // ==================== 辅助函数 ====================
+
+            /** 通用 API 调用 */
+            const apiCall = async (method, url, data = null) => {
+                try {
+                    const resp = method === 'get' ? await axios.get(url) : await axios.post(url, data);
+                    return resp.data.success ? resp.data : null;
+                } catch (e) {
+                    console.error(`API 错误 [${url}]:`, e);
+                    return null;
+                }
+            };
+
+            /** 获取类别对应的标签 */
+            const getTagsForCategory = (catName) => {
+                const cat = categories.value.find(c => c.name === catName);
+                return cat ? cat.tags : [];
+            };
+
+            // ==================== 数据加载 ====================
+
+            /** 获取规则 */
+            const fetchRules = async (assign = true) => {
+                loading.value = true;
+                const data = await apiCall('get', '/api/rules');
+                const processed = data?.rules?.map((r, i) => ({
+                    ...r,
+                    priority: i + 1, // 优先级作为行属性，排序时跟随行移动
+                    match_mode: r.match_mode || 'keyword',
+                    time_based: Array.isArray(r.time_based) ? r.time_based : [],
+                    inputVisible: false,
+                    inputValue: ''
+                })) || [];
+
+                if (assign) {
+                    rules.value = processed;
+                }
+                loading.value = false;
+                return processed;
+            };
+
+            /** 获取分类 */
+            const fetchCategories = async () => {
+                const data = await apiCall('get', '/api/categories');
+                categories.value = data ? Object.entries(data.categories).map(([name, tags]) => ({ name, tags })) : [];
+            };
+
+            // ==================== 规则操作 ====================
+
+            /** 添加规则（空行） */
+            const addRule = () => {
+                // 新增规则优先级为当前最大值 + 1
+                const maxPriority = rules.value.reduce((max, r) => Math.max(max, r.priority || 0), 0);
+                rules.value.unshift({
+                    id: null, category: '', rule: [], key: '交易对方',
+                    match_mode: 'keyword', priority: maxPriority + 1,
+                    time_based: [], tag: '', comment: '',
+                    inputVisible: false, inputValue: ''
+                });
+            };
+
+            /** 移动规则（合并上移/下移），交换优先级 */
+            const moveRule = (index, direction) => {
+                const newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= rules.value.length) return;
+                // 交换两行的优先级
+                const tempPriority = rules.value[index].priority;
+                rules.value[index].priority = rules.value[newIndex].priority;
+                rules.value[newIndex].priority = tempPriority;
+                // 交换位置
+                const [item] = rules.value.splice(index, 1);
+                rules.value.splice(newIndex, 0, item);
+                ElMessage.warning('规则优先级已修改，点击保存后生效');
+            };
+
+            /** 删除规则 */
+            const deleteRule = (index) => {
+                rules.value.splice(index, 1);
+                ElMessage.warning('该规则已删除，点击保存后生效');
+            };
+
+            /** 保存所有规则 */
+            const saveAllRules = async () => {
+                if (!rules.value.length) return ElMessage.warning('没有规则需要保存');
+
+                // 校验正则规则
+                for (let i = 0; i < rules.value.length; i++) {
+                    const r = rules.value[i];
+                    if (r.match_mode === 'regex') {
+                        for (const pattern of r.rule) {
+                            try {
+                                new RegExp(pattern);
+                            } catch (e) {
+                                return ElMessage.error(`第 ${i + 1} 条规则存在无效正则: "${pattern}"`);
+                            }
+                        }
+                    }
+                }
+
+                saving.value = true;
+                // 保存时过滤掉软删除的规则项
+                const rulesToSave = rules.value.map((r, i) => ({
+                    id: r.id, category: r.category,
+                    rule: r.rule.filter(item => !deletedRuleItems.value.has(`${i}_${item}`)),
+                    key: r.key,
+                    match_mode: r.match_mode || 'keyword',
+                    time_based: Array.isArray(r.time_based) ? r.time_based : [],
+                    tag: r.tag, comment: r.comment || ''
+                }));
+                const data = await apiCall('post', '/api/rules', { rules: rulesToSave });
+                if (data) {
+                    ElMessage.success('保存规则成功');
+                    newRuleItems.value.clear(); // 清空新增规则追踪
+                    deletedRuleItems.value.clear(); // 清空删除规则追踪
+                    await fetchRules();
+                } else {
+                    ElMessage.error('保存规则失败');
+                }
+                saving.value = false;
+            };
+
+            // ==================== 规则项编辑 ====================
+
+            /** 显示输入框 */
+            const showInput = (rowIndex) => {
+                const rule = rules.value[rowIndex];
+                if (!rule) return;
+                rule.inputVisible = true;
+                rule.inputValue = '';
+                nextTick(() => ruleInput.value?.focus());
+            };
+
+            /** 确认输入 */
+            const handleInputConfirm = (rowIndex) => {
+                const rule = rules.value[rowIndex];
+                if (!rule?.inputVisible) return;
+                const newRule = rule.inputValue.trim();
+                if (newRule) {
+                    if (rule.rule.includes(newRule)) {
+                        ElMessage.error('该规则已存在');
+                    } else {
+                        rule.rule.unshift(newRule);
+                        // 记录为新增的规则项
+                        newRuleItems.value.add(`${rowIndex}_${newRule}`);
+                    }
+                }
+                rule.inputVisible = false;
+                rule.inputValue = '';
+            };
+
+            /** 判断是否为新增的规则项 */
+            const isNewRuleItem = (rowIndex, item) => {
+                return newRuleItems.value.has(`${rowIndex}_${item}`);
+            };
+
+            /** 判断是否为软删除的规则项 */
+            const isDeletedRuleItem = (rowIndex, item) => {
+                return deletedRuleItems.value.has(`${rowIndex}_${item}`);
+            };
+
+            /** 获取规则标签类型：删除=danger，新增=warning，默认='' */
+            const getRuleTagType = (rowIndex, item) => {
+                if (isDeletedRuleItem(rowIndex, item)) return 'danger';
+                if (isNewRuleItem(rowIndex, item)) return 'warning';
+                return '';
+            };
+
+            /** 软删除规则项（标记为已删除，保存后才真正移除） */
+            const removeRuleItem = (rowIndex, itemIndex) => {
+                const rule = rules.value[rowIndex];
+                if (!rule?.rule) return;
+                const item = rule.rule[itemIndex];
+                const key = `${rowIndex}_${item}`;
+                // 计算非删除状态的规则项数量
+                const activeCount = rule.rule.filter((r, i) => !deletedRuleItems.value.has(`${rowIndex}_${r}`)).length;
+                // 新增的规则项直接删除
+                if (newRuleItems.value.has(key)) {
+                    newRuleItems.value.delete(key);
+                    rule.rule.splice(itemIndex, 1);
+                } else {
+                    if (activeCount <= 1) {
+                        return ElMessage.warning('规则不能为空');
+                    }
+                    deletedRuleItems.value.add(key);
+                }
+            };
+
+            /** 恢复软删除的规则项 */
+            const restoreRuleItem = (rowIndex, item) => {
+                const key = `${rowIndex}_${item}`;
+                if (deletedRuleItems.value.has(key)) {
+                    deletedRuleItems.value.delete(key);
+                }
+            };
+
+            /** 统一处理规则标签关闭事件：已删除则恢复，未删除则软删除 */
+            const handleRuleTagClose = (rowIndex, itemIndex, item) => {
+                if (isDeletedRuleItem(rowIndex, item)) {
+                    restoreRuleItem(rowIndex, item);
+                } else {
+                    removeRuleItem(rowIndex, itemIndex);
+                }
+            };
+
+            // ==================== 字段变更处理 ====================
+
+            /** 排序变化 */
+            const handleSortChange = ({ prop, order }) => {
+                if (!order) return;
+                rules.value.sort((a, b) => {
+                    // 优先级列按数字排序
+                    if (prop === 'priority') {
+                        const cmp = (a.priority || 0) - (b.priority || 0);
+                        return order === 'ascending' ? cmp : -cmp;
+                    }
+                    const cmp = (a[prop] || '').localeCompare(b[prop] || '');
+                    return order === 'ascending' ? cmp : -cmp;
+                });
+            };
+
+            /** 类别变化 */
+            const handleCategoryChange = (rowIndex) => {
+                const rule = rules.value[rowIndex];
+                if (!rule) return;
+                if (rule.category !== '食') {
+                    rule.time_based = [];
+                } else if (rule.time_based.length > 0) {
+                    rule.tag = '-';
+                }
+            };
+
+            /** 标签变化 */
+            const handleTagChange = (value, rowIndex) => {
+                const rule = rules.value[rowIndex];
+                if (rule && value !== '-') rule.time_based = [];
+            };
+
+            /** 时间归类变化 */
+            const handleTimeBasedChange = (value, rowIndex) => {
+                const rule = rules.value[rowIndex];
+                if (!rule) return;
+                rule.time_based = [...value];
+                if (rule.time_based.length > 0 && rule.category === '食') {
+                    rule.tag = '-';
+                }
+            };
+
+            // ==================== 对话框操作 ====================
+
+            /** 保存对话框规则 */
+            const saveRule = () => {
+                if (!ruleForm.value.category || !ruleForm.value.ruleText) {
+                    return ElMessage.warning('请填写必要信息');
+                }
+                const ruleItems = ruleForm.value.ruleText.split('\n').filter(r => r.trim());
+                if (!ruleItems.length) return ElMessage.warning('请至少输入一条规则');
+
+                const rule = { ...ruleForm.value, rule: ruleItems };
+                if (isEditing.value) {
+                    const idx = rules.value.findIndex(r => r.id === rule.id);
+                    if (idx !== -1) rules.value[idx] = rule;
+                } else {
+                    rule.id = Date.now();
+                    rules.value.push(rule);
+                }
+                showAddRuleDialog.value = false;
+                ruleForm.value = { ...DEFAULT_FORM };
+                isEditing.value = false;
+            };
+
+            // ==================== 生命周期 ====================
+
+            onMounted(async () => {
+                const loader = document.getElementById('page-loader');
+                try {
+                    // 1. Fetch data (no assignment)
+                    const [_, rulesData] = await Promise.all([fetchCategories(), fetchRules(false)]);
+
+                    // 2. Chunked Rendering to prevent Main Thread blocking (Loader Stutter)
+                    const CHUNK_SIZE = 3; // Render 20 rows per frame
+                    let currentIndex = 0;
+
+                    const renderNextChunk = () => {
+                        if (currentIndex < rulesData.length) {
+                            const chunk = rulesData.slice(currentIndex, currentIndex + CHUNK_SIZE);
+                            rules.value.push(...chunk);
+                            currentIndex += CHUNK_SIZE;
+                            requestAnimationFrame(renderNextChunk); // Yield to browser for animation frame
+                        } else {
+                            // 3. All data rendered -> specific delay -> Fade out
+                            if (loader) {
+                                // Small buffer to ensure final paint
+                                requestAnimationFrame(() => {
+                                    loader.style.opacity = '0';
+                                    setTimeout(() => loader.style.display = 'none', 1000);
+                                });
+                            }
+                        }
+                    };
+
+                    // Start the loop
+                    requestAnimationFrame(renderNextChunk);
+
+                } catch (e) {
+                    console.error('Initial load failed', e);
+                    if (loader) loader.style.display = 'none';
+                }
+            });
+
+            // ==================== 返回模板绑定 ====================
+
+            return {
+                // 常量
+                MATCH_FIELDS, TIME_OPTIONS,
+                // 状态
+                rules, categories, loading, saving, showAddRuleDialog, isEditing, ruleForm, ruleInput,
+                // 方法
+                getTagsForCategory, addRule, moveRule, deleteRule, saveAllRules,
+                showInput, handleInputConfirm, removeRuleItem, isNewRuleItem, isDeletedRuleItem, getRuleTagType, handleRuleTagClose,
+                handleSortChange, handleCategoryChange, handleTagChange, handleTimeBasedChange,
+                saveRule,
+                MATCH_MODES,
+                // 图标
+                QuestionFilled, Delete, ArrowUp, ArrowDown
+            };
+        }
+    });
+
+    app.use(ElementPlus, { locale: zhCn });
+    app.mount('#app');
+</script>
+{% endblock %}

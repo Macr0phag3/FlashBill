@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <!-- ==================== Meta 信息 ==================== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记账助手</title>
+
+    <!-- ==================== 样式表 ==================== -->
+    <!-- Element Plus 组件库 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/element-plus/ele-index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/element-plus/element-plus-dark.css') }}">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- ==================== 脚本库 ==================== -->
+    <script src="{{ url_for('static', filename='vendor/vue/vue.global.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/element-plus/element-plus.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/element-plus/icons-vue.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/axios/axios.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+
+    <!-- ==================== 主题初始化（防止闪烁，需在 body 渲染前执行） ==================== -->
+    <script>
+        (function () {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <!-- 页面特定加载遮罩 (由子模板按需实现) -->
+    {% block page_loader %}{% endblock %}
+
+    <!-- ==================== 导航栏 ==================== -->
+    <!-- ==================== 导航栏 ==================== -->
+    <header class="app-header-wrapper">
+        <div class="header-split-container">
+            <!-- 岛屿 1: Logo -->
+            <a href="/" class="nav-island island-logo">
+                记账助手
+            </a>
+
+            <!-- 岛屿 2: 导航菜单 (居中) -->
+            <nav class="nav-island island-menu">
+                <a href="/statistics" class="nav-link" id="statistics-tab">统计分析</a>
+                <a href="/tagging" class="nav-link" id="home-tab">新增记账</a>
+                <a href="/rules" class="nav-link" id="rules-tab">规则管理</a>
+                <a href="/categories" class="nav-link" id="categories-tab">分类管理</a>
+            </nav>
+
+            <!-- 右侧容器 -->
+            <div class="header-right-group">
+                <!-- 岛屿 3: 信息展示 -->
+                <div class="nav-island island-info duration-text" id="record-keeping-duration">
+                </div>
+
+                <!-- 岛屿 4: 主题切换 -->
+                <div class="nav-island island-theme">
+                    <button class="theme-toggle-btn" id="darkModeToggle" type="button" aria-label="切换深色模式">
+                        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 16 16" fill="currentColor">
+                            <path
+                                d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
+                        </svg>
+                        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 16 16" fill="currentColor" style="display: none;">
+                            <path
+                                d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 移动端汉堡菜单按钮 (保留但需要重新样式化) -->
+            <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="打开菜单">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==================== 主内容区 ==================== -->
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- ==================== 页面脚本 ==================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initThemeToggle();
+            initActiveNav();
+            initRecordDuration();
+            initMobileMenu();
+            initLogoAnimation();
+            initNavTextGlitch();
+        });
+
+        /**
+         * 初始化导航菜单文字故障效果 (Hover 时随机跳变)
+         * 使用事件委托 (Event Delegation) 以支持动态生成的元素 (如 Vue 渲染的 el-tabs)
+         */
+        function initNavTextGlitch() {
+            // 目标选择器：导航链接、信息岛、以及 Element Plus 的 Tab 标签
+            const selector = '.island-menu .nav-link, .island-info, .el-tabs__item';
+            const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:.=*+-<>";
+
+            // 在 body 上监听 mouseover (冒泡)
+            document.body.addEventListener('mouseover', (e) => {
+                const target = e.target.closest(selector);
+                if (!target) return;
+
+                // 防止重复触发
+                if (target.dataset.isGlitching) return;
+                target.dataset.isGlitching = 'true';
+
+                const originalText = target.textContent.trim();
+                // 备份原始文本
+                target.dataset.originalText = originalText;
+
+                let iteration = 0;
+                let intervalId = setInterval(() => {
+                    // 每一个字符需要多少次迭代才能确定下来 (速度控制)
+                    const revealIndex = Math.floor(iteration / 2);
+
+                    // 已确定的部分
+                    const revealedText = originalText.substring(0, revealIndex);
+
+                    // 剩余未确定的部分 (生成乱码)
+                    const scrambledRest = originalText
+                        .substring(revealIndex)
+                        .split('')
+                        .map(char => {
+                            if (char === ' ') return ' ';
+                            if (char.charCodeAt(0) > 255) {
+                                return chars[Math.floor(Math.random() * chars.length)] +
+                                    chars[Math.floor(Math.random() * chars.length)];
+                            }
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        })
+                        .join('');
+
+                    target.textContent = revealedText + scrambledRest;
+
+                    // 全部展示完毕，停止动画
+                    if (revealIndex >= originalText.length) {
+                        clearInterval(intervalId);
+                        // 移除标记但是保留原始文本直到鼠标移出? 
+                        // 不，动画结束就结束了。但我们需要保持标记防止 hover 期间再次触发
+                        target.dataset.isGlitching = 'done'; // 标记为已完成但还在 hover 状态
+                    }
+
+                    iteration++;
+                }, 60);
+
+                // 将 intervalId 存入对象以便清理
+                target.dataset.glitchInterval = intervalId;
+
+                // 定义清理函数
+                const stopGlitch = () => {
+                    clearInterval(Number(target.dataset.glitchInterval));
+                    // 恢复原始文本
+                    if (target.dataset.originalText) {
+                        target.textContent = target.dataset.originalText;
+                    }
+                    delete target.dataset.isGlitching;
+                    delete target.dataset.glitchInterval;
+                    delete target.dataset.originalText;
+                    target.removeEventListener('mouseout', stopHandler);
+                };
+
+                // 鼠标移出时停止
+                const stopHandler = (outEvent) => {
+                    // 确保是真的移出了 target (处理子元素冒泡)
+                    if (!target.contains(outEvent.relatedTarget)) {
+                        stopGlitch();
+                    }
+                };
+
+                target.addEventListener('mouseout', stopHandler);
+            });
+        }
+
+        /**
+         * 初始化 Logo 岛屿动画 (随机颜色 + 抖动)
+         */
+        function initLogoAnimation() {
+            const logoIsland = document.querySelector('.island-logo');
+            if (!logoIsland) return;
+
+            const changeStyle = () => {
+                // 生成随机亮色作为背景 (避免太暗影响阅读)
+                const hue = Math.floor(Math.random() * 360);
+                const saturation = 70 + Math.random() * 30; // 70-100%
+                const lightness = 80 + Math.random() * 15; // 80-95% (亮背景)
+
+                // 深色文本以保证对比度
+                const textColor = `hsl(${hue}, ${saturation}%, 20%)`;
+                const bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                const borderColor = `hsl(${hue}, ${saturation}%, 50%)`;
+
+                // 应用样式
+                logoIsland.style.backgroundColor = bgColor;
+                logoIsland.style.color = textColor;
+                logoIsland.style.boxShadow = `0 0 15px ${borderColor}`;
+
+                // 触发抖动动画
+                logoIsland.classList.remove('shake');
+                void logoIsland.offsetWidth; // 触发重绘，重置动画
+                logoIsland.classList.add('shake');
+            };
+
+            // 每 3 秒执行一次
+            setInterval(changeStyle, 3000);
+        }
+
+        /**
+         * 初始化主题切换功能
+         */
+        function initThemeToggle() {
+            const toggle = document.getElementById('darkModeToggle');
+            const html = document.documentElement;
+            const iconMoon = toggle.querySelector('.icon-moon');
+            const iconSun = toggle.querySelector('.icon-sun');
+
+            // 根据当前主题设置图标
+            const updateIcon = () => {
+                const isDark = html.classList.contains('dark');
+                iconMoon.style.display = isDark ? 'none' : 'block';
+                iconSun.style.display = isDark ? 'block' : 'none';
+            };
+            updateIcon();
+
+            // 点击切换主题
+            toggle.addEventListener('click', () => {
+                const isDark = html.classList.contains('dark');
+                if (isDark) {
+                    html.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    html.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+                updateIcon();
+            });
+        }
+
+        /**
+         * 初始化导航栏活动状态
+         */
+        function initActiveNav() {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                    link.setAttribute('aria-current', 'page');
+                }
+            });
+        }
+
+        /**
+         * 初始化记账天数显示
+         */
+        function initRecordDuration() {
+            const firstDate = localStorage.getItem('firstBillDate');
+            const el = document.getElementById('record-keeping-duration');
+            if (el) {
+                if (!firstDate) {
+                    el.style.fontSize = '12px'; // 稍微调小一点以免太长
+                    el.textContent = '(打开 统计分析 -> 数据表格 后自动计算)';
+                    return;
+                }
+                el.style.fontSize = ''; // 恢复默认字体大小
+                const days = Math.ceil((new Date() - new Date(firstDate)) / 86400000);
+                const years = (days / 365).toFixed(1);
+                el.textContent = `第一笔账至今 ${days} 天（${years} 年）`;
+            }
+        }
+
+        /**
+         * 初始化移动端菜单
+         */
+        function initMobileMenu() {
+            const menuBtn = document.getElementById('mobileMenuToggle');
+            const navMenu = document.querySelector('.nav-menu');
+
+            if (menuBtn && navMenu) {
+                menuBtn.addEventListener('click', () => {
+                    navMenu.classList.toggle('show');
+                });
+            }
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

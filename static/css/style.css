@@ -1,0 +1,1270 @@
+/* ==================== 公共工具类 ==================== */
+@font-face {
+    font-family: 'fusion-pixel';
+    src: url('../fonts/fusion-pixel.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+:root {
+    --header-height: 50px;
+    --primary-color: var(--el-color-primary);
+    --bg-color: #ffffff;
+    --bg-color-secondary: #f5f7fa;
+    --text-color: #303133;
+    --text-color-secondary: #303133;
+    --border-color: #dcdfe6;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --font-primary: 'fusion-pixel', 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    --el-font-family: var(--font-primary);
+}
+
+body {
+    font-family: var(--font-primary);
+}
+
+/* 强制 input, textarea, select, button 等表单元素继承字体 */
+input,
+textarea,
+select,
+button,
+.el-input__inner {
+    font-family: inherit;
+}
+
+/* 强制 placeholder 占位符使用自定义字体 */
+::placeholder,
+.el-input__inner::placeholder {
+    font-family: var(--font-primary) !important;
+    opacity: 1;
+    /* Firefox 默认降低透明度，这就修正 */
+}
+
+/* 暗色模式变量 */
+html.dark {
+    --bg-color: #141414;
+    --bg-color-secondary: #1d1d1d;
+    --text-color: #e5eaf3;
+    --text-color-secondary: #d2d2d2;
+    --border-color: #e5eaf3;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ==================== 工具类 ==================== */
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.mx-2 {
+    margin: 0 8px;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.text-muted {
+    color: var(--text-color-secondary);
+}
+
+.stats-box {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+}
+
+.table-container {
+    width: 100%;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 12px;
+}
+
+/* ==================== 导航栏样式 ==================== */
+.app-header-wrapper {
+    position: sticky;
+    top: 10px;
+    z-index: 1000;
+    width: 100%;
+    margin-bottom: 20px;
+    height: 45px;
+    /* 固定整体高度，确保对齐 */
+    pointer-events: none;
+    /* 让wrapper不阻挡点击，子元素自身开启点击 */
+}
+
+/* 导航容器布局 */
+.header-split-container {
+    max-width: 1400px;
+    width: 95%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 200px 1fr auto;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+/* 岛屿通用样式 */
+.nav-island {
+    pointer-events: auto;
+    height: 45px;
+    /* 所有岛屿统一高度 */
+    background-color: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* 岛屿 1: Logo (最左) */
+.island-logo {
+    color: #ebfc2e;
+    box-shadow: 0 0 20px #409eff;
+    background-color: #409eff;
+    width: fit-content;
+    height: 35px;
+    text-decoration: none;
+    justify-self: start;
+    margin-right: auto;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+html.dark .island-logo {
+    color: #ebfc2e;
+    box-shadow: 0 0 20px #409eff;
+    background-color: #409eff;
+}
+
+/* Define slice variables on the root or shared class so both can use them */
+.nav-island {
+    --slice-0: inset(50% 50% 50% 50%);
+    --slice-1: inset(80% -6px 0 0);
+    --slice-2: inset(50% -6px 30% 0);
+    --slice-3: inset(10% -6px 85% 0);
+    --slice-4: inset(40% -6px 43% 0);
+    --slice-5: inset(80% -6px 5% 0);
+}
+
+@keyframes glitch {
+    0% {
+        clip-path: inset(-50px);
+        transform: translate(0);
+    }
+
+    10% {
+        clip-path: var(--slice-3);
+        transform: translate(2px, 2px);
+    }
+
+    20% {
+        clip-path: var(--slice-1);
+        transform: translate(-2px, 2px);
+    }
+
+    30% {
+        clip-path: var(--slice-3);
+        transform: translate(0px, 1px);
+    }
+
+    40% {
+        clip-path: var(--slice-2);
+        transform: translate(-1px, 0px);
+    }
+
+    50% {
+        clip-path: var(--slice-3);
+        transform: translate(1px, 0px);
+    }
+
+    60% {
+        clip-path: var(--slice-4);
+        transform: translate(1px, 2px);
+    }
+
+    70% {
+        clip-path: var(--slice-2);
+        transform: translate(-2px, 2px);
+    }
+
+    80% {
+        clip-path: var(--slice-5);
+        transform: translate(4px, -2px);
+    }
+
+    90% {
+        clip-path: var(--slice-1);
+        transform: translate(-2px, 0px);
+    }
+
+    100% {
+        clip-path: inset(-50px);
+        transform: translate(0);
+    }
+}
+
+.island-logo.shake {
+    animation: glitch 0.8s cubic-bezier(.3, .46, .45, .9) both;
+    animation-iteration-count: 1;
+}
+
+/* 岛屿 2: 菜单 (绝对居中) */
+.island-menu {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 8px;
+    padding: 0 10px;
+    /* 胶囊内间距 */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.324);
+}
+
+html.dark .island-menu {
+    background-color: rgba(20, 20, 20, 0.75);
+    box-shadow:
+        -2px -3px 3px rgba(255, 255, 255, 0.169),
+        -5px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+/* 岛屿 3 & 4: 右侧组 */
+.header-right-group {
+    display: flex;
+    gap: 15px;
+    justify-self: end;
+}
+
+.island-info {
+    width: fit-content;
+    height: 30px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.324);
+    margin-right: 0;
+}
+
+html.dark .island-info {
+    background-color: rgba(20, 20, 20, 0.75);
+    box-shadow:
+        -2px -3px 3px rgba(255, 255, 255, 0.169),
+        -5px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.island-theme {
+    color: rgba(0, 119, 255, 0.75) !important;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(0, 119, 255, 0.75);
+    border: 1px solid rgba(0, 119, 255, 0.75);
+    transition: all 0.3s ease;
+}
+
+.island-theme:hover {
+    box-shadow: 0 0 10px rgba(0, 119, 255, 0.9);
+    transform: scale(1.1);
+}
+
+/* Dark Mode 适配 */
+html.dark .island-theme {
+    background-color: rgba(20, 20, 20, 0.75);
+    box-shadow: 0 0 20px rgb(255, 196, 2);
+    border: 1px solid rgb(255, 196, 2);
+}
+
+html.dark .island-theme:hover {
+    box-shadow: 0 0 10px rgb(255, 196, 2);
+    transform: scale(1.1);
+}
+
+/* 移除旧的 logo wrapper 样式干扰 */
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* 导航链接样式微调 */
+.nav-menu {
+    margin-left: 0;
+    /* 重置旧样式 */
+}
+
+
+.nav-link {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: var(--bg-color-secondary);
+    color: var(--primary-color);
+}
+
+.nav-link.active {
+    background-color: var(--el-color-primary-light-9);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+html.dark .nav-link.active {
+    background-color: rgba(64, 158, 255, 0.2);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.duration-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+}
+
+/* 重写 Theme Toggle Button */
+.theme-toggle-btn {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    /* 边框由父级 island-theme 处理 */
+    color: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    /* 修复 transform 冲突，确保 hover 时也能应用 glitch */
+    transform: translate(0);
+}
+
+/* Hover 时触发 Glitch 抖动 */
+.theme-toggle-btn:hover {
+    color: var(--primary-color);
+}
+
+.theme-toggle-btn:hover svg {
+    animation: glitch 0.5s cubic-bezier(.3, .46, .45, .9) both;
+    animation-iteration-count: 1;
+}
+
+html.dark .theme-toggle-btn {
+    color: #ffd700;
+}
+
+/* 移动端菜单按钮 */
+.mobile-menu-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background-color: var(--bg-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px 16px;
+        box-shadow: 0 4px 12px var(--shadow-color);
+        margin-left: 0;
+    }
+
+    .nav-menu.show {
+        display: flex;
+    }
+
+    .nav-link {
+        width: 100%;
+        padding: 12px 16px;
+    }
+
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    .header-actions {
+        margin-left: 0;
+    }
+
+    .duration-text {
+        display: none;
+    }
+}
+
+/* ==================== Index 页面样式 ==================== */
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-right: 20px;
+}
+
+.search-input {
+    width: 200px;
+}
+
+.rule-form {
+    padding: 20px;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.upload-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    vertical-align: middle;
+}
+
+.refresh-btn {
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    transform: rotate(180deg);
+}
+
+.refresh-btn .el-icon {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.hidden-column {
+    display: none !important;
+}
+
+/* ==================== Categories 页面样式 ==================== */
+
+.tag-input {
+    width: 100px;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.button-new-tag {
+    height: 24px;
+    line-height: 22px;
+    padding: 0 5px;
+    font-size: 12px;
+    border-radius: 4px;
+    background-color: var(--el-fill-color-light);
+    border-color: var(--el-border-color);
+    color: var(--el-text-color-secondary);
+}
+
+.button-new-tag:hover {
+    background-color: var(--el-border-color);
+    border-color: var(--el-border-color-hover);
+    color: var(--el-text-color-regular);
+}
+
+.tag-item {
+    margin: 0;
+    height: 24px;
+    line-height: 22px;
+    padding: 0 8px;
+    font-size: 12px;
+}
+
+/* 确保标签内容（文字+恢复图标）在同一行 */
+.tag-item .el-tag__content {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* 已删除标签：将关闭按钮的 X 图标替换为 Element Plus Check 图标 */
+.tag-deleted .el-tag__close svg {
+    display: none;
+}
+
+.tag-deleted .el-tag__close::before {
+    content: '';
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath d='M406.656 706.944L195.84 496.128a32 32 0 10-45.248 45.248l256 256a32 32 0 0045.248 0l512-512a32 32 0 00-45.248-45.248L406.592 706.944z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath d='M406.656 706.944L195.84 496.128a32 32 0 10-45.248 45.248l256 256a32 32 0 0045.248 0l512-512a32 32 0 00-45.248-45.248L406.592 706.944z'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+/* 删除线仅作用于标签文字，不穿透到关闭按钮 */
+.tag-deleted .el-tag__content {
+    text-decoration: line-through;
+}
+
+/* ==================== Rules 页面样式 ==================== */
+
+/* 表格滚动容器 - 使用 auto 避免始终显示滚动条 */
+.el-table__body-wrapper {
+    overflow-x: auto !important;
+}
+
+.el-table__inner-wrapper {
+    overflow-x: auto !important;
+}
+
+/* 确保表头和内容宽度同步 */
+.el-table__header-wrapper {
+    overflow: hidden !important;
+}
+
+.el-table__fixed {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.el-table__fixed-right {
+    position: absolute !important;
+    top: 0;
+    right: 0;
+    z-index: 2;
+}
+
+.el-table__fixed-body-wrapper {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+
+/* Rules 页面特定样式 */
+.rules-table-container {
+    height: calc(100vh - 213px);
+}
+
+.categories-table-container {
+    height: calc(100vh - 213px);
+}
+
+.el-tag.tag-dash {
+    background-color: var(--el-color-info) !important;
+    border-color: var(--el-color-info) !important;
+    color: var(--el-color-white) !important;
+}
+
+.rule-tags {
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 5px 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rule-tags .el-tag {
+    flex-shrink: 0;
+    margin-right: 0px;
+    margin-bottom: 0;
+}
+
+.rule-count {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    margin-right: 8px;
+    background-color: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    padding: 0 8px;
+    height: 24px;
+    line-height: 22px;
+    display: inline-block;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+}
+
+/* v-cloak 用于 Vue 编译完成前隐藏元素 */
+[v-cloak] {
+    display: none !important;
+}
+
+/* 全局加载遮罩 */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease-out;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    z-index: 10;
+}
+
+/* Element Plus 加载动画样式 */
+.loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--el-color-primary-light-7);
+    border-top-color: var(--el-color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 禁用过渡效果（用于避免闪烁） */
+.no-transition,
+.no-transition * {
+    transition: none !important;
+}
+
+/* ==================== Dark Mode for Element Plus Buttons ==================== */
+/* 暗色模式按钮采用标签风格：半透明底色 + 彩色文字 */
+
+html.dark .el-button--primary {
+    --el-button-bg-color: var(--el-color-primary-light-9);
+    --el-button-border-color: var(--el-color-primary-light-5);
+    --el-button-text-color: var(--el-color-primary);
+    --el-button-hover-bg-color: var(--el-color-primary-light-7);
+    --el-button-hover-border-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-primary);
+    --el-button-active-bg-color: var(--el-color-primary-light-8);
+    --el-button-active-border-color: var(--el-color-primary);
+    --el-button-active-text-color: var(--el-color-primary);
+}
+
+html.dark .el-button--success {
+    --el-button-bg-color: var(--el-color-success-light-9);
+    --el-button-border-color: var(--el-color-success-light-5);
+    --el-button-text-color: var(--el-color-success);
+    --el-button-hover-bg-color: var(--el-color-success-light-7);
+    --el-button-hover-border-color: var(--el-color-success);
+    --el-button-hover-text-color: var(--el-color-success);
+    --el-button-active-bg-color: var(--el-color-success-light-8);
+    --el-button-active-border-color: var(--el-color-success);
+    --el-button-active-text-color: var(--el-color-success);
+}
+
+html.dark .el-button--warning {
+    --el-button-bg-color: var(--el-color-warning-light-9);
+    --el-button-border-color: var(--el-color-warning-light-5);
+    --el-button-text-color: var(--el-color-warning);
+    --el-button-hover-bg-color: var(--el-color-warning-light-7);
+    --el-button-hover-border-color: var(--el-color-warning);
+    --el-button-hover-text-color: var(--el-color-warning);
+    --el-button-active-bg-color: var(--el-color-warning-light-8);
+    --el-button-active-border-color: var(--el-color-warning);
+    --el-button-active-text-color: var(--el-color-warning);
+}
+
+html.dark .el-button--danger {
+    --el-button-bg-color: var(--el-color-danger-light-9);
+    --el-button-border-color: var(--el-color-danger-light-5);
+    --el-button-text-color: var(--el-color-danger);
+    --el-button-hover-bg-color: var(--el-color-danger-light-7);
+    --el-button-hover-border-color: var(--el-color-danger);
+    --el-button-hover-text-color: var(--el-color-danger);
+    --el-button-active-bg-color: var(--el-color-danger-light-8);
+    --el-button-active-border-color: var(--el-color-danger);
+    --el-button-active-text-color: var(--el-color-danger);
+}
+
+html.dark .el-button--info {
+    --el-button-bg-color: var(--el-color-info-light-9);
+    --el-button-border-color: var(--el-color-info-light-5);
+    --el-button-text-color: var(--el-color-info);
+    --el-button-hover-bg-color: var(--el-color-info-light-7);
+    --el-button-hover-border-color: var(--el-color-info);
+    --el-button-hover-text-color: var(--el-color-info);
+    --el-button-active-bg-color: var(--el-color-info-light-8);
+    --el-button-active-border-color: var(--el-color-info);
+    --el-button-active-text-color: var(--el-color-info);
+}
+
+/* Disabled 按钮：同色系但更暗淡，与可点击按钮形成对比 */
+html.dark .el-button--primary.is-disabled,
+html.dark .el-button--primary.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-primary-light-9);
+    --el-button-disabled-border-color: var(--el-color-primary-light-7);
+    --el-button-disabled-text-color: var(--el-color-primary-light-5);
+}
+
+html.dark .el-button--success.is-disabled,
+html.dark .el-button--success.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-success-light-9);
+    --el-button-disabled-border-color: var(--el-color-success-light-7);
+    --el-button-disabled-text-color: var(--el-color-success-light-5);
+}
+
+html.dark .el-button--warning.is-disabled,
+html.dark .el-button--warning.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-warning-light-9);
+    --el-button-disabled-border-color: var(--el-color-warning-light-7);
+    --el-button-disabled-text-color: var(--el-color-warning-light-5);
+}
+
+html.dark .el-button--danger.is-disabled,
+html.dark .el-button--danger.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-danger-light-9);
+    --el-button-disabled-border-color: var(--el-color-danger-light-7);
+    --el-button-disabled-text-color: var(--el-color-danger-light-5);
+}
+
+html.dark .el-button--info.is-disabled,
+html.dark .el-button--info.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-info-light-9);
+    --el-button-disabled-border-color: var(--el-color-info-light-7);
+    --el-button-disabled-text-color: var(--el-color-info-light-5);
+}
+
+/* ==================== Dark Mode for Element Plus Tables ==================== */
+
+html.dark .el-table {
+    --el-table-bg-color: #1d1d1d;
+    --el-table-tr-bg-color: #1d1d1d;
+    --el-table-header-bg-color: #262626;
+    --el-table-header-text-color: #e5eaf3;
+    --el-table-row-hover-bg-color: #363636;
+    --el-text-color-regular: #cfd3dc;
+    --el-text-color-primary: #e5eaf3;
+}
+
+/* ==================== Statistics Page Styles ==================== */
+
+/* 只影响内容区域的container，不影响导航栏的container */
+body>.container.mt-4 {
+    padding: 0px;
+    margin-top: 20px;
+}
+
+.stats-filter-container {
+    margin-bottom: 0px;
+    padding: 5px;
+    border-radius: 4px;
+    min-height: 85px;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-tags-container {
+    margin-top: 10px;
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-item .el-tag {
+    margin-right: 10px;
+}
+
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.chart-container {
+    padding: 0px;
+    border-radius: 4px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.box-card {
+    margin: 0px;
+}
+
+.el-card {
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.298);
+    border-radius: 20px !important;
+}
+
+html.dark .el-card {
+    /* background-color: rgba(20, 20, 20, 0.75); */
+    box-shadow:
+        -5px -5px 5px rgba(255, 255, 255, 0.169),
+        -10px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping */
+    align-items: center;
+    gap: 15px;
+    justify-content: space-between;
+}
+
+.filter-row .el-form-item {
+    margin-bottom: 0px;
+    margin-right: 0;
+}
+
+/* On mobile, add some bottom margin to wrapped items if needed, or rely on gap */
+@media (max-width: 768px) {
+    .filter-row .el-form-item {
+        margin-bottom: 10px;
+    }
+}
+
+.filter-row .el-form-item__label {
+    padding-right: 8px;
+}
+
+.filter-dropdown .el-select-dropdown__wrap {
+    max-height: 200px;
+}
+
+.filter-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    /* Allow wrapping */
+}
+
+.filter-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    /* Allow wrapping */
+}
+
+.pie-container {
+    padding: 0px;
+    border-radius: 4px;
+}
+
+.pivot-container {
+    padding: 0px;
+    border-radius: 4px;
+}
+
+.pie-row {
+    display: flex;
+    gap: 20px;
+}
+
+.analysis-container {
+    padding: 0px;
+}
+
+.analysis-content {
+    padding: 0;
+}
+
+.analysis-filters {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.analysis-form {
+    margin-bottom: 0;
+}
+
+.average-results {
+    min-height: 200px;
+}
+
+.average-table-container {
+    margin-top: 20px;
+}
+
+.average-item {
+    padding: 20px;
+    margin-bottom: 15px;
+    background-color: var(--bg-color-secondary);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.average-label {
+    font-size: 16px;
+    color: var(--text-color-secondary);
+}
+
+.average-type-text {
+    margin-left: 10px;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+}
+
+.average-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.timeline-container {
+    padding: 15px;
+}
+
+/* 时间线包装器 */
+.timeline-wrapper {
+    position: relative;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* 垂直中心线 */
+.timeline-center-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+/* 时间线内容 */
+.timeline-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* 日期分组 */
+.timeline-date-group {
+    margin-bottom: 20px;
+}
+
+/* 日期头部 */
+.timeline-date-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 0;
+}
+
+/* 时间线项目容器 */
+.timeline-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 单个时间线项目 */
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+}
+
+/* 时间点标记 */
+.timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 15px;
+    width: 15px;
+    height: 15px;
+    background-color: var(--primary-color);
+    border: 2px solid var(--bg-color);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 1px 11px var(--shadow-color);
+    z-index: 3;
+}
+
+/* 卡片样式 */
+.timeline-item-card {
+    border-radius: 6px;
+    box-shadow: 0 1px 3px var(--shadow-color);
+    width: calc(50% - 40px);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+/* 偶数项卡片居右，奇数项卡片居左 */
+.timeline-item:nth-child(odd) .timeline-item-card {
+    margin-right: auto;
+    margin-left: 15px;
+}
+
+.timeline-item:nth-child(even) .timeline-item-card {
+    margin-left: auto;
+    margin-right: 15px;
+}
+
+/* 卡片悬停效果 */
+.timeline-item-card:hover {
+    box-shadow: 0 2px 6px rgba(123, 128, 127, 0.779);
+    transform: translateY(-1px);
+}
+
+/* 卡片内容 */
+.timeline-item-content {
+    padding: 0px;
+}
+
+/* 时间和金额头部 */
+.timeline-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 15px;
+}
+
+/* 时间样式 */
+.timeline-time {
+    font-size: 18px;
+    color: var(--text-color);
+    font-weight: 400;
+    padding-bottom: 3px;
+}
+
+/* 金额样式 */
+.timeline-amount {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* 信息详情 */
+.timeline-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 详情行 */
+.timeline-item-detail {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    font-size: 14px;
+    padding-top: 5px;
+}
+
+/* 标签样式 */
+.timeline-label {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    width: 70px;
+    flex-shrink: 0;
+    font-weight: 400;
+}
+
+/* 值样式 */
+.timeline-value {
+    font-size: 14px;
+    color: var(--text-color);
+    flex: 1;
+    word-break: break-word;
+}
+
+/* 标签之间的间隔 */
+.timeline-item-detail .el-tag {
+    margin-right: 8px;
+}
+
+/* 最后一个标签没有右边距 */
+.timeline-item-detail .el-tag:last-child {
+    margin-right: 0;
+}
+
+/* 加载状态样式 */
+.loading-more {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text-color-secondary);
+    font-size: 16px;
+}
+
+.all-loaded {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text-color-secondary);
+    font-size: 16px;
+}
+
+/* 空数据样式 */
+.no-data {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-color-secondary);
+    font-size: 18px;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    margin: 20px 0;
+}
+
+/* Dark mode 卡片样式 */
+html.dark .timeline-item-card {
+    background-color: var(--bg-color-secondary);
+}
+
+html.dark .timeline-item-card:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* ==================== 文本色彩类 ==================== */
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+/* ==================== 文本选中快速创建规则 ==================== */
+
+/* 可选择文本样式 */
+.selectable-text {
+    cursor: text;
+    user-select: text;
+}
+
+.selectable-text::selection {
+    background-color: var(--el-color-primary-light-7);
+    color: var(--el-color-primary);
+}
+
+/* 浮动图标样式 */
+.text-selection-popup {
+    position: fixed;
+    z-index: 9999;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.text-selection-popup .el-button {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ==================== Element Plus 样式覆盖 ==================== */
+
+/* 将消息提示移至右上角 */
+.el-message {
+    top: 83px !important;
+}
+
+.header-btn-group {
+    align-items: center;
+    gap: 20px;
+}
+
+.header-btn-group .el-button+.el-button {
+    margin-left: 0 !important;
+}

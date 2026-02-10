@@ -1,0 +1,911 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- Element Plus 中文语言包 -->
+<script src="{{ url_for('static', filename='vendor/vue/zh-cn.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- ==================== 账单管理界面 ==================== -->
+<div id="app">
+    <el-card class="mb-3">
+        <!-- 卡片头部：账单类型选择 + 操作按钮 -->
+        <template #header>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center" style="gap: 20px;">
+                    <span>账单数据</span>
+                    <div class="stats-box text-muted" style="font-size: 13px;">
+                        [[ billStats.total ]] / (tag, [[ billStats.tagTagged ]], [[ billStats.tagPercentage.toFixed(2)
+                        ]]% ||
+                        catg, [[ billStats.categoryTagged ]], [[ billStats.categoryPercentage.toFixed(2) ]]%)
+                    </div>
+                </div>
+                <div class="d-flex header-btn-group">
+                    <el-select v-model="billType" placeholder="选择账单类型" style="width: 100px;">
+                        <el-option label="支付宝" value="alipay"></el-option>
+                        <el-option label="微信" value="wechat"></el-option>
+                    </el-select>
+                    <el-upload action="/upload" :on-success="handleUploadSuccess" :on-error="handleUploadError"
+                        :before-upload="beforeUpload" :show-file-list="false" :data="{ bill_type: billType }"
+                        name="file" accept=".xlsx,text/csv">
+                        <el-button type="primary">
+                            上传账单
+                        </el-button>
+                    </el-upload>
+                    <el-button type="success" @click="handleExport"
+                        :disabled="!filteredBillsData.length">导出账单</el-button>
+                    <el-button type="danger" @click="handleClearCache" :disabled="!bills.length">清除缓存</el-button>
+                </div>
+            </div>
+        </template>
+
+        <!-- 工具栏：统计信息 + 筛选控件 -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <div class="d-flex align-items-center gap-4">
+
+                <el-input v-model="searchQuery" placeholder="搜索关键字(null 为空值)" clearable @input="handleFilterChange"
+                    style="width: 180px;"></el-input>
+                <el-select v-model="searchField" placeholder="指定搜索字段" @change="handleFilterChange" style="width: 130px;"
+                    clearable>
+                    <el-option label="交易对方" value="交易对方"></el-option>
+                    <el-option label="商品说明" value="商品说明"></el-option>
+                    <el-option label="类别" value="类别"></el-option>
+                    <el-option label="标签" value="标签"></el-option>
+                </el-select>
+                <el-select v-model="mealType" placeholder="餐点类型" @change="handleFilterChange" style="width: 100px;"
+                    clearable>
+                    <el-option label="早餐" value="早餐"></el-option>
+                    <el-option label="午餐" value="午餐"></el-option>
+                    <el-option label="晚餐" value="晚餐"></el-option>
+                    <el-option label="夜宵" value="夜宵"></el-option>
+                </el-select>
+                <el-checkbox v-model="showUntaggedOnly" @change="handleFilterChange">只看未标记</el-checkbox>
+                <el-select v-model="frequencySortField" placeholder="按频率排序" style="width: 120px;"
+                    @change="handleFilterChange" clearable>
+                    <el-option label="按交易对方" value="交易对方"></el-option>
+                    <el-option label="按商品说明" value="商品说明"></el-option>
+                </el-select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <el-button type="primary" @click="handleStartTagging" :disabled="!bills.length">
+                    [[ isEditing ? '保存数据' : '开始打标' ]]
+                </el-button>
+                <el-button type="primary" @click="handleBatchTag"
+                    :disabled="!isEditing || !selectedBills.length">批量打标</el-button>
+                <el-button type="warning" @click="handleAITag" :disabled="!isEditing || !bills.length"
+                    :loading="aiTagLoading">
+                    AI 打标
+                </el-button>
+
+                <el-button type="danger" @click="resetFilters">重置筛选</el-button>
+            </div>
+        </div>
+
+        <!-- 账单表格 -->
+        <div class="table-container">
+            <el-table :data="paginatedBills" style="width: 100%" border stripe :max-height="560"
+                @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
+                :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
+                v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">
+                <!-- 序号列（非编辑模式） -->
+                <el-table-column type="index" label="序号" width="60" align="center" fixed="left" v-if="!isEditing">
+                    <template #default="scope">[[ (currentPage - 1) * pageSize + scope.$index + 1 ]]</template>
+                </el-table-column>
+                <!-- 选择列（编辑模式） -->
+                <el-table-column type="selection" width="55" align="center" fixed="left"
+                    v-if="isEditing"></el-table-column>
+                <!-- 日期列 -->
+                <el-table-column prop="交易时间" label="日期" width="180" align="center" sortable="custom"
+                    fixed="left"></el-table-column>
+                <!-- 金额列 -->
+                <el-table-column prop="金额" label="金额" width="120" align="center" sortable="custom">
+                    <template #default="scope">
+                        <el-input-number v-if="isEditing" v-model="scope.row.金额" :precision="2" :step="0.01"
+                            size="small" @change="markModified(scope.row)" style="width: 90px"
+                            :controls="false"></el-input-number>
+                        <span v-else>[[ formatAmount(scope.row.金额) ]]</span>
+                    </template>
+                </el-table-column>
+                <!-- 类别列 -->
+                <el-table-column prop="类别" label="类别" width="120" align="center" :filters="categoryFilterOptions"
+                    :filter-method="filterCategory">
+                    <template #default="scope">
+                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" style="width: 80px" clearable
+                            @change="handleCategoryChange(scope.row)" filterable>
+                            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
+                        </el-select>
+                        <span v-else>[[ scope.row.类别 ]]</span>
+                    </template>
+                </el-table-column>
+                <!-- 标签列 -->
+                <el-table-column prop="标签" label="标签" width="120" align="center" :filters="tagFilterOptions"
+                    :filter-method="filterTag">
+                    <template #default="scope">
+                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" style="width: 80px" clearable
+                            @change="markModified(scope.row)" filterable>
+                            <el-option v-for="tag in getTagsForCategory(scope.row.类别)" :key="tag" :label="tag"
+                                :value="tag"></el-option>
+                        </el-select>
+                        <span v-else>[[ scope.row.标签 ]]</span>
+                    </template>
+                </el-table-column>
+                <!-- 其他列 -->
+                <el-table-column prop="交易对方" label="交易对方" min-width="120" sortable header-align="center">
+                    <template #default="scope">
+                        <span class="selectable-text" @mouseup="handleTextSelect($event, '交易对方', scope.row)">
+                            [[ scope.row.交易对方 ]]
+                        </span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="商品说明" label="商品说明" min-width="120" sortable header-align="center">
+                    <template #default="scope">
+                        <span class="selectable-text" @mouseup="handleTextSelect($event, '商品说明', scope.row)">
+                            [[ scope.row.商品说明 ]]
+                        </span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="备注" label="备注" min-width="50" header-align="center">
+                    <template #default="scope">
+                        <el-input v-if="isEditing" v-model="scope.row.备注" size="small" @change="markModified(scope.row)"
+                            style="width: 150px"></el-input>
+                        <span v-else>[[ scope.row.备注 ]]</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="命中规则" label="命中规则" min-width="150" header-align="center">
+                    <template #default="scope">
+                        <el-input v-if="isEditing" v-model="scope.row.命中规则" size="small"
+                            @change="markModified(scope.row)" style="width: 150px"></el-input>
+                        <span v-else>[[ scope.row.命中规则 ]]</span>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <!-- 分页器 -->
+            <div class="pagination-container" style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                    :page-sizes="[100, 500, 1000, 5000, 10000]" layout="total, sizes, prev, pager, next, jumper"
+                    :total="filteredBillsData.length" @size-change="val => { pageSize = val; currentPage = 1; }"
+                    @current-change="val => currentPage = val">
+                </el-pagination>
+            </div>
+        </div>
+    </el-card>
+
+    <!-- 批量打标对话框 -->
+    <el-dialog v-model="batchTagDialogVisible" title="批量打标" width="500px" :close-on-click-modal="false">
+        <el-form :model="batchTagForm" label-width="80px">
+            <el-form-item label="类别">
+                <el-select v-model="batchTagForm.category" placeholder="请选择类别" style="width: 100%">
+                    <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="标签">
+                <el-select v-model="batchTagForm.tag" placeholder="请选择标签" style="width: 100%">
+                    <el-option v-for="tag in categoryTags[batchTagForm.category] || []" :key="tag" :label="tag"
+                        :value="tag"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="备注">
+                <el-input v-model="batchTagForm.comment" placeholder="请输入备注"></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="batchTagDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="applyBatchTag">确定</el-button>
+        </template>
+    </el-dialog>
+
+    <!-- AI 打标结果对话框 -->
+    <el-dialog v-model="aiTagDialogVisible" title="AI 打标结果" width="900px" :close-on-click-modal="false">
+        <div class="ai-tag-results">
+            <!-- 打标结果表格 -->
+            <div class="mb-4">
+                <h4 class="mb-2">📋 打标结果（[[ aiTagResults.tagged_bills.length ]] 条）</h4>
+                <el-table :data="aiTagResults.tagged_bills" border stripe max-height="250"
+                    @selection-change="handleAITagSelection" ref="aiTagTableRef">
+                    <el-table-column type="selection" width="55" align="center"></el-table-column>
+                    <el-table-column prop="交易订单号" label="订单号" width="180" show-overflow-tooltip></el-table-column>
+                    <el-table-column prop="类别" label="类别" width="80" align="center"></el-table-column>
+                    <el-table-column prop="标签" label="标签" width="100" align="center"></el-table-column>
+                    <el-table-column prop="备注" label="备注" show-overflow-tooltip></el-table-column>
+                </el-table>
+            </div>
+
+            <!-- 规则建议表格 -->
+            <div v-if="aiTagResults.suggested_rules.length">
+                <h4 class="mb-2">💡 规则建议（[[ aiTagResults.suggested_rules.length ]] 条）</h4>
+                <el-table :data="aiTagResults.suggested_rules" border stripe max-height="200"
+                    @selection-change="handleRuleSelection" ref="ruleTableRef">
+                    <el-table-column type="selection" width="55" align="center"></el-table-column>
+                    <el-table-column prop="key" label="匹配字段" width="100" align="center"></el-table-column>
+                    <el-table-column label="关键词" width="180">
+                        <template #default="scope">
+                            <el-tag v-for="kw in scope.row.rule" :key="kw" size="small" class="me-1">[[ kw ]]</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="category" label="类别" width="80" align="center"></el-table-column>
+                    <el-table-column prop="tag" label="标签" width="80" align="center"></el-table-column>
+                    <el-table-column prop="comment" label="说明" show-overflow-tooltip></el-table-column>
+                </el-table>
+            </div>
+        </div>
+        <template #footer>
+            <div class="d-flex justify-content-between align-items-center">
+                <el-checkbox v-model="saveSelectedRules" v-if="selectedRules.length">
+                    同时保存选中的规则建议
+                </el-checkbox>
+                <span v-else></span>
+                <div>
+                    <el-button @click="aiTagDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyAITagResults" :disabled="!selectedAITags.length">
+                        应用选中（[[ selectedAITags.length ]] 条）
+                    </el-button>
+                </div>
+            </div>
+        </template>
+    </el-dialog>
+
+    <!-- 快速创建规则弹框 -->
+    <el-dialog v-model="quickRuleDialogVisible" title="快速创建规则" width="500px" :close-on-click-modal="false">
+        <el-form :model="quickRuleForm" label-width="80px">
+            <el-form-item label="匹配字段">
+                <el-select v-model="quickRuleForm.key" placeholder="选择匹配字段">
+                    <el-option label="交易对方" value="交易对方"></el-option>
+                    <el-option label="商品说明" value="商品说明"></el-option>
+                    <el-option label="任意字段 (交易对方/商品说明)" value="ANY"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="关键词">
+                <el-input v-model="quickRuleForm.keyword" placeholder="选中的文本"></el-input>
+            </el-form-item>
+            <el-form-item label="匹配模式">
+                <el-radio-group v-model="quickRuleForm.match_mode">
+                    <el-radio label="keyword">关键词</el-radio>
+                    <el-radio label="regex">正则</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item>
+                <template #label>
+                    <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%;">
+                        <el-tooltip v-if="isNewCategory" content="将创建新类别" placement="top">
+                            <el-icon color="#E6A23C" :size="16" style="margin-right: 4px;">
+                                <component :is="WarningFilled" />
+                            </el-icon>
+                        </el-tooltip>
+                        <span>类别</span>
+                    </div>
+                </template>
+                <el-select v-model="quickRuleForm.category" placeholder="选择或输入类别" style="width: 100%" filterable
+                    allow-create default-first-option @change="quickRuleForm.tag = ''">
+                    <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <template #label>
+                    <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%;">
+                        <el-tooltip v-if="isNewTag" content="将创建新标签" placement="top">
+                            <el-icon color="#E6A23C" :size="16" style="margin-right: 4px;">
+                                <component :is="WarningFilled" />
+                            </el-icon>
+                        </el-tooltip>
+                        <span>标签</span>
+                    </div>
+                </template>
+                <el-select v-model="quickRuleForm.tag" placeholder="选择或输入标签" style="width: 100%" filterable allow-create
+                    default-first-option>
+                    <el-option v-for="tag in categoryTags[quickRuleForm.category] || []" :key="tag" :label="tag"
+                        :value="tag"></el-option>
+                </el-select>
+                </el-select>
+                <div style="font-size: 12px; color: #909399; margin-top: 4px; line-height: 1.4;">
+                    标签为 - 时，打标时将根据账单时间自动归类为 早/午/晚餐与夜宵
+                </div>
+            </el-form-item>
+            <el-form-item label="备注">
+                <el-input v-model="quickRuleForm.comment" placeholder="可选，用于记录规则用途"></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <el-button @click="quickRuleDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveQuickRule"
+                :disabled="!quickRuleForm.keyword || !quickRuleForm.category">保存规则</el-button>
+        </template>
+    </el-dialog>
+
+    <!-- 文本选中浮动图标 -->
+    <div v-if="textSelection.visible" class="text-selection-popup"
+        :style="{ left: textSelection.x + 'px', top: textSelection.y + 'px' }">
+        <el-button type="primary" size="small" circle @click="openQuickRuleDialog">
+            <el-icon>
+                <component :is="Plus" />
+            </el-icon>
+        </el-button>
+    </div>
+</div>
+
+<!-- ==================== Vue 应用逻辑 ==================== -->
+<script>
+    const { createApp, ref, computed, onMounted, watch } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+    const { UploadFilled, Plus, WarningFilled } = ElementPlusIconsVue;
+
+    // Element Plus 中文配置
+    const zhCn = {
+        el: {
+            table: { confirmFilter: '确定', resetFilter: '清空', clearFilter: '清空', sumText: '合计' },
+            pagination: { goto: '前往', pagesize: '条/页', total: '共 {total} 条', pageClassifier: '页', page: '页', prev: '上一页', next: '下一页' },
+            select: { loading: '加载中', noMatch: '无匹配数据', noData: '无数据', placeholder: '请选择' }
+        }
+    };
+
+    const app = createApp({
+        delimiters: ['[[', ']]'],
+        setup() {
+            // ==================== 响应式状态 ====================
+            const bills = ref([]);
+            const loading = ref(false);
+            const isEditing = ref(false);
+            const hasCache = ref(false);
+            const billType = ref('alipay');
+
+            // 筛选状态
+            const searchQuery = ref('');
+            const searchField = ref('');
+            const mealType = ref('');
+            const showUntaggedOnly = ref(false);
+            const sortField = ref('交易时间');
+            const sortOrder = ref('ascending');
+            const frequencySortField = ref(''); // 频率排序字段
+
+            // 分类数据
+            const categories = ref([]);
+            const categoryTags = ref({});
+
+            // 分页状态
+            const currentPage = ref(1);
+            const pageSize = ref(20);
+
+            // 批量打标
+            const selectedBills = ref([]);
+            const batchTagDialogVisible = ref(false);
+            const batchTagForm = ref({ category: '', tag: '', comment: '' });
+
+            // 统计信息（默认值）
+            const DEFAULT_STATS = { total: 0, tagged: 0, percentage: 0, categoryTagged: 0, categoryPercentage: 0, tagTagged: 0, tagPercentage: 0 };
+            const billStats = ref({ ...DEFAULT_STATS });
+
+            // AI 打标相关状态
+            const aiTagLoading = ref(false);
+            const aiTagDialogVisible = ref(false);
+            const aiTagResults = ref({ tagged_bills: [], suggested_rules: [] });
+            const selectedAITags = ref([]);
+            const selectedRules = ref([]);
+            const saveSelectedRules = ref(true);
+
+            // 文本选中快速创建规则相关状态
+            const textSelection = ref({ visible: false, x: 0, y: 0, text: '', field: '', row: null });
+            const quickRuleDialogVisible = ref(false);
+            const quickRuleForm = ref({ key: '', keyword: '', category: '', tag: '', comment: '' });
+
+            // ==================== 辅助函数 ====================
+
+            /** 通用 API 调用 */
+            const apiCall = async (method, url, data = null) => {
+                try {
+                    const resp = method === 'get' ? await axios.get(url) : await axios.post(url, data);
+                    return resp.data.success ? resp.data : null;
+                } catch (e) {
+                    console.error(`API 错误 [${url}]:`, e);
+                    return null;
+                }
+            };
+
+            /** 标记数据已修改 */
+            const markModified = (row) => row && (row._modified = true);
+
+            /** 生成唯一订单号 */
+            const generateOrderId = () => `${billType.value === 'wechat' ? 'WECHAT' : 'ALI'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            /** 餐点时间判断 */
+            const getMealTimeRange = (meal) => ({
+                '早餐': [6, 11], '午餐': [11, 14], '晚餐': [17, 20], '夜宵': [[20, 24], [0, 3]]
+            })[meal];
+
+            const isInMealTime = (bill, meal) => {
+                if (!meal) return true;
+                const time = new Date(bill.交易时间);
+                const h = time.getHours() + time.getMinutes() / 60;
+                const range = getMealTimeRange(meal);
+                if (meal === '夜宵') return (h >= 20 && h < 24) || (h >= 0 && h < 3);
+                return h >= range[0] && h < range[1];
+            };
+
+            /** 搜索匹配 */
+            const matchSearch = (bill, query, field) => {
+                if (!query) return true;
+                const q = query.toLowerCase();
+                const fields = field === '' ? ['交易时间', '金额', '类别', '标签', '交易对方', '商品说明', '备注', '命中规则'] : [field];
+                return fields.some(f => {
+                    const v = String(bill[f] || '');
+                    return q === 'null' ? !v.trim() : v.toLowerCase().includes(q);
+                });
+            };
+
+            // ==================== 核心筛选逻辑（统一） ====================
+
+            /** 应用所有筛选条件 */
+            const applyFilters = (data) => {
+                let result = [...data];
+                // 餐点筛选
+                if (mealType.value) result = result.filter(b => isInMealTime(b, mealType.value));
+                // 搜索筛选
+                if (searchQuery.value) result = result.filter(b => matchSearch(b, searchQuery.value, searchField.value));
+                // 未标记筛选
+                if (showUntaggedOnly.value) result = result.filter(b => !b.类别?.trim());
+                // 排序
+                if (frequencySortField.value) {
+                    const field = frequencySortField.value;
+                    const freqMap = {};
+                    result.forEach(b => {
+                        const val = b[field] || '';
+                        freqMap[val] = (freqMap[val] || 0) + 1;
+                    });
+
+                    result.sort((a, b) => {
+                        const valA = a[field] || '';
+                        const valB = b[field] || '';
+                        const countA = freqMap[valA] || 0;
+                        const countB = freqMap[valB] || 0;
+                        if (countA !== countB) return countB - countA; // 频率降序
+                        // 频率相同时，按交易时间降序
+                        return new Date(b.交易时间) - new Date(a.交易时间);
+                    });
+                } else if (sortField.value && sortOrder.value) {
+                    result.sort((a, b) => {
+                        const av = a[sortField.value], bv = b[sortField.value];
+                        let cmp = 0;
+                        if (sortField.value === '金额') cmp = (parseFloat(av) || 0) - (parseFloat(bv) || 0);
+                        else if (sortField.value === '交易时间') cmp = new Date(av) - new Date(bv);
+                        else cmp = String(av || '').localeCompare(String(bv || ''));
+                        return sortOrder.value === 'ascending' ? cmp : -cmp; // 注意：element-plus 排序可能是 'ascending'/'descending'
+                    });
+                }
+                return result;
+            };
+
+            /** 重置筛选 */
+            const resetFilters = () => {
+                searchQuery.value = '';
+                searchField.value = '';
+                mealType.value = '';
+                showUntaggedOnly.value = false;
+                frequencySortField.value = '';
+                sortField.value = '交易时间';
+                sortOrder.value = 'ascending';
+                // handleFilterChange 只是重置页码，applyFilters 是 computed 自动触发
+                currentPage.value = 1;
+            };
+
+            // 筛选后的数据
+            const filteredBillsData = computed(() => applyFilters(bills.value));
+
+            // 分页数据
+            const paginatedBills = computed(() => {
+                const start = (currentPage.value - 1) * pageSize.value;
+                return filteredBillsData.value.slice(start, start + pageSize.value);
+            });
+
+            // 空数据提示
+            const emptyText = computed(() => bills.value.length ? '没有符合条件的数据' : '未上传文件');
+
+            // 筛选选项
+            const generateFilters = (field) => {
+                const vals = [...new Set(filteredBillsData.value.map(b => b[field]))].filter(Boolean);
+                return [{ text: '(空)', value: '' }, ...vals.map(v => ({ text: v, value: v }))];
+            };
+            const categoryFilterOptions = computed(() => generateFilters('类别'));
+            const tagFilterOptions = computed(() => generateFilters('标签'));
+            const filterCategory = (value, row) => value === '' ? !row.类别?.trim() : row.类别 === value;
+            const filterTag = (value, row) => value === '' ? !row.标签?.trim() : row.标签 === value;
+
+            // ==================== 数据加载 ====================
+
+            /** 获取账单 */
+            const fetchBills = async () => {
+                loading.value = true;
+                const data = await apiCall('get', '/api/bills');
+                bills.value = data?.bills || [];
+                await fetchStats();
+                loading.value = false;
+            };
+
+            /** 获取统计 */
+            const fetchStats = async () => {
+                const data = await apiCall('get', '/api/bill_stats');
+                billStats.value = data?.stats || { ...DEFAULT_STATS };
+            };
+
+            /** 获取分类 */
+            const fetchCategories = async () => {
+                const data = await apiCall('get', '/api/categories');
+                if (data) {
+                    categories.value = Object.keys(data.categories);
+                    categoryTags.value = data.categories;
+                }
+            };
+
+            /** 检查并加载缓存 */
+            const checkProgress = async (silent = false) => {
+                const data = await apiCall('get', '/api/check_progress');
+                hasCache.value = data?.has_progress || false;
+                if (hasCache.value) {
+                    const loadData = await apiCall('get', '/api/load_progress');
+                    if (loadData?.bills) {
+                        bills.value = Array.isArray(loadData.bills) ? loadData.bills : Object.values(loadData.bills);
+                        await fetchStats();
+                        if (!silent) ElMessage.success('成功加载缓存数据');
+                    }
+                } else {
+                    await fetchBills();
+                }
+            };
+
+            // ==================== 事件处理 ====================
+
+            /** 筛选变化 */
+            const handleFilterChange = () => {
+                currentPage.value = 1;
+                // 使用 computed 自动更新，无需手动调用
+            };
+
+            /** 排序变化 */
+            const handleSortChange = ({ prop, order }) => {
+                sortField.value = prop;
+                sortOrder.value = order;
+            };
+
+            /** 类别变化时清空标签 */
+            const handleCategoryChange = (row) => {
+                row.标签 = '';
+                markModified(row);
+            };
+
+            /** 获取类别对应的标签 */
+            const getTagsForCategory = (cat) => categoryTags.value[cat] || [];
+
+            /** 表格选择变化 */
+            const handleSelectionChange = (selection) => selectedBills.value = selection;
+
+            // ==================== 打标操作 ====================
+
+            /** 开始/保存打标 */
+            const handleStartTagging = async () => {
+                if (isEditing.value) {
+                    // 保存进度
+                    const billsToSave = bills.value.map(b => b.交易订单号 ? b : { ...b, 交易订单号: generateOrderId() });
+                    const resp = await apiCall('post', '/api/save_progress', { bills: billsToSave });
+                    if (resp) {
+                        isEditing.value = false;
+                        hasCache.value = true;
+                        showUntaggedOnly.value = false;
+                        ElMessage.success('保存进度成功');
+                        await checkProgress(true);
+                    } else {
+                        ElMessage.error('保存进度失败');
+                    }
+                } else {
+                    // 进入打标模式
+                    await fetchCategories();
+                    isEditing.value = true;
+                    showUntaggedOnly.value = true;
+                    ElMessage.warning('对 “交易对方” 和“商品说明” 划词可以快速新增打标规则');
+                }
+            };
+
+            /** AI 打标 */
+            const handleAITag = async () => {
+                // 获取当前筛选后的未打标账单
+                const untaggedBills = filteredBillsData.value.filter(b => !b.类别?.trim());
+                if (untaggedBills.length === 0) {
+                    return ElMessage.info('当前筛选结果中没有未打标的账单');
+                }
+
+                aiTagLoading.value = true;
+                try {
+                    // 把当前筛选后的数据发给后端
+                    const resp = await axios.post('/api/ai_tag', { bills: untaggedBills });
+                    if (resp.data.success) {
+                        aiTagResults.value = {
+                            tagged_bills: resp.data.tagged_bills || [],
+                            suggested_rules: resp.data.suggested_rules || [],
+                        };
+                        if (aiTagResults.value.tagged_bills.length === 0) {
+                            ElMessage.info('没有找到未打标的账单');
+                        } else {
+                            aiTagDialogVisible.value = true;
+                            // 默认全选打标结果
+                            selectedAITags.value = [...aiTagResults.value.tagged_bills];
+                        }
+                    } else {
+                        ElMessage.error(resp.data.message || 'AI 打标失败');
+                    }
+                } catch (e) {
+                    console.error('AI 打标错误:', e);
+                    ElMessage.error(e.response?.data?.message || 'AI 打标请求失败');
+                }
+                aiTagLoading.value = false;
+            };
+
+            /** AI 打标结果选择 */
+            const handleAITagSelection = (selection) => selectedAITags.value = selection;
+            const handleRuleSelection = (selection) => selectedRules.value = selection;
+
+            /** 应用 AI 打标结果 */
+            const applyAITagResults = async () => {
+                if (!selectedAITags.value.length) return ElMessage.warning('请选择要应用的打标结果');
+
+                try {
+                    const resp = await axios.post('/api/apply_ai_tags', {
+                        tagged_bills: selectedAITags.value,
+                        save_rules: saveSelectedRules.value && selectedRules.value.length > 0,
+                        selected_rules: selectedRules.value,
+                    });
+
+                    if (resp.data.success) {
+                        ElMessage.success(resp.data.message);
+                        aiTagDialogVisible.value = false;
+                        await checkProgress(true);
+                    } else {
+                        ElMessage.error(resp.data.message || '应用失败');
+                    }
+                } catch (e) {
+                    ElMessage.error('应用打标结果失败');
+                }
+            };
+
+            // ==================== 文本选中快速创建规则 ====================
+
+            /** 处理文本选中 */
+            const handleTextSelect = (event, field, row) => {
+                // 允许在编辑模式下使用（用户需求）
+                // if (isEditing.value) { ... }
+
+                const selection = window.getSelection();
+                const text = selection.toString().trim();
+
+                if (text && text.length > 0) {
+                    // 计算浮动图标位置
+                    const rect = selection.getRangeAt(0).getBoundingClientRect();
+                    textSelection.value = {
+                        visible: true,
+                        x: rect.right + 5,
+                        y: rect.top - 5,
+                        text: text,
+                        field: field,
+                        row: row,
+                    };
+                } else {
+                    textSelection.value.visible = false;
+                }
+            };
+
+            /** 打开快速规则弹框 */
+            const openQuickRuleDialog = async () => {
+                await fetchCategories();
+                quickRuleForm.value = {
+                    key: textSelection.value.field,
+                    keyword: textSelection.value.text,
+                    match_mode: 'keyword',
+                    category: '',
+                    tag: '',
+                    comment: '',
+                };
+                textSelection.value.visible = false;
+                quickRuleDialogVisible.value = true;
+            };
+
+            /** 保存快速规则 */
+            const saveQuickRule = async () => {
+                // 正则校验
+                if (quickRuleForm.value.match_mode === 'regex') {
+                    try {
+                        new RegExp(quickRuleForm.value.keyword);
+                    } catch (e) {
+                        return ElMessage.error('无效的正则表达式：' + e.message);
+                    }
+                }
+
+                const rule = {
+                    key: quickRuleForm.value.key,
+                    match_mode: quickRuleForm.value.match_mode,
+                    rule: [quickRuleForm.value.keyword],
+                    category: quickRuleForm.value.category,
+                    tag: quickRuleForm.value.tag || '-',
+                    time_based: (quickRuleForm.value.category === '食' && (!quickRuleForm.value.tag || quickRuleForm.value.tag === '-')) ? ['全部'] : [],
+                    comment: quickRuleForm.value.comment || '快速创建',
+                };
+
+                try {
+                    // 调用后端合并规则
+                    const resp = await axios.post('/api/apply_ai_tags', {
+                        tagged_bills: [],
+                        save_rules: true,
+                        selected_rules: [rule],
+                    });
+
+                    if (resp.data.success) {
+                        ElMessage.success('规则保存成功，已触发自动打标');
+                        quickRuleDialogVisible.value = false;
+                        // 调用后端重新应用打标规则
+                        await axios.post('/api/auto_tag');
+                        // 刷新数据
+                        await checkProgress(true);
+                    } else {
+                        ElMessage.error(resp.data.message || '保存失败');
+                    }
+                } catch (e) {
+                    ElMessage.error('保存规则失败');
+                }
+            };
+
+            /** 检查是否为新类别 */
+            const isNewCategory = computed(() => {
+                const cat = quickRuleForm.value.category;
+                return cat && !categories.value.includes(cat);
+            });
+
+            /** 检查是否为新标签 */
+            const isNewTag = computed(() => {
+                const tag = quickRuleForm.value.tag;
+                if (!tag || tag === '-') return false;
+                const existingTags = categoryTags.value[quickRuleForm.value.category] || [];
+                return !existingTags.includes(tag);
+            });
+
+            // 点击其他区域隐藏浮动图标
+            document.addEventListener('mousedown', (e) => {
+                if (!e.target.closest('.text-selection-popup') && !e.target.closest('.selectable-text')) {
+                    textSelection.value.visible = false;
+                }
+            });
+
+            /** 批量打标 */
+            const handleBatchTag = () => {
+                if (!selectedBills.value.length) return ElMessage.warning('请先选择要打标的账单');
+                batchTagDialogVisible.value = true;
+            };
+
+            const applyBatchTag = () => {
+                const { category, tag, comment } = batchTagForm.value;
+                if (!category && !tag && !comment) return ElMessage.warning('请至少填写一个打标项');
+                selectedBills.value.forEach(b => {
+                    if (category) b.类别 = category;
+                    if (tag) b.标签 = tag;
+                    if (comment) b.备注 = comment;
+                });
+                batchTagDialogVisible.value = false;
+                batchTagForm.value = { category: '', tag: '', comment: '' };
+                ElMessage.success('批量打标成功');
+            };
+
+            // ==================== 文件操作 ====================
+
+            /** 上传前检查 */
+            const beforeUpload = async (file) => {
+                if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
+                    ElMessage.error('只能上传 xlsx 或 csv 文件！');
+                    return false;
+                }
+                const data = await apiCall('get', '/api/check_progress');
+                if (data?.has_progress) {
+                    try {
+                        await ElMessageBox.confirm('检测到有保存的进度，上传新文件将覆盖当前进度，是否继续？', '警告', {
+                            confirmButtonText: '继续',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        });
+                        return true;
+                    } catch { return false; }
+                }
+                return true;
+            };
+
+            /** 上传成功 */
+            const handleUploadSuccess = async (response) => {
+                if (response.success) {
+                    ElMessage.success('上传成功');
+                    await fetchBills();
+                    // 自动打标
+                    const resp = await apiCall('post', '/api/auto_tag');
+                    if (resp) await fetchBills();
+                } else {
+                    ElMessage.error(response.message || '上传失败');
+                }
+            };
+
+            const handleUploadError = () => ElMessage.error('上传失败');
+
+            /** 导出账单 */
+            const handleExport = async () => {
+                if (!filteredBillsData.value.length) return ElMessage.warning('没有可导出的数据');
+                try {
+                    const resp = await axios.post('/api/export', { bills: filteredBillsData.value }, { responseType: 'blob' });
+                    const url = window.URL.createObjectURL(new Blob([resp.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `账单数据_${new Date().toLocaleDateString()}.xlsx`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    ElMessage.success('导出成功');
+                } catch { ElMessage.error('导出失败'); }
+            };
+
+            /** 清除缓存 */
+            const handleClearCache = async () => {
+                try {
+                    await ElMessageBox.confirm('确定要清除缓存数据吗？此操作不可恢复', '警告', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+                    const resp = await apiCall('post', '/api/clear_cache');
+                    if (resp) {
+                        hasCache.value = false;
+                        bills.value = [];
+                        await fetchBills();
+                        ElMessage.success('缓存已清除');
+                    }
+                } catch { }
+            };
+
+            // ==================== 生命周期 ====================
+
+            onMounted(checkProgress);
+
+            // ==================== 返回模板绑定 ====================
+
+            return {
+                // 状态
+                bills, loading, isEditing, hasCache, billType, billStats,
+                searchQuery, searchField, mealType, showUntaggedOnly,
+                categories, categoryTags, currentPage, pageSize,
+                selectedBills, batchTagDialogVisible, batchTagForm,
+                // AI 打标状态
+                aiTagLoading, aiTagDialogVisible, aiTagResults,
+                selectedAITags, selectedRules, saveSelectedRules,
+                // 快速规则状态
+                textSelection, quickRuleDialogVisible, quickRuleForm,
+                // 计算属性
+                filteredBillsData, paginatedBills, emptyText,
+                categoryFilterOptions, tagFilterOptions,
+                // 方法
+                handleFilterChange, handleSortChange, handleCategoryChange,
+                getTagsForCategory, handleSelectionChange, markModified,
+                handleStartTagging, handleBatchTag, applyBatchTag,
+                // AI 打标方法
+                handleAITag, handleAITagSelection, handleRuleSelection, applyAITagResults,
+                // 快速规则方法
+                handleTextSelect, openQuickRuleDialog, saveQuickRule,
+                isNewCategory, isNewTag,
+                beforeUpload, handleUploadSuccess, handleUploadError,
+                handleExport, handleClearCache,
+                resetFilters, frequencySortField, // 导出
+                filterCategory, filterTag, formatAmount,
+                UploadFilled, Plus, WarningFilled
+            };
+        }
+    });
+
+    // 注册所有图标
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        app.component(key, component)
+    }
+
+    app.use(ElementPlus, { locale: zhCn });
+    app.mount('#app');
+</script>
+{% endblock %}

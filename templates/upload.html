@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block upload %}
+<h2>上传账单</h2>
+<form method="post" enctype="multipart/form-data">
+    <label>选择账单类型:</label>
+    <select name="bill_type">
+        <option value="alipay">支付宝账单</option>
+        <option value="wechat">微信账单</option>
+    </select><br><br>
+
+    <label>选择文件:</label>
+    <input type="file" name="file" accept=".xlsx,text/csv"><br><br>
+
+    <input type="submit" value="处理账单">
+</form>
+{% endblock %}

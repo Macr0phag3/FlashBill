@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- 注：Vue/Element Plus 已在 base.html 引入，此处仅引入额外样式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/element-plus/element-plus.css') }}" />
+{% endblock %}
+
+{% block content %}
+<!-- ==================== 分类管理界面 ==================== -->
+<div id="app">
+    <el-card class="mb-3">
+        <template #header>
+            <div class="d-flex justify-content-between align-items-center">
+                <span>分类管理</span>
+                <div class="d-flex gap-2">
+                    <el-button type="primary" @click="addCategory">添加分类</el-button>
+                    <el-button type="success" @click="saveCategories">保存分类</el-button>
+                </div>
+            </div>
+        </template>
+
+        <!-- 分类表格 -->
+        <div class="categories-table-container">
+            <el-table :data="categories" style="width: 100%" border stripe height="100%">
+                <!-- 分类名称列 -->
+                <el-table-column label="分类名称" width="120" align="center" header-align="center">
+                    <template #default="scope">
+                        <el-input v-model="scope.row.name" size="small" placeholder="请输入分类名称"></el-input>
+                    </template>
+                </el-table-column>
+
+                <!-- 标签列 -->
+                <el-table-column label="标签" header-align="center">
+                    <template #default="scope">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex flex-wrap align-items-center gap-2" style="flex: 1;">
+                                <el-tag v-for="(tag, tagIndex) in scope.row.tags" :key="tagIndex" closable
+                                    :type="getTagType(scope.row.name, tag)"
+                                    :class="{ 'tag-deleted': isDeletedTag(scope.row.name, tag) }"
+                                    :style="isDeletedTag(scope.row.name, tag) ? { opacity: 0.7 } : {}"
+                                    @close="handleTagClose(scope.$index, tagIndex, scope.row.name, tag)"
+                                    class="tag-item">
+                                    [[ tag ]]
+                                </el-tag>
+                            </div>
+                            <el-input v-if="scope.row.inputVisible" v-model="scope.row.inputValue" class="tag-input"
+                                size="small" @keyup.enter="handleInputConfirm(scope.row.name)"
+                                @blur="handleInputConfirm(scope.row.name)" style="width: 100px">
+                            </el-input>
+                            <el-button v-else class="button-new-tag" size="small" @click="showInput(scope.$index)">
+                                + 新标签
+                            </el-button>
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <!-- 操作列 -->
+                <el-table-column label="操作" width="100" align="center">
+                    <template #default="scope">
+                        <el-button type="danger" size="small" @click="removeCategory(scope.$index)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </el-card>
+</div>
+
+<!-- ==================== Vue 应用逻辑 ==================== -->
+<script>
+    const { createApp, ref, onMounted } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+
+    const app = createApp({
+        delimiters: ['[[', ']]'],
+        setup() {
+            const categories = ref([]);
+            const newTagItems = ref(new Set()); // 追踪新增的标签项
+            const deletedTagItems = ref(new Set()); // 追踪软删除的标签项
+
+            // ==================== API 辅助函数 ====================
+
+            /** 通用 API 调用封装 */
+            const apiCall = async (method, url, data = null, successMsg = null) => {
+                try {
+                    const response = method === 'get'
+                        ? await axios.get(url)
+                        : await axios.post(url, data);
+                    if (response.data.success) {
+                        if (successMsg) ElMessage.success(successMsg);
+                        return response.data;
+                    }
+                    throw new Error(response.data.message || '操作失败');
+                } catch (error) {
+                    console.error(`API 调用失败 [${url}]:`, error);
+                    ElMessage.error(error.message || '操作失败');
+                    return null;
+                }
+            };
+
+            // ==================== 数据加载 ====================
+
+            /** 获取分类数据 */
+            const fetchCategories = async () => {
+                const data = await apiCall('get', '/api/categories');
+                if (data) {
+                    categories.value = Object.entries(data.categories).map(([name, tags]) => ({
+                        name, tags, inputVisible: false, inputValue: ''
+                    }));
+                    await checkCategoriesDiff(data.categories);
+                }
+            };
+
+            // ==================== 差异检测 ====================
+
+            /** 差异类型映射 */
+            const DIFF_TYPES = {
+                missing_category: { text: '缺失分类', color: 'var(--el-color-danger)' },
+                missing_tags: { text: '缺失标签', color: 'var(--el-color-warning)' },
+                extra_category: { text: '多余分类', color: 'var(--el-color-success)' },
+                extra_tags: { text: '多余标签', color: 'var(--el-color-primary)' }
+            };
+
+            /** 检查分类与 DB.xlsx 的差异 */
+            const checkCategoriesDiff = async (currentCategories) => {
+                const data = await apiCall('get', '/api/statistics?limit=1');
+                if (!data?.all_items?.length) return;
+
+                // 从 DB 数据提取分类和标签
+                const dbCategories = {};
+                data.all_items.forEach(({ category, tag }) => {
+                    if (category?.trim()) {
+                        dbCategories[category] = dbCategories[category] || new Set();
+                        if (tag?.trim() && tag !== '-') dbCategories[category].add(tag);
+                    }
+                });
+                // Set 转 Array
+                Object.keys(dbCategories).forEach(k => dbCategories[k] = [...dbCategories[k]]);
+
+                const diffs = compareCategories(currentCategories, dbCategories);
+                if (diffs.length) showDiffDialog(diffs, dbCategories);
+            };
+
+            /** 比较两个分类对象的差异 */
+            const compareCategories = (current, db) => {
+                const diffs = [];
+                const addDiff = (type, category, extra = {}) => diffs.push({ type, category, ...extra });
+
+                // 检查 DB 中的分类
+                Object.keys(db).forEach(cat => {
+                    if (!current[cat]) {
+                        addDiff('missing_category', cat);
+                    } else {
+                        const currSet = new Set(current[cat] || []);
+                        const dbSet = new Set(db[cat] || []);
+                        const missing = [...dbSet].filter(t => !currSet.has(t));
+                        const extra = [...currSet].filter(t => !dbSet.has(t));
+                        if (missing.length) addDiff('missing_tags', cat, { missingTags: missing });
+                        if (extra.length) addDiff('extra_tags', cat, { extraTags: extra });
+                    }
+                });
+
+                // 检查 current 中多余的分类
+                Object.keys(current).forEach(cat => {
+                    if (!db[cat]) addDiff('extra_category', cat);
+                });
+
+                return diffs;
+            };
+
+            /** 显示差异对话框 */
+            const showDiffDialog = (diffs, dbCategories) => {
+                const getDetail = d => ({
+                    missing_tags: `DB.xlsx中有: ${d.missingTags?.join(', ')}`,
+                    extra_tags: `categories.json中有: ${d.extraTags?.join(', ')}`,
+                    missing_category: 'DB.xlsx中有此分类',
+                    extra_category: 'categories.json中有此分类'
+                })[d.type];
+
+                const rows = diffs.map(d => {
+                    const { text, color } = DIFF_TYPES[d.type];
+                    return `<tr>
+                    <td style="border:1px solid var(--el-border-color);padding:8px">
+                        <span style="color:${color};font-weight:bold">${text}</span>
+                    </td>
+                    <td style="border:1px solid var(--el-border-color);padding:8px">${d.category}</td>
+                    <td style="border:1px solid var(--el-border-color);padding:8px">${getDetail(d)}</td>
+                </tr>`;
+                }).join('');
+
+                const html = `
+                <div style="max-height:400px;overflow-y:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead><tr style="background:var(--el-fill-color-light)">
+                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">类型</th>
+                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">分类</th>
+                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">差异详情</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+                <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--el-border-color);color:var(--el-text-color-secondary);font-size:12px">
+                    共发现 ${diffs.length} 处差异
+                </div>`;
+
+                ElMessageBox.confirm(html, '分类数据差异', {
+                    confirmButtonText: '使用 DB.xlsx 覆盖',
+                    cancelButtonText: '保持当前设置',
+                    dangerouslyUseHTMLString: true
+                }).then(() => updateFromDB(dbCategories))
+                    .catch(() => ElMessage.info('已保持当前分类数据'));
+            };
+
+            /** 从 DB 数据覆盖 categories.json */
+            const updateFromDB = async (dbCategories) => {
+                const result = await apiCall('post', '/api/categories', { categories: dbCategories }, '已使用DB.xlsx的分类数据覆盖');
+                if (result) await fetchCategories();
+            };
+
+            // ==================== 分类操作 ====================
+
+            /** 添加新分类 */
+            const addCategory = () => {
+                categories.value.unshift({ name: '', tags: [], inputVisible: false, inputValue: '' });
+            };
+
+            /** 删除分类 */
+            const removeCategory = (index) => categories.value.splice(index, 1);
+
+            /** 显示标签输入框 */
+            const showInput = (index) => categories.value[index].inputVisible = true;
+
+            /** 确认添加标签 */
+            const handleInputConfirm = (categoryName) => {
+                const cat = categories.value.find(c => c.name === categoryName);
+                if (!cat?.inputVisible) return;
+
+                const newTag = cat.inputValue.trim();
+                if (newTag) {
+                    if (cat.tags.includes(newTag)) {
+                        ElMessage.error('该标签已存在');
+                    } else {
+                        cat.tags.push(newTag);
+                        // 记录为新增的标签项
+                        newTagItems.value.add(`${cat.name}_${newTag}`);
+                    }
+                }
+                cat.inputVisible = false;
+                cat.inputValue = '';
+            };
+
+            /** 软删除标签（标记为已删除，保存后才真正移除） */
+            const removeTag = (catIdx, tagIdx) => {
+                const cat = categories.value[catIdx];
+                const tag = cat.tags[tagIdx];
+                const key = `${cat.name}_${tag}`;
+                // 如果是新增的标签，直接删除而不是软删除
+                if (newTagItems.value.has(key)) {
+                    newTagItems.value.delete(key);
+                    cat.tags.splice(tagIdx, 1);
+                } else {
+                    deletedTagItems.value.add(key);
+                }
+            };
+
+            /** 恢复软删除的标签 */
+            const restoreTag = (catName, tag) => {
+                const key = `${catName}_${tag}`;
+                if (deletedTagItems.value.has(key)) {
+                    deletedTagItems.value.delete(key);
+                }
+            };
+
+            /** 统一处理标签关闭事件：已删除则恢复，未删除则软删除 */
+            const handleTagClose = (catIdx, tagIdx, catName, tag) => {
+                if (isDeletedTag(catName, tag)) {
+                    restoreTag(catName, tag);
+                } else {
+                    removeTag(catIdx, tagIdx);
+                }
+            };
+
+            /** 判断是否为新增的标签 */
+            const isNewTag = (catName, tag) => newTagItems.value.has(`${catName}_${tag}`);
+
+            /** 判断是否为软删除的标签 */
+            const isDeletedTag = (catName, tag) => deletedTagItems.value.has(`${catName}_${tag}`);
+
+            /** 获取标签类型：删除=danger，新增=warning，默认='' */
+            const getTagType = (catName, tag) => {
+                if (isDeletedTag(catName, tag)) return 'danger';
+                if (isNewTag(catName, tag)) return 'warning';
+                return '';
+            };
+
+            /** 保存分类到服务器 */
+            const saveCategories = async () => {
+                const data = {};
+                // 保存时过滤掉软删除的标签
+                categories.value.forEach(c => {
+                    if (c.name.trim()) {
+                        data[c.name.trim()] = c.tags.filter(tag => !deletedTagItems.value.has(`${c.name}_${tag}`));
+                    }
+                });
+                const result = await apiCall('post', '/api/categories', { categories: data }, '保存成功');
+                if (result) {
+                    newTagItems.value.clear(); // 清空新增标签追踪
+                    deletedTagItems.value.clear(); // 清空删除标签追踪
+                    fetchCategories();
+                }
+            };
+
+            // ==================== 生命周期 ====================
+
+            onMounted(fetchCategories);
+
+            return { categories, addCategory, removeCategory, showInput, handleInputConfirm, removeTag, restoreTag, handleTagClose, saveCategories, isNewTag, isDeletedTag, getTagType };
+        }
+    });
+
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+{% endblock %}
