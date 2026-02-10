@@ -25,8 +25,8 @@
   <img width="2560" height="1313" alt="image" src="https://github.com/user-attachments/assets/6b7af1c5-3ef2-4af5-b8bb-37f75be51ff0" />
   - **规则引擎**：基于关键字/正则的自动分类规则，支持优先级排序。
   - **划词打标**：支持划词创建自动打标规则
-    <img width="743" height="598" alt="image" src="https://github.com/user-attachments/assets/a075cf82-cc02-42c3-94e3-9b021fcc90ba" />
-    <img width="792" height="797" alt="image" src="https://github.com/user-attachments/assets/037b444b-02d5-4c61-b6b4-461e46a109fa" />
+    <img width="743" height="300" alt="image" src="https://github.com/user-attachments/assets/a075cf82-cc02-42c3-94e3-9b021fcc90ba" />
+    <img width="792" height="300" alt="image" src="https://github.com/user-attachments/assets/037b444b-02d5-4c61-b6b4-461e46a109fa" />
   - **AI 辅助**：集成 OpenAI API，对未知账单进行智能分类与打标，并能反向生成规则。
 
 - **统计分析**：
