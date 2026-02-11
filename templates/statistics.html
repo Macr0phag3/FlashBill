@@ -150,7 +150,8 @@
                             <div class="timeline-content">
                                 <div v-for="(dateGroup, date) in timelineData" :key="date" class="timeline-date-group">
                                     <div class="timeline-date-header">
-                                        <el-tag type="" size="large">{% raw %}{{ formatDate(date) }}{% endraw %} 总支出: {%
+                                        <el-tag type="success" size="large">{% raw %}{{ formatDate(date) }}{% endraw %}
+                                            总支出: ¥{%
                                             raw %}{{ formatAmount(dateGroup.total) }}{% endraw %}</el-tag>
                                     </div>
                                     <div class="timeline-items">
@@ -167,8 +168,8 @@
                                                         <span class="timeline-time">{% raw %}{{ formatTime(item.date)
                                                             }}{% endraw %}</span>
                                                         <span class="timeline-amount"
-                                                            :style="{ color: Number(item.amount) < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
-                                                            {% raw %}{{ formatAmount(item.amount) }}{% endraw %}
+                                                            style="color: var(--el-color-success)">
+                                                            ¥{% raw %}{{ formatAmount(item.amount) }}{% endraw %}
                                                         </span>
                                                     </div>
                                                     <div class="timeline-item-info">

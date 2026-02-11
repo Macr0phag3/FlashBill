@@ -1028,7 +1028,7 @@ html.dark .el-card {
     top: 0;
     bottom: 0;
     width: 2px;
-    background-color: var(--border-color);
+    background-color: var(--el-color-danger);
     transform: translateX(-50%);
     z-index: 1;
 }
@@ -1076,11 +1076,15 @@ html.dark .el-card {
     width: 15px;
     height: 15px;
     background-color: var(--primary-color);
-    border: 2px solid var(--bg-color);
+    border: 3px solid var(--bg-color);
     border-radius: 50%;
     transform: translateX(-50%);
-    box-shadow: 0 1px 11px var(--shadow-color);
+    box-shadow: 0 0px 10px rgba(0, 0, 0, 0.298);
     z-index: 3;
+}
+
+html.dark .timeline-dot {
+    box-shadow: 0 0px 10px rgba(255, 255, 255, 0.298);
 }
 
 /* 卡片样式 */
@@ -1089,7 +1093,6 @@ html.dark .el-card {
     box-shadow: 0 1px 3px var(--shadow-color);
     width: calc(50% - 40px);
     transition: all 0.3s ease;
-    border: 1px solid var(--border-color);
 }
 
 /* 偶数项卡片居右，奇数项卡片居左 */
@@ -1107,6 +1110,7 @@ html.dark .el-card {
 .timeline-item-card:hover {
     box-shadow: 0 2px 6px rgba(123, 128, 127, 0.779);
     transform: translateY(-1px);
+    border: 1px solid var(--border-color) !important;
 }
 
 /* 卡片内容 */
@@ -1121,26 +1125,29 @@ html.dark .el-card {
     align-items: center;
     margin-bottom: 0px;
     padding-bottom: 0px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 2px dashed var(--border-color);
     font-size: 15px;
+    padding-bottom: 5px;
 }
 
 /* 时间样式 */
 .timeline-time {
-    font-size: 18px;
-    color: var(--text-color);
-    font-weight: 400;
-    padding-bottom: 3px;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--primary-color);
+    padding-bottom: 5px;
 }
 
 /* 金额样式 */
 .timeline-amount {
-    font-size: 18px;
+    font-size: 20px;
+    padding-bottom: 5px;
     font-weight: bold;
 }
 
 /* 信息详情 */
 .timeline-item-info {
+    padding-top: 5px;
     display: flex;
     flex-direction: column;
     gap: 6px;
