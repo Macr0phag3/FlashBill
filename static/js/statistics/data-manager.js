@@ -18,7 +18,9 @@ const useStatisticsData = () => {
         category: [],
         tag: [],
         minAmount: null,
-        maxAmount: null
+        maxAmount: null,
+        searchQuery: '', // 全局搜索关键词
+        searchField: ''  // 全局搜索字段
     });
 
     // 下拉选项
@@ -46,6 +48,18 @@ const useStatisticsData = () => {
         if (filterForm.value.tag?.length) filterForm.value.tag.forEach(t => tags.push({ type: 'tag', label: '标签', value: t }));
         if (filterForm.value.minAmount !== null) tags.push({ type: 'minAmount', label: '最小金额', value: filterForm.value.minAmount });
         if (filterForm.value.maxAmount !== null) tags.push({ type: 'maxAmount', label: '最大金额', value: filterForm.value.maxAmount });
+        if (filterForm.value.searchQuery) {
+            const fieldMap = {
+                '': '全部字段',
+                'counter_party': '交易对方',
+                'goods_desc': '商品说明',
+                'category': '类别',
+                'tag': '标签',
+                'remark': '备注'
+            };
+            const fieldLabel = fieldMap[filterForm.value.searchField] || '未知字段';
+            tags.push({ type: 'search', label: `搜索(${fieldLabel})`, value: filterForm.value.searchQuery });
+        }
         return tags;
     });
 
@@ -63,6 +77,24 @@ const useStatisticsData = () => {
         if (f.tag?.length) filtered = filtered.filter(i => f.tag.includes(i.tag));
         if (f.minAmount !== null) filtered = filtered.filter(i => i.amount >= f.minAmount);
         if (f.maxAmount !== null) filtered = filtered.filter(i => i.amount <= f.maxAmount);
+
+        // 关键词搜索
+        if (f.searchQuery) {
+            const query = f.searchQuery.trim().toLowerCase();
+            const field = f.searchField;
+            if (query) {
+                filtered = filtered.filter(item => {
+                    if (field) {
+                        return String(item[field] || '').toLowerCase().includes(query);
+                    } else {
+                        // 全字段搜索
+                        return ['counter_party', 'goods_desc', 'category', 'tag', 'remark'].some(k =>
+                            String(item[k] || '').toLowerCase().includes(query)
+                        );
+                    }
+                });
+            }
+        }
 
         // 表格数据：保留所有筛选结果
         rawFilteredData.value = filtered;
@@ -82,7 +114,8 @@ const useStatisticsData = () => {
      */
     const resetFilter = () => {
         filterForm.value = {
-            year: [], month: [], book: [], category: [], tag: [], minAmount: null, maxAmount: null
+            year: [], month: [], book: [], category: [], tag: [], minAmount: null, maxAmount: null,
+            searchQuery: '', searchField: ''
         };
         handleFilter();
     };
@@ -103,6 +136,7 @@ const useStatisticsData = () => {
             case 'tag': filterForm.value.tag = filterForm.value.tag.filter(v => v !== value); break;
             case 'minAmount': filterForm.value.minAmount = null; break;
             case 'maxAmount': filterForm.value.maxAmount = null; break;
+            case 'search': filterForm.value.searchQuery = ''; break;
         }
         handleFilter();
     };

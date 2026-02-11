@@ -10,6 +10,8 @@ const useTableTab = (updateCallback) => {
     const sortBy = Vue.ref('date');
     const sortOrder = Vue.ref('desc');
 
+    const tableFreqSortField = Vue.ref(''); // 频率排序字段
+
     /** 每页条数变更 */
     const handleSizeChange = (val) => {
         pageSize.value = val;
@@ -35,6 +37,12 @@ const useTableTab = (updateCallback) => {
         if (updateCallback) updateCallback();
     };
 
+    /** 搜索/频率排序变更 */
+    const handleTableSearch = () => {
+        currentPage.value = 1;
+        if (updateCallback) updateCallback();
+    };
+
     return {
         tableData,
         loading,
@@ -43,8 +51,10 @@ const useTableTab = (updateCallback) => {
         total,
         sortBy,
         sortOrder,
+        tableFreqSortField,
         handleSizeChange,
         handleCurrentChange,
-        handleSortChange
+        handleSortChange,
+        handleTableSearch
     };
 };

@@ -829,7 +829,7 @@ body>.container.mt-4 {
     margin-bottom: 0px;
     padding: 5px;
     border-radius: 4px;
-    min-height: 85px;
+    min-height: 80px;
     display: flex;
     flex-direction: column;
 }
@@ -842,10 +842,93 @@ body>.container.mt-4 {
     align-items: flex-start;
 }
 
-.filter-form {
+.filter-form-container {
     display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
-    gap: 20px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.filter-item {
+    margin-bottom: 0 !important;
+}
+
+.divider-vertical {
+    width: 2px;
+    height: 24px;
+    background-color: var(--el-border-color-light);
+    margin: 0 5px;
+}
+
+.search-input .el-input-group__prepend {
+    background-color: var(--el-fill-color-light);
+    padding: 0;
+}
+
+.search-input .el-input-group__prepend .el-select {
+    margin: 0;
+    width: 100px;
+}
+
+.search-input .el-input-group__prepend .el-select .el-input__wrapper {
+    box-shadow: none !important;
+    /* Remove default border/shadow */
+    background-color: transparent !important;
+    padding: 0 10px;
+}
+
+.search-input .el-input-group__prepend .el-select .el-input__inner {
+    text-align: center;
+    color: var(--el-text-color-regular);
+    font-size: 13px;
+}
+
+/* Fix focus state */
+.search-input .el-input-group__prepend .el-select .el-input.is-focus .el-input__wrapper {
+    box-shadow: none !important;
+}
+
+/* Amount range group styles */
+.amount-range-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--el-fill-color-blank);
+    border: 1px solid var(--el-border-color);
+    border-radius: var(--el-border-radius-base);
+    padding: 0 10px;
+    height: 32px;
+    /* Standard input height */
+    transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+.amount-range-group:hover {
+    border-color: var(--el-border-color-hover);
+}
+
+.amount-range-group:focus-within {
+    border-color: var(--el-color-primary);
+}
+
+.amount-range-group .el-input-number {
+    width: 120px;
+}
+
+/* Remove borders from input-numbers inside the group to make it look seamless */
+.amount-range-group .el-input-number .el-input__wrapper {
+    box-shadow: none !important;
+    padding: 0;
+    background-color: transparent;
+}
+
+.amount-range-group .el-input-number .el-input__inner {
+    text-align: center;
+}
+
+.range-separator {
+    margin: 0 10px;
+    color: var(--el-text-color-secondary);
 }
 
 .filter-item {
@@ -860,6 +943,7 @@ body>.container.mt-4 {
 
 .pagination-container {
     margin-top: 20px;
+    /* margin-bottom: 10px !important; */
     display: flex;
     justify-content: flex-end;
 }
@@ -1125,7 +1209,7 @@ html.dark .timeline-dot {
     align-items: center;
     margin-bottom: 0px;
     padding-bottom: 0px;
-    border-bottom: 2px dashed var(--border-color);
+    border-bottom: 2px solid var(--el-border-color-light);
     font-size: 15px;
     padding-bottom: 5px;
 }
@@ -1281,4 +1365,10 @@ html.dark .timeline-item-card:hover {
 
 .header-btn-group .el-button+.el-button {
     margin-left: 0 !important;
+}
+
+/* ==================== Tabs Styles ==================== */
+.el-tabs__item {
+    font-size: 16px !important;
+    font-weight: 500;
 }
