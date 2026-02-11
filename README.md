@@ -2,7 +2,7 @@
 
 一小时记完一年的账单！
 
-demo 体验: [flashbill-demo](https://flashbill-demo.onrender.com/statistics)
+请用电脑访问 demo 体验: [flashbill-demo](https://flashbill-demo.onrender.com/statistics)
 
 自动化 & 智能化的记账助手，基于 Python Flask + Vue 3 + Element Plus 的个人记账分析工具。支持支付宝/微信账单导入、自动规则打标、AI 智能分类以及多维度统计分析。
 
@@ -18,6 +18,7 @@ demo 体验: [flashbill-demo](https://flashbill-demo.onrender.com/statistics)
 
 **注意事项：**
 
+1. 本项目不打算适配移动端，因为所有记账的逻辑和动线都是为了 pc 支持，手机记账个人感觉是陷阱需求
 1. 本项目仅为个人记账使用，不支持多人同时记账，也并不打算支持。你的数据安全很重要，不建议使用任何联网的 app 或者网站
 1. 打标完成之后，需要导出账单 -> 手动复制粘贴到 DB.xlsx 中，这么设计主要是处于以下考虑：
   - 避免 AI 后续改动代码或者测试时，导致 DB.xlsx 出现非预期的改动，这是作为本项目的数据库，数据安全很重要，因此最好不提供这个功能
