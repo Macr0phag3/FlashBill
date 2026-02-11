@@ -94,7 +94,7 @@
                     <template #default="scope">[[ (currentPage - 1) * pageSize + scope.$index + 1 ]]</template>
                 </el-table-column>
                 <!-- 选择列（编辑模式） -->
-                <el-table-column type="selection" width="55" align="center" fixed="left"
+                <el-table-column type="selection" width="60" align="center" fixed="left"
                     v-if="isEditing"></el-table-column>
                 <!-- 日期列 -->
                 <el-table-column prop="交易时间" label="日期" width="180" align="center" sortable="custom"
@@ -146,17 +146,17 @@
                         </span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="备注" label="备注" min-width="50" header-align="center">
+                <el-table-column prop="备注" label="备注" width="100" header-align="center">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.备注" size="small" @change="markModified(scope.row)"
-                            style="width: 150px"></el-input>
+                            style="width: 100%"></el-input>
                         <span v-else>[[ scope.row.备注 ]]</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="命中规则" label="命中规则" min-width="150" header-align="center">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.命中规则" size="small"
-                            @change="markModified(scope.row)" style="width: 150px"></el-input>
+                            @change="markModified(scope.row)" style="width: 100%"></el-input>
                         <span v-else>[[ scope.row.命中规则 ]]</span>
                     </template>
                 </el-table-column>
@@ -177,12 +177,14 @@
     <el-dialog v-model="batchTagDialogVisible" title="批量打标" width="500px" :close-on-click-modal="false">
         <el-form :model="batchTagForm" label-width="80px">
             <el-form-item label="类别">
-                <el-select v-model="batchTagForm.category" placeholder="请选择类别" style="width: 100%">
+                <el-select v-model="batchTagForm.category" placeholder="选择或输入类别" style="width: 100%" filterable
+                    allow-create default-first-option @change="batchTagForm.tag = ''">
                     <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="标签">
-                <el-select v-model="batchTagForm.tag" placeholder="请选择标签" style="width: 100%">
+                <el-select v-model="batchTagForm.tag" placeholder="选择或输入标签" style="width: 100%" filterable allow-create
+                    default-first-option>
                     <el-option v-for="tag in categoryTags[batchTagForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>
@@ -298,10 +300,15 @@
                     <el-option v-for="tag in categoryTags[quickRuleForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>
-                </el-select>
                 <div style="font-size: 12px; color: #909399; margin-top: 4px; line-height: 1.4;">
                     标签为 - 时，打标时将根据账单时间自动归类为 早/午/晚餐与夜宵
                 </div>
+            </el-form-item>
+            <el-form-item label="时间归类" v-if="quickRuleForm.tag && quickRuleForm.tag === '-'">
+                <el-select v-model="quickRuleForm.time_based" multiple placeholder="选择时段" style="width: 100%"
+                    @change="handleQuickRuleTimeBasedChange">
+                    <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t"></el-option>
+                </el-select>
             </el-form-item>
             <el-form-item label="备注">
                 <el-input v-model="quickRuleForm.comment" placeholder="可选，用于记录规则用途"></el-input>
@@ -387,7 +394,28 @@
             // 文本选中快速创建规则相关状态
             const textSelection = ref({ visible: false, x: 0, y: 0, text: '', field: '', row: null });
             const quickRuleDialogVisible = ref(false);
-            const quickRuleForm = ref({ key: '', keyword: '', category: '', tag: '', comment: '' });
+            const quickRuleForm = ref({ key: '', keyword: '', category: '', tag: '', comment: '', time_based: ['全部'] });
+
+            // 时间归类选项常量
+            const TIME_OPTIONS = ['全部', '早餐', '午餐', '晚餐', '夜宵'];
+            const MEAL_OPTIONS = ['早餐', '午餐', '晚餐', '夜宵'];
+
+            /** 时间归类互斥处理："全部"与具体餐时互斥 */
+            const handleQuickRuleTimeBasedChange = (val) => {
+                if (val.includes('全部') && val.length > 1) {
+                    const lastSelected = val[val.length - 1];
+                    if (lastSelected === '全部') {
+                        quickRuleForm.value.time_based = ['全部'];
+                    } else {
+                        quickRuleForm.value.time_based = val.filter(t => t !== '全部');
+                    }
+                }
+                // 四个餐时全选时自动合并为"全部"
+                const current = quickRuleForm.value.time_based;
+                if (!current.includes('全部') && MEAL_OPTIONS.every(m => current.includes(m))) {
+                    quickRuleForm.value.time_based = ['全部'];
+                }
+            };
 
             // ==================== 辅助函数 ====================
 
@@ -701,6 +729,7 @@
                     category: '',
                     tag: '',
                     comment: '',
+                    time_based: ['全部'],
                 };
                 textSelection.value.visible = false;
                 quickRuleDialogVisible.value = true;
@@ -723,8 +752,8 @@
                     rule: [quickRuleForm.value.keyword],
                     category: quickRuleForm.value.category,
                     tag: quickRuleForm.value.tag || '-',
-                    time_based: (quickRuleForm.value.category === '食' && (!quickRuleForm.value.tag || quickRuleForm.value.tag === '-')) ? ['全部'] : [],
-                    comment: quickRuleForm.value.comment || '快速创建',
+                    time_based: (quickRuleForm.value.category === '食' && (!quickRuleForm.value.tag || quickRuleForm.value.tag === '-')) ? quickRuleForm.value.time_based : [],
+                    comment: quickRuleForm.value.comment,
                 };
 
                 try {
@@ -878,7 +907,7 @@
                 aiTagLoading, aiTagDialogVisible, aiTagResults,
                 selectedAITags, selectedRules, saveSelectedRules,
                 // 快速规则状态
-                textSelection, quickRuleDialogVisible, quickRuleForm,
+                textSelection, quickRuleDialogVisible, quickRuleForm, TIME_OPTIONS,
                 // 计算属性
                 filteredBillsData, paginatedBills, emptyText,
                 categoryFilterOptions, tagFilterOptions,
@@ -889,7 +918,7 @@
                 // AI 打标方法
                 handleAITag, handleAITagSelection, handleRuleSelection, applyAITagResults,
                 // 快速规则方法
-                handleTextSelect, openQuickRuleDialog, saveQuickRule,
+                handleTextSelect, openQuickRuleDialog, saveQuickRule, handleQuickRuleTimeBasedChange,
                 isNewCategory, isNewTag,
                 beforeUpload, handleUploadSuccess, handleUploadError,
                 handleExport, handleClearCache,

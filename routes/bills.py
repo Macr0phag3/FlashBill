@@ -329,7 +329,7 @@ def apply_ai_tags():
                         "match_mode": rule.get("match_mode", "keyword"),
                         "category": category,
                         "tag": tag,
-                        "time_based": [],
+                        "time_based": rule.get("time_based", []),
                         "comment": rule.get("comment", "AI 建议"),
                     }
                     existing_rules.insert(0, new_rule)

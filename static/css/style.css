@@ -102,6 +102,13 @@ html.dark {
     width: 100%;
 }
 
+/* 固定 el-table 行高，避免编辑/查看模式切换时表格抖动 */
+.table-container .el-table td.el-table__cell {
+    height: 45px;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 .container {
     max-width: 1400px;
     margin: 0 auto;
