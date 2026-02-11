@@ -3,6 +3,7 @@ pytest-cov
 pytest-flask
 openpyxl
 flask
+gunicorn
 pandas
 httpx
 python-dotenv

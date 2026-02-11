@@ -46,4 +46,8 @@ def tagging():
 
 # ==================== 启动应用 ====================
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    app.run(
+        debug=os.getenv("FLASK_DEBUG", "1") == "1",
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "8000")),
+    )
