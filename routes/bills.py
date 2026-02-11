@@ -13,7 +13,7 @@ from core.utils import Alipay, Wechat, apply_rules_to_bills, ai_tag_bills, load_
 from core.config import PROGRESS_FILE, EXPORT_COLUMNS
 
 # ==================== Blueprint 配置 ====================
-bills_bp = Blueprint('bills', __name__)
+bills_bp = Blueprint("bills", __name__)
 
 # 支持的账单处理器映射
 BILL_PROCESSORS = {
@@ -48,6 +48,18 @@ def save_to_progress(bills: dict) -> None:
         json.dump(bills, f, ensure_ascii=False, indent=2)
 
 
+def cleanup_temp_files(paths: list[str]) -> None:
+    """清理临时文件，忽略删除失败"""
+    for path in set(paths):
+        if not path:
+            continue
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            continue
+
+
 # ==================== 路由：基础账单操作 ====================
 @bills_bp.route("/bills")
 def get_bills():
@@ -76,33 +88,38 @@ def upload_file():
     filename = secure_filename(file.filename)
     filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
-    
-    # 转换 xlsx 为 csv
-    if file.filename.endswith(".xlsx"):
-        df = pd.read_excel(filepath)
-        csv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "temp.csv")
-        df.to_csv(csv_path, index=False)
-    else:
-        csv_path = filepath
-    
-    # 获取账单类型
-    bill_type = request.form.get("bill_type", "alipay")
-    if bill_type not in BILL_PROCESSORS:
-        return jsonify({"error": "不支持的账单类型"}), 400
-    
-    # 解析账单
-    ProcessorClass, book_name = BILL_PROCESSORS[bill_type]
-    processor = ProcessorClass(csv_path)
-    bills = processor.bill
-    
-    # 标记账本来源
-    for bill in bills.values():
-        bill["账本"] = book_name
-    
-    save_to_progress(bills)
-    set_current_bills(bills)
-    
-    return jsonify({"success": True, "bills": list(bills.values())})
+
+    temp_files = [filepath]
+    try:
+        # 转换 xlsx 为 csv
+        if file.filename.endswith(".xlsx"):
+            df = pd.read_excel(filepath)
+            csv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "temp.csv")
+            df.to_csv(csv_path, index=False)
+            temp_files.append(csv_path)
+        else:
+            csv_path = filepath
+
+        # 获取账单类型
+        bill_type = request.form.get("bill_type", "alipay")
+        if bill_type not in BILL_PROCESSORS:
+            return jsonify({"error": "不支持的账单类型"}), 400
+
+        # 解析账单
+        ProcessorClass, book_name = BILL_PROCESSORS[bill_type]
+        processor = ProcessorClass(csv_path)
+        bills = processor.bill
+
+        # 标记账本来源
+        for bill in bills.values():
+            bill["账本"] = book_name
+
+        save_to_progress(bills)
+        set_current_bills(bills)
+
+        return jsonify({"success": True, "bills": list(bills.values())})
+    finally:
+        cleanup_temp_files(temp_files)
 
 
 # ==================== 路由：账单 API ====================
