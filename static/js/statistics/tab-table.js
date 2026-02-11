@@ -11,6 +11,7 @@ const useTableTab = (updateCallback) => {
     const sortOrder = Vue.ref('desc');
 
     const tableFreqSortField = Vue.ref(''); // 频率排序字段
+    const tableFreqSortEmptyLast = Vue.ref(false); // 空值置底 (默认关闭)
 
     /** 每页条数变更 */
     const handleSizeChange = (val) => {
@@ -52,6 +53,7 @@ const useTableTab = (updateCallback) => {
         sortBy,
         sortOrder,
         tableFreqSortField,
+        tableFreqSortEmptyLast,
         handleSizeChange,
         handleCurrentChange,
         handleSortChange,

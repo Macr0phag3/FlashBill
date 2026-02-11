@@ -76,7 +76,7 @@
                             <el-input-number v-model="filterForm.maxAmount" :precision="2" :step="100" :controls="false"
                                 placeholder="最大金额" @change="handleFilter" style="width: 60px"></el-input-number>
                         </div>
-                        <el-button type="danger" @click="resetFilter">重置</el-button>
+                        <el-button type="danger" @click="handleReset">重置</el-button>
                     </div>
                 </el-form>
 
@@ -90,12 +90,21 @@
             </div>
             <div style="position: relative;">
                 <!-- 频率排序控件 (仅在表格 Tab 显示) -->
-                <div v-show="activeTab === 'table'" style="position: absolute; right: 0; top: 0; z-index: 10;">
+                <div v-show="activeTab === 'table'"
+                    style="position: absolute; right: 0; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px;">
+                    <el-checkbox v-model="tableFreqSortEmptyLast" label="空值置底" size="default"
+                        @change="handleTableSearch" v-show="tableFreqSortField"></el-checkbox>
                     <el-select v-model="tableFreqSortField" placeholder="频率排序：无" style="width: 150px" clearable
                         @change="handleTableSearch" size="default">
                         <el-option label="频率排序：无" value=""></el-option>
                         <el-option label="按交易对方频率" value="counter_party"></el-option>
                         <el-option label="按商品说明频率" value="goods_desc"></el-option>
+                        <el-option label="按日期频率" value="date"></el-option>
+                        <el-option label="按类别频率" value="category"></el-option>
+                        <el-option label="按标签频率" value="tag"></el-option>
+                        <el-option label="按金额频率" value="amount"></el-option>
+                        <el-option label="按账本频率" value="book"></el-option>
+                        <el-option label="按备注频率" value="remark"></el-option>
                     </el-select>
                 </div>
 
@@ -363,6 +372,7 @@
                     </el-tab-pane>
                 </el-tabs>
             </div>
+        </div>
     </el-card>
 </div>
 
@@ -376,6 +386,7 @@
 <script src="{{ url_for('static', filename='js/statistics/tab-pie.js') }}"></script>
 <script src="{{ url_for('static', filename='js/statistics/tab-pivot.js') }}"></script>
 <script src="{{ url_for('static', filename='js/statistics/tab-analysis.js') }}"></script>
+
 
 <script>
     const { createApp, onMounted, watch, nextTick, onBeforeUnmount } = Vue;
@@ -433,6 +444,16 @@
                     data.sort((a, b) => {
                         const valA = a[freqField] || '';
                         const valB = b[freqField] || '';
+
+                        // 2.1.1 空值置底逻辑
+                        if (tableFreqSortEmptyLast.value) {
+                            const isEmptyA = !valA;
+                            const isEmptyB = !valB;
+                            if (isEmptyA && !isEmptyB) return 1;
+                            if (!isEmptyA && isEmptyB) return -1;
+                            // 如果都为空，则认为相等（或继续按其他规则，但在频率排序中通常就结束了）
+                        }
+
                         const countA = freqMap[valA];
                         const countB = freqMap[valB];
 
@@ -470,7 +491,7 @@
                 tableData,
                 currentPage, pageSize, total, sortBy, sortOrder,
                 // 新增变量
-                tableFreqSortField,
+                tableFreqSortField, tableFreqSortEmptyLast,
                 handleSizeChange, handleCurrentChange, handleSortChange,
                 handleTableSearch
             } = useTableTab(triggerUpdateTable);
@@ -539,6 +560,14 @@
                 });
             };
 
+            /** 处理重置 */
+            const handleReset = () => {
+                resetFilter();
+                tableFreqSortField.value = '';
+                tableFreqSortEmptyLast.value = false; // Reset to default (or keep logic if user wants)
+                handleTableSearch(); // Refresh table
+            };
+
             // 监听筛选数据变化，自动更新当前 Tab
             watch([filteredAllData, rawFilteredData], () => {
                 updateActiveTab();
@@ -588,7 +617,7 @@
                 yearOptions, monthOptions, bookOptions, categoryOptions, tagOptions, filterTags,
 
                 // Methods
-                handleFilter, handleCategoryChange, resetFilter, removeFilterTag,
+                handleFilter, handleCategoryChange, resetFilter, handleReset, removeFilterTag,
                 handleSizeChange, handleCurrentChange, handleSortChange, // Table
                 handleScroll, // Timeline
                 handleTimeUnitChange, handlePivotTimeUnitChange, // Chart & Pivot Updates
@@ -598,7 +627,7 @@
 
                 // Valid for Template
                 tableData, currentPage, pageSize, total, sortBy, sortOrder, // Table
-                tableFreqSortField, handleTableSearch, // Table Sort
+                tableFreqSortField, tableFreqSortEmptyLast, handleTableSearch, // Table Sort
                 timelineData, isLoadingMore, isAllLoaded, // Timeline
                 timeUnit, // Chart
                 pivotTimeUnit, // Pivot
