@@ -20,6 +20,8 @@ PROGRESS_FILE = DATA_DIR / "bills.process"
 RULES_FILE = DATA_DIR / "rules.json"
 CATEGORIES_FILE = DATA_DIR / "categories.json"
 CATEGORIES_META_FILE = DATA_DIR / "categories_meta.json"
+BOOKS_FILE = DATA_DIR / "books.json"
+BOOKS_META_FILE = DATA_DIR / "books_meta.json"
 DB_FILE = DATA_DIR / "DB.xlsx"
 
 

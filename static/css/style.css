@@ -629,6 +629,10 @@ html.dark .theme-toggle-btn {
     height: calc(100vh - 213px);
 }
 
+.books-table-container {
+    height: calc(100vh - 213px);
+}
+
 .el-tag.tag-dash {
     background-color: var(--el-color-info) !important;
     border-color: var(--el-color-info) !important;

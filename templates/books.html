@@ -1,15 +1,849 @@
 {% extends "base.html" %}
 
+{% block head %}
+{{ super() }}
+<style>
+    .el-color-picker.default-color .el-color-picker__trigger {
+        border-color: var(--el-color-primary);
+    }
+
+    .el-color-picker.default-color .el-color-picker__color {
+        border-color: var(--el-color-primary);
+    }
+
+    .el-color-picker.default-color .el-color-picker__color-inner {
+        background-color: var(--el-color-primary) !important;
+    }
+
+    .el-color-picker .el-color-picker__icon {
+        display: none;
+    }
+
+    .el-color-picker .el-color-picker__trigger {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .icon-picker-btn,
+    .icon-picker-btn:hover,
+    .icon-picker-btn:focus,
+    .icon-picker-btn:active {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .books-layout {
+        display: grid;
+        grid-template-columns: 33.333% 66.667%;
+        gap: 16px;
+        min-height: calc(100vh - 235px);
+    }
+
+    .books-pane {
+        min-width: 0;
+    }
+
+    .books-pane-left .books-table-container {
+        height: 100%;
+    }
+
+    .books-pane-right {
+        border: none;
+        border-left: 1px solid var(--el-border-color);
+        border-radius: 0;
+        background: transparent;
+        padding: 16px 16px 16px 20px;
+    }
+
+    .books-pane-right h3 {
+        margin: -4px 0 30px 0;
+        font-size: 16px;
+    }
+
+    .quota-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .quota-card {
+        border-radius: 1rem;
+        border: none;
+        background: var(--el-fill-color-extra-light);
+        padding: 12px;
+    }
+
+    .quota-card .label {
+        color: var(--el-text-color-secondary);
+        font-size: 13px;
+    }
+
+    .quota-card .value {
+        margin-top: 6px;
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .quota-card.remaining-positive .value {
+        color: var(--el-color-success);
+    }
+
+    .quota-card.remaining-negative .value {
+        color: var(--el-color-danger);
+    }
+
+    .quota-metrics {
+        margin-top: 10px;
+        margin-left: 5px;
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: var(--el-text-color-secondary);
+        font-size: 13px;
+    }
+
+    .quota-chart {
+        width: 100%;
+        min-height: 300px;
+        margin-top: 12px;
+        border-radius: 10px;
+        background: var(--el-bg-color);
+        border: 1px solid var(--el-border-color);
+    }
+
+    .score-panel {
+        margin-top: 20px;
+        border: none;
+        background: var(--el-fill-color-extra-light);
+        box-shadow: none;
+        border-radius: 1.5rem;
+        padding: 14px 12px;
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 20px;
+        min-height: 240px;
+        max-height: clamp(260px, calc(100vh - 460px), 620px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .score-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        transform: translateX(-80px);
+    }
+
+    .rings-stack {
+        position: relative;
+        width: 186px;
+        height: 186px;
+        overflow: visible;
+    }
+
+    .rings-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+        overflow: visible;
+    }
+
+    .rings-svg .ring-stroke {
+        fill: none;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ring-stroke-color, #6a6bff) 45%, transparent));
+    }
+
+    .score-center {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .score-center .label {
+        font-size: 12px;
+        letter-spacing: 0;
+        color: var(--el-text-color-secondary);
+        line-height: 1.2;
+    }
+
+    .score-center .value {
+        margin-top: 2px;
+        font-size: 32px;
+        line-height: 1;
+        font-weight: 700;
+        color: var(--el-text-color-primary);
+        text-shadow: none;
+    }
+
+    .score-legend {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 16px;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+        width: 100%;
+        justify-self: start;
+        align-self: center;
+        margin: 0;
+    }
+
+    .score-item {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        padding-left: 44px;
+        min-height: 32px;
+        margin: 0;
+    }
+
+    .score-icon {
+        width: 32px;
+        height: 32px;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(calc(-50% + 2px));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        color: var(--score-color);
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .score-icon .el-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transform: translateY(1px);
+    }
+
+    .score-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        width: 100%;
+        max-width: 100%;
+        text-align: left;
+    }
+
+    .score-head {
+        display: flex;
+        justify-content: flex-start;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 2px;
+        flex-wrap: wrap;
+    }
+
+    .score-name {
+        color: var(--score-color);
+        font-size: 17px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .score-val {
+        color: var(--el-text-color-primary);
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+        margin-left: 2px;
+    }
+
+    .score-stats {
+        display: grid;
+        gap: 2px;
+        margin-top: 2px;
+    }
+
+    .score-stat-line {
+        font-size: 14px;
+        color: var(--el-text-color-secondary);
+        display: flex;
+        justify-content: flex-start;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .score-stat-line b {
+        color: var(--el-text-color-primary);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 1200px) {
+        .books-layout {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+
+        .books-pane-left .books-table-container {
+            height: 520px;
+        }
+
+        .books-pane-right {
+            min-height: 180px;
+            border-left: none;
+            padding: 16px;
+        }
+
+        .score-panel {
+            grid-template-columns: 1fr;
+            min-height: auto;
+            gap: 8px;
+            max-height: none;
+            overflow: visible;
+        }
+
+        .score-visual {
+            transform: translateX(0);
+        }
+
+        .score-legend {
+            max-height: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_loader %}
+{% include 'loader.html' %}
+{% endblock %}
+
 {% block content %}
-<div id="app">
+<div id="app" v-cloak>
     <el-card class="mb-3">
         <template #header>
             <div class="d-flex justify-content-between align-items-center">
                 <span>账本管理</span>
+                <div class="d-flex gap-2">
+                    <el-button type="primary" @click="addBook">添加账本</el-button>
+                    <el-button type="success" @click="saveBooks">保存账本</el-button>
+                </div>
             </div>
         </template>
 
-        <el-empty description="账本管理功能开发中"></el-empty>
+        <div class="books-layout">
+            <div class="books-pane books-pane-left">
+                <div class="books-table-container" v-loading="loading">
+                    <el-table :data="books" style="width: 100%" stripe height="100%" :fit="false">
+                        <el-table-column label="账本名称" width="190" align="center" header-align="center">
+                            <template #default="scope">
+                                <div class="d-flex align-items-center gap-2">
+                                    <el-popover trigger="click" placement="bottom-start" :width="200"
+                                        @show="handleIconPopoverShow(scope.$index)">
+                                        <template #reference>
+                                            <el-button size="small" circle class="icon-picker-btn">
+                                                <el-icon size="16"
+                                                    :style="{ color: scope.row.color || defaultBookColor }">
+                                                    <component :is="scope.row.icon || defaultBookIcon" />
+                                                </el-icon>
+                                            </el-button>
+                                        </template>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <el-color-picker v-model="scope.row.color" size="small" :teleported="false"
+                                                :class="{ 'default-color': !scope.row.color }"></el-color-picker>
+                                            <el-select v-model="scope.row.icon" placeholder="选择图标" filterable clearable
+                                                size="small" style="flex: 1" :teleported="false"
+                                                :ref="el => setIconSelectRef(scope.$index, el)">
+                                                <el-option v-for="iconName in iconList" :key="iconName"
+                                                    :label="iconName" :value="iconName">
+                                                    <span style="float: left">
+                                                        <el-icon>
+                                                            <component :is="iconName" />
+                                                        </el-icon>
+                                                    </span>
+                                                    <span
+                                                        style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                                                        [[ iconName ]]
+                                                    </span>
+                                                </el-option>
+                                            </el-select>
+                                        </div>
+                                    </el-popover>
+                                    <el-input v-model="scope.row.name" size="small" placeholder="请输入账本名称"
+                                        style="width: 110px"></el-input>
+                                </div>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="固定配额" width="150" align="left" header-align="center">
+                            <template #default="scope">
+                                <div class="d-flex align-items-center gap-2" style="padding-left: 6px;">
+                                    <el-input-number
+                                        :model-value="scope.row.fixed_quota > 0 ? scope.row.fixed_quota : null"
+                                        @update:model-value="val => handleQuotaChange(scope.row, val)" :precision="2"
+                                        :step="100" :min="0" placeholder="无配额" size="small" :controls="false"
+                                        style="width: 90px"></el-input-number>
+                                    <span class="text-muted">元</span>
+                                </div>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="操作" width="76" align="center">
+                            <template #default="scope">
+                                <el-button type="danger" size="small" @click="removeBook(scope.$index)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+            </div>
+
+            <div class="books-pane books-pane-right">
+                <h3>额度概览</h3>
+                <div class="quota-cards" v-loading="statsLoading">
+                    <div class="quota-card">
+                        <div class="label">固定配额总计</div>
+                        <div class="value">[[ formatAmount(totalFixedQuota) ]]</div>
+                    </div>
+                    <div class="quota-card" :class="remainingClass">
+                        <div class="label">剩余额度总计</div>
+                        <div class="value">[[ formatAmount(remainingQuota) ]]</div>
+                    </div>
+                </div>
+                <div class="quota-metrics">
+                    <span>* 累计月数：[[ activeMonthCount ]]</span>
+                    <span>累计注入：[[ formatAmount(totalInflow) ]]</span>
+                    <span>累计流出：[[ formatAmount(totalSpent) ]]</span>
+                </div>
+                <div v-if="displayStats.length" class="score-panel">
+                    <div class="score-visual">
+                        <div class="rings-stack">
+                            <svg class="rings-svg" viewBox="-12 -12 124 124" preserveAspectRatio="xMidYMid meet">
+                                <circle v-for="(item, index) in displayStats" :key="`ring-${item.name}-${index}`"
+                                    class="ring-stroke" cx="50" cy="50" :r="getRingRadius(index)"
+                                    :stroke="getScoreColor(item, index)" :stroke-width="ringLayout.ringWidth"
+                                    :stroke-dasharray="getRingDashArray(item, index)"
+                                    :style="{ '--ring-stroke-color': getScoreColor(item, index) }"></circle>
+                            </svg>
+                            <div class="score-center">
+                                <div class="label">配额开销</div>
+                                <div class="value">[[ overallScoreText ]]</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="score-legend">
+                        <div class="score-item" v-for="(item, index) in displayStats" :key="`${item.name}-${index}`"
+                            :style="{ '--score-color': getScoreColor(item, index), '--score-pct': getScorePercent(item) }">
+                            <div class="score-icon">
+                                <el-icon>
+                                    <component :is="item.icon || defaultBookIcon" />
+                                </el-icon>
+                            </div>
+                            <div class="score-content">
+                                <div class="score-head">
+                                    <span class="score-name">[[ item.name ]]</span>
+                                    <span class="score-val" :style="{ color: getScoreTextColor(item) }">[[
+                                        getScoreText(item) ]]</span>
+                                </div>
+                                <div class="score-stats">
+                                    <div class="score-stat-line">
+                                        <span>累计月数</span><b>[[ activeMonthCount ]]</b>
+                                        <span>累计注入</span><b>[[ formatAmount(item.inflow) ]]</b>
+                                        <span>累计流出</span><b>[[ formatAmount(item.outflow) ]]</b>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <el-empty v-else description="暂无可统计账本（固定配额大于 0）"></el-empty>
+            </div>
+        </div>
     </el-card>
 </div>
+
+<script>
+    const { createApp, ref, computed, onMounted, onBeforeUnmount, nextTick, watch } = Vue;
+    const { ElMessage } = ElementPlus;
+    const ElementPlusIcons = ElementPlusIconsVue;
+
+    const app = createApp({
+        delimiters: ['[[', ']]'],
+        setup() {
+            const books = ref([]);
+            const loading = ref(false);
+            const iconSelectRefs = ref({});
+            const bookSpending = ref({});
+            const statsLoading = ref(false);
+            const activeMonthCount = ref(1);
+            const ringAnimProgress = ref(1);
+            let ringAnimationFrameId = null;
+
+            const iconList = Object.keys(ElementPlusIcons);
+            const defaultBookIcon = iconList.includes('Coin') ? 'Coin' : 'Grid';
+            const defaultBookColor = '#409EFF';
+
+            const setIconSelectRef = (index, el) => {
+                if (el) {
+                    iconSelectRefs.value[index] = el;
+                } else {
+                    delete iconSelectRefs.value[index];
+                }
+            };
+
+            const handleIconPopoverShow = (index) => {
+                nextTick(() => {
+                    const selectRef = iconSelectRefs.value[index];
+                    if (selectRef?.focus) selectRef.focus();
+                });
+            };
+
+            const apiCall = async (method, url, data = null, successMsg = null) => {
+                try {
+                    const response = method === 'get'
+                        ? await axios.get(url)
+                        : await axios.post(url, data);
+                    if (response.data.success) {
+                        if (successMsg) ElMessage.success(successMsg);
+                        return response.data;
+                    }
+                    throw new Error(response.data.message || '操作失败');
+                } catch (error) {
+                    console.error(`API 调用失败 [${url}]:`, error);
+                    ElMessage.error(error.message || '操作失败');
+                    return null;
+                }
+            };
+
+            const formatAmount = (value) => Number(value || 0).toFixed(2);
+
+            const quotaBooks = computed(() => books.value.filter((item) => {
+                const name = (item.name || '').trim();
+                const fixedQuota = Number(item.fixed_quota || 0);
+                return name && fixedQuota > 0;
+            }));
+
+            const bookStats = computed(() => quotaBooks.value.map((item) => {
+                const name = (item.name || '').trim();
+                const monthlyQuota = Number(item.fixed_quota || 0);
+                const inflow = monthlyQuota * activeMonthCount.value;
+                const outflow = Number(bookSpending.value[name] || 0);
+                const remaining = inflow - outflow;
+                return {
+                    name,
+                    monthlyQuota,
+                    inflow,
+                    outflow,
+                    remaining,
+                    color: item.color || '',
+                    icon: item.icon || defaultBookIcon,
+                };
+            }));
+
+            const displayStats = computed(() => [...bookStats.value]
+                .sort((a, b) => b.inflow - a.inflow));
+
+            const overallScore = computed(() => {
+                if (!displayStats.value.length) return 0;
+                const total = displayStats.value.reduce((sum, item) => sum + getScorePercent(item), 0);
+                return total / displayStats.value.length;
+            });
+
+            const overallScoreText = computed(() => {
+                const score = Math.max(0, overallScore.value);
+                if (score > 100) return '>100%';
+                return `${Math.round(score)}%`;
+            });
+
+            const ringLayout = computed(() => {
+                const count = Math.max(1, displayStats.value.length);
+                const outerRadius = 80;
+                const innerRadius = 30;
+                const ringGap = 3;
+                const maxRingWidth = 12;
+                const availableBand = Math.max(6, outerRadius - innerRadius);
+                const width = Math.min(maxRingWidth, Math.max(0.9, (availableBand - (count - 1) * ringGap) / count));
+                return {
+                    outerRadius,
+                    ringGap,
+                    ringWidth: Number(width.toFixed(2)),
+                    step: Number((width + ringGap).toFixed(2)),
+                };
+            });
+
+            const totalFixedQuota = computed(() =>
+                quotaBooks.value.reduce((sum, item) => sum + Number(item.fixed_quota || 0), 0)
+            );
+
+            const totalSpent = computed(() =>
+                bookStats.value.reduce((sum, item) => sum + item.outflow, 0)
+            );
+
+            const totalInflow = computed(() => totalFixedQuota.value * activeMonthCount.value);
+
+            const remainingQuota = computed(() => totalInflow.value - totalSpent.value);
+            const remainingClass = computed(() =>
+                remainingQuota.value >= 0 ? 'remaining-positive' : 'remaining-negative'
+            );
+
+            const handleQuotaChange = (row, value) => {
+                if (value === null || value === undefined || value === '') {
+                    row.fixed_quota = 0;
+                    return;
+                }
+                const numericValue = Number(value);
+                row.fixed_quota = Number.isFinite(numericValue) ? Math.max(0, numericValue) : 0;
+            };
+
+            const cyberPalette = ['#6a6bff', '#21d29b', '#24d8ff'];
+
+            const getScorePercent = (item) => {
+                if (!item?.inflow) return 0;
+                return Math.max(0, (item.outflow / item.inflow) * 100);
+            };
+
+            const getScoreColor = (item, index) =>
+                item.color || cyberPalette[index % cyberPalette.length];
+
+            const getScoreText = (item) => `${Math.round(getScorePercent(item))}%`;
+
+            const getScoreTextColor = (item) => {
+                const percent = getScorePercent(item);
+                if (percent >= 100) return 'var(--el-color-danger)';
+                if (percent > 50) return 'var(--el-color-warning)';
+                return 'var(--el-color-success)';
+            };
+
+            const triggerRingAnimation = () => {
+                if (ringAnimationFrameId !== null) {
+                    cancelAnimationFrame(ringAnimationFrameId);
+                    ringAnimationFrameId = null;
+                }
+
+                const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+                if (prefersReducedMotion || !displayStats.value.length) {
+                    ringAnimProgress.value = 1;
+                    return;
+                }
+
+                ringAnimProgress.value = 0;
+                const duration = 900;
+                const start = performance.now();
+                const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+                const tick = (now) => {
+                    const t = Math.min(1, (now - start) / duration);
+                    ringAnimProgress.value = easeOutCubic(t);
+                    if (t < 1) {
+                        ringAnimationFrameId = requestAnimationFrame(tick);
+                    } else {
+                        ringAnimationFrameId = null;
+                    }
+                };
+
+                ringAnimationFrameId = requestAnimationFrame(tick);
+            };
+
+            const getRingRadius = (index) =>
+                ringLayout.value.outerRadius - (ringLayout.value.ringWidth / 2) - index * ringLayout.value.step;
+
+            const getRingDashArray = (item, index) => {
+                const radius = getRingRadius(index);
+                const circumference = 2 * Math.PI * radius;
+                const percent = (Math.max(0, Math.min(100, getScorePercent(item))) * ringAnimProgress.value) / 100;
+                const dash = Math.max(0, circumference * percent);
+                const gap = Math.max(0.001, circumference - dash);
+                return `${dash.toFixed(3)} ${gap.toFixed(3)}`;
+            };
+
+            watch(displayStats, () => {
+                triggerRingAnimation();
+            }, { deep: true });
+
+            const fetchBookSpending = async () => {
+                statsLoading.value = true;
+                try {
+                    const data = await apiCall('get', '/api/statistics?page=1&page_size=1');
+                    if (!data?.all_items) {
+                        bookSpending.value = {};
+                        activeMonthCount.value = 1;
+                        return;
+                    }
+
+                    const map = {};
+                    let earliestDate = null;
+
+                    for (const item of data.all_items) {
+                        const bookName = String(item.book || '').trim();
+                        if (!bookName) continue;
+                        const amount = Math.abs(Number(item.amount) || 0);
+                        map[bookName] = (map[bookName] || 0) + amount;
+
+                        const parsedDate = new Date(item.date);
+                        if (!Number.isNaN(parsedDate.getTime())) {
+                            if (!earliestDate || parsedDate < earliestDate) {
+                                earliestDate = parsedDate;
+                            }
+                        }
+                    }
+                    bookSpending.value = map;
+
+                    const now = new Date();
+                    const baseDate = earliestDate || now;
+                    const months =
+                        (now.getFullYear() - baseDate.getFullYear()) * 12 +
+                        (now.getMonth() - baseDate.getMonth()) + 1;
+                    activeMonthCount.value = Math.max(1, months);
+                } finally {
+                    statsLoading.value = false;
+                }
+            };
+
+            const fetchBooks = async () => {
+                loading.value = true;
+                try {
+                    const data = await apiCall('get', '/api/books');
+                    if (!data) return;
+
+                    const booksData = data.books || {};
+                    const meta = data.meta || {};
+                    const names = new Set([...Object.keys(booksData), ...Object.keys(meta)]);
+
+                    books.value = Array.from(names).map((name) => ({
+                        name,
+                        fixed_quota: Number(booksData[name]?.fixed_quota ?? 0) || 0,
+                        icon: meta[name]?.icon || defaultBookIcon,
+                        color: meta[name]?.color || defaultBookColor,
+                    }));
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            const addBook = () => {
+                books.value.unshift({
+                    name: '',
+                    fixed_quota: 0,
+                    icon: defaultBookIcon,
+                    color: defaultBookColor,
+                });
+            };
+
+            const removeBook = (index) => {
+                books.value.splice(index, 1);
+            };
+
+            const saveBooks = async () => {
+                const booksData = {};
+                const metaData = {};
+                const seen = new Set();
+
+                for (const item of books.value) {
+                    const name = (item.name || '').trim();
+                    if (!name) continue;
+
+                    if (seen.has(name)) {
+                        ElMessage.error(`存在重复账本：${name}`);
+                        return;
+                    }
+                    seen.add(name);
+
+                    booksData[name] = {
+                        fixed_quota: Number(item.fixed_quota ?? 0),
+                    };
+                    metaData[name] = {
+                        icon: item.icon || defaultBookIcon,
+                        color: item.color || defaultBookColor,
+                    };
+                }
+
+                const result = await apiCall(
+                    'post',
+                    '/api/books',
+                    { books: booksData, meta: metaData },
+                    '保存成功'
+                );
+                if (result) fetchBooks();
+            };
+
+            onMounted(async () => {
+                const loader = document.getElementById('page-loader');
+                try {
+                    await fetchBooks();
+                    await fetchBookSpending();
+                } finally {
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.display = 'none', 300);
+                    }
+                }
+            });
+
+            onBeforeUnmount(() => {
+                if (ringAnimationFrameId !== null) {
+                    cancelAnimationFrame(ringAnimationFrameId);
+                    ringAnimationFrameId = null;
+                }
+            });
+
+            return {
+                books,
+                loading,
+                iconList,
+                defaultBookIcon,
+                defaultBookColor,
+                addBook,
+                removeBook,
+                saveBooks,
+                formatAmount,
+                totalFixedQuota,
+                totalInflow,
+                totalSpent,
+                remainingQuota,
+                remainingClass,
+                bookStats,
+                displayStats,
+                overallScore,
+                overallScoreText,
+                statsLoading,
+                activeMonthCount,
+                handleQuotaChange,
+                getScoreText,
+                getScoreTextColor,
+                getScoreColor,
+                getScorePercent,
+                ringLayout,
+                getRingRadius,
+                getRingDashArray,
+                setIconSelectRef,
+                handleIconPopoverShow,
+            };
+        }
+    });
+
+    app.use(ElementPlus);
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        app.component(key, component);
+    }
+    app.mount('#app');
+</script>
 {% endblock %}

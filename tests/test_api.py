@@ -75,6 +75,11 @@ class TestPageRoutes:
         """测试分类页面 GET"""
         response = client.get('/categories')
         assert response.status_code == 200
+
+    def test_books_page_get(self, client):
+        """测试账本管理页面 GET"""
+        response = client.get('/books')
+        assert response.status_code == 200
     
     def test_statistics_page(self, client):
         """测试统计页面"""
@@ -273,6 +278,50 @@ class TestCategoriesAPI:
         """测试更新分类时传入无效格式"""
         response = client.post('/api/categories',
                               data=json.dumps({'categories': []}),
+                              content_type='application/json')
+        data = response.get_json()
+        assert response.status_code == 400
+        assert data['success'] == False
+
+
+# ==================== 账本 API 测试 ====================
+
+class TestBooksAPI:
+    """测试账本管理API"""
+
+    def test_get_books(self, client):
+        """测试获取账本"""
+        response = client.get('/api/books')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data['success'] == True
+        assert 'books' in data
+        assert 'meta' in data
+        assert isinstance(data['books'], dict)
+        assert isinstance(data['meta'], dict)
+
+    def test_update_books(self, client):
+        """测试更新账本"""
+        new_books = {
+            "日常开销": {"fixed_quota": 2000},
+            "旅游基金": {"fixed_quota": 5000},
+        }
+        new_meta = {
+            "日常开销": {"icon": "Wallet", "color": "#409EFF"},
+            "旅游基金": {"icon": "MapLocation", "color": "#67C23A"},
+        }
+
+        response = client.post('/api/books',
+                              data=json.dumps({'books': new_books, 'meta': new_meta}),
+                              content_type='application/json')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data['success'] == True
+
+    def test_update_books_invalid_format(self, client):
+        """测试更新账本时传入无效格式"""
+        response = client.post('/api/books',
+                              data=json.dumps({'books': []}),
                               content_type='application/json')
         data = response.get_json()
         assert response.status_code == 400

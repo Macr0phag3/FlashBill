@@ -25,6 +25,8 @@ from core.config import (
     RULES_FILE,
     CATEGORIES_FILE,
     CATEGORIES_META_FILE,
+    BOOKS_FILE,
+    BOOKS_META_FILE,
     # OpenAI 配置
     OPENAI_API_KEY,
     OPENAI_BASE_URL,
@@ -80,6 +82,26 @@ def load_category_meta() -> dict:
 def save_category_meta(meta: dict) -> None:
     """保存分类元数据（图标、颜色）"""
     _save_json(CATEGORIES_META_FILE, meta, indent=4)
+
+
+def load_books() -> dict:
+    """加载账本配置"""
+    return _load_json(BOOKS_FILE, {})
+
+
+def save_books(books: dict) -> None:
+    """保存账本配置"""
+    _save_json(BOOKS_FILE, books, indent=4)
+
+
+def load_book_meta() -> dict:
+    """加载账本元数据（图标、颜色）"""
+    return _load_json(BOOKS_META_FILE, {})
+
+
+def save_book_meta(meta: dict) -> None:
+    """保存账本元数据（图标、颜色）"""
+    _save_json(BOOKS_META_FILE, meta, indent=4)
 
 
 # ==================== 自定义异常 ====================

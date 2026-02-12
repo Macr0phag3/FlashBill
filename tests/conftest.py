@@ -13,6 +13,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/..'))
 CONFIG_FILES = [
     'data/rules.json',
     'data/categories.json',
+    'data/books.json',
+    'data/books_meta.json',
     'data/DB.xlsx',  # 账单数据库
 ]
 

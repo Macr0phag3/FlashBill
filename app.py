@@ -9,6 +9,7 @@ from flask import Flask, render_template, redirect
 from routes.categories import categories_bp
 from routes.rules import rules_bp
 from routes.bills import bills_bp
+from routes.books import books_bp
 from routes.progress import progress_bp
 from routes.statistics import statistics_bp
 
@@ -27,6 +28,7 @@ current_bills = {}
 app.register_blueprint(categories_bp)
 app.register_blueprint(rules_bp)
 app.register_blueprint(bills_bp)
+app.register_blueprint(books_bp)
 app.register_blueprint(progress_bp)
 app.register_blueprint(statistics_bp)
 
@@ -42,12 +44,6 @@ def index():
 def tagging():
     """新增记账（原首页）"""
     return render_template("tagging.html")
-
-
-@app.route("/books")
-def books():
-    """账本管理页面"""
-    return render_template("books.html")
 
 
 # ==================== 启动应用 ====================

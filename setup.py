@@ -9,7 +9,14 @@ import json
 import random
 from datetime import datetime, timedelta
 import pandas as pd
-from core.config import DATA_DIR, RULES_FILE, CATEGORIES_FILE, DB_FILE
+from core.config import (
+    DATA_DIR,
+    RULES_FILE,
+    CATEGORIES_FILE,
+    BOOKS_FILE,
+    BOOKS_META_FILE,
+    DB_FILE,
+)
 
 # 默认分类数据
 DEFAULT_CATEGORIES = {
@@ -150,6 +157,16 @@ DEFAULT_RULES = [
     }
 ]
 
+DEFAULT_BOOKS = {
+    "支付宝": {"fixed_quota": 0},
+    "微信": {"fixed_quota": 0},
+}
+
+DEFAULT_BOOKS_META = {
+    "支付宝": {"icon": "Wallet", "color": "#409EFF"},
+    "微信": {"icon": "ChatDotRound", "color": "#67C23A"},
+}
+
 ENV_FILE = ".env"
 DEFAULT_ENV = """# OpenAI Configuration
 OPENAI_API_KEY=
@@ -274,7 +291,19 @@ def initialize_data_files():
             json.dump(DEFAULT_CATEGORIES, f, ensure_ascii=False, indent=4)
         print(f"[Init] 创建默认分类文件: {CATEGORIES_FILE}")
 
-    # 4. 初始化 DB.xlsx（生成示例数据）
+    # 4. 初始化 books.json
+    if not os.path.exists(BOOKS_FILE):
+        with open(BOOKS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(DEFAULT_BOOKS, f, ensure_ascii=False, indent=4)
+        print(f"[Init] 创建默认账本文件: {BOOKS_FILE}")
+
+    # 5. 初始化 books_meta.json
+    if not os.path.exists(BOOKS_META_FILE):
+        with open(BOOKS_META_FILE, 'w', encoding='utf-8') as f:
+            json.dump(DEFAULT_BOOKS_META, f, ensure_ascii=False, indent=4)
+        print(f"[Init] 创建默认账本元数据文件: {BOOKS_META_FILE}")
+
+    # 6. 初始化 DB.xlsx（生成示例数据）
     if not os.path.exists(DB_FILE):
         df = generate_sample_db()
         df.to_excel(DB_FILE, index=False)

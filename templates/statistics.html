@@ -163,10 +163,16 @@
                             </el-table-column>
                             <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
                                 <template #default="{ row }">
-                                    <el-tag v-if="row.book" :type="getBookTagType(row.book)" effect="light"
-                                        size="default">
-                                        <span v-text="row.book"></span>
+                                    <el-tag v-if="row.book" size="default" effect="plain" :style="getBookTagStyle(row.book)">
+                                        <span
+                                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                            <el-icon size="16">
+                                                <component :is="getBookIconComponent(row.book)" />
+                                            </el-icon>
+                                            <span v-text="row.book"></span>
+                                        </span>
                                     </el-tag>
+                                    <span v-else>-</span>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -227,15 +233,31 @@
                                                                     }}{% endraw %}</span>
                                                             </div>
                                                             <div class="timeline-item-detail">
-                                                                <el-tag type="" effect="light" size="small">{% raw %}{{
-                                                                    item.category }}{% endraw %}</el-tag>
+                                                                <el-tag v-if="item.category" size="small" effect="plain"
+                                                                    :style="getCategoryTagStyle(item.category)">
+                                                                    <span
+                                                                        style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                                                        <el-icon size="14">
+                                                                            <component :is="getCategoryIconComponent(item.category)" />
+                                                                        </el-icon>
+                                                                        {% raw %}{{ item.category }}{% endraw %}
+                                                                    </span>
+                                                                </el-tag>
                                                                 <el-tag v-for="tag in (item.tag ? [item.tag] : [])"
-                                                                    :key="tag" type="danger" effect="light"
+                                                                    :key="tag" effect="plain"
+                                                                    :style="getCategoryTagStyle(item.category)"
                                                                     size="small">{%
                                                                     raw %}{{ tag }}{% endraw %}</el-tag>
-                                                                <el-tag :type="getBookTagType(item.book)" effect="light"
-                                                                    size="small">{% raw %}{{ item.book }}{% endraw
-                                                                    %}</el-tag>
+                                                                <el-tag v-if="item.book" size="small" effect="plain"
+                                                                    :style="getBookTagStyle(item.book)">
+                                                                    <span
+                                                                        style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                                                        <el-icon size="14">
+                                                                            <component :is="getBookIconComponent(item.book)" />
+                                                                        </el-icon>
+                                                                        {% raw %}{{ item.book }}{% endraw %}
+                                                                    </span>
+                                                                </el-tag>
                                                             </div>
 
                                                         </div>
@@ -440,6 +462,10 @@
             const defaultCategoryColor = '#409EFF';
             const fallbackCategoryIconComponent =
                 ElementPlusIconsVue.Coin || ElementPlusIconsVue.Grid || ElementPlusIconsVue.CollectionTag;
+            const defaultBookColor = '#409EFF';
+            const fallbackBookIconComponent =
+                ElementPlusIconsVue.Coin || ElementPlusIconsVue.Wallet || ElementPlusIconsVue.CollectionTag;
+            const bookMeta = Vue.ref({});
 
             const getCategoryColor = (category) => {
                 if (!category) return defaultCategoryColor;
@@ -487,6 +513,42 @@
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center'
+                };
+            };
+
+            const loadBookMeta = async () => {
+                try {
+                    const { data } = await axios.get('/api/books');
+                    if (data?.success && data.meta && typeof data.meta === 'object') {
+                        bookMeta.value = data.meta;
+                    } else {
+                        bookMeta.value = {};
+                    }
+                } catch (error) {
+                    console.error('加载账本配置失败:', error);
+                    bookMeta.value = {};
+                }
+            };
+
+            const getBookColor = (book) => {
+                if (!book) return defaultBookColor;
+                return bookMeta.value?.[book]?.color || defaultBookColor;
+            };
+
+            const getBookIconComponent = (book) => {
+                if (!book) return fallbackBookIconComponent;
+                const iconName = bookMeta.value?.[book]?.icon;
+                if (!iconName) return fallbackBookIconComponent;
+                const filledIcon = ElementPlusIconsVue[`${iconName}Filled`];
+                return filledIcon || ElementPlusIconsVue[iconName] || fallbackBookIconComponent;
+            };
+
+            const getBookTagStyle = (book) => {
+                const color = getBookColor(book);
+                return {
+                    color: color,
+                    borderColor: hexToRgba(color, 0.35),
+                    backgroundColor: hexToRgba(color, 0.1)
                 };
             };
 
@@ -653,9 +715,9 @@
             const handlePivotTimeUnitChange = () => updateActiveTab();
 
             // --- 生命周期 ---
-            onMounted(() => {
+            onMounted(async () => {
                 // 初始化加载数据
-                loadData().then(() => {
+                await Promise.all([loadData(), loadBookMeta()]).finally(() => {
                     const loader = document.getElementById('page-loader');
                     if (loader) {
                         loader.style.opacity = '0';
@@ -708,8 +770,9 @@
                 averageResults, timeSpanData, // Analysis
 
                 // Utils
-                formatDate, formatTime, formatAmount, getBookTagType,
-                getCategoryColor, getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle
+                formatDate, formatTime, formatAmount,
+                getCategoryColor, getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle,
+                getBookIconComponent, getBookTagStyle
             };
         }
     });
