@@ -539,6 +539,13 @@
             };
 
             const formatAmount = (value) => Number(value || 0).toFixed(2);
+            const calculateMonthDivisor = (start, end) => {
+                if (!start || !end) return 1;
+
+                let months = (end.getFullYear() - start.getFullYear()) * 12;
+                months += (end.getMonth() - start.getMonth());
+                return Math.max(1, months + 1);
+            };
 
             const quotaBooks = computed(() => books.value.filter((item) => {
                 const name = (item.name || '').trim();
@@ -698,29 +705,23 @@
                     }
 
                     const map = {};
-                    let earliestDate = null;
+                    let startDate = null;
+                    let endDate = null;
 
                     for (const item of data.all_items) {
+                        const parsedDate = new Date(item.date);
+                        if (!Number.isNaN(parsedDate.getTime())) {
+                            if (!startDate || parsedDate < startDate) startDate = parsedDate;
+                            if (!endDate || parsedDate > endDate) endDate = parsedDate;
+                        }
+
                         const bookName = String(item.book || '').trim();
                         if (!bookName) continue;
                         const amount = Math.abs(Number(item.amount) || 0);
                         map[bookName] = (map[bookName] || 0) + amount;
-
-                        const parsedDate = new Date(item.date);
-                        if (!Number.isNaN(parsedDate.getTime())) {
-                            if (!earliestDate || parsedDate < earliestDate) {
-                                earliestDate = parsedDate;
-                            }
-                        }
                     }
                     bookSpending.value = map;
-
-                    const now = new Date();
-                    const baseDate = earliestDate || now;
-                    const months =
-                        (now.getFullYear() - baseDate.getFullYear()) * 12 +
-                        (now.getMonth() - baseDate.getMonth()) + 1;
-                    activeMonthCount.value = Math.max(1, months);
+                    activeMonthCount.value = calculateMonthDivisor(startDate, endDate);
                 } finally {
                     statsLoading.value = false;
                 }
