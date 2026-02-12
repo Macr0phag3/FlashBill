@@ -160,7 +160,7 @@ DEFAULT_RULES = [
 
 DEFAULT_BOOKS = {
     "日常开销": {"fixed_quota": 0},
-    "零花钱": {"fixed_quota": 3000},
+    "零花钱": {"fixed_quota": 30000},
 }
 
 DEFAULT_BOOKS_META = {
