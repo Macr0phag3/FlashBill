@@ -4,7 +4,7 @@
 处理分类的页面展示和 API 操作。
 """
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
-from core.utils import load_categories, save_categories
+from core.utils import load_categories, save_categories, load_category_meta, save_category_meta
 
 # ==================== Blueprint 配置 ====================
 categories_bp = Blueprint('categories', __name__)
@@ -51,7 +51,11 @@ def handle_categories():
 @categories_bp.route("/api/categories", methods=["GET"])
 def get_categories():
     """获取所有分类"""
-    return jsonify({"success": True, "categories": load_categories()})
+    return jsonify({
+        "success": True, 
+        "categories": load_categories(),
+        "meta": load_category_meta()
+    })
 
 
 @categories_bp.route("/api/categories", methods=["POST"])
@@ -65,6 +69,13 @@ def update_categories():
             return jsonify({"success": False, "message": "无效的数据格式"}), 400
         
         save_categories(categories)
+        
+        # 保存元数据（如果有）
+        if "meta" in data:
+            meta = data.get("meta", {})
+            if isinstance(meta, dict):
+                save_category_meta(meta)
+        
         return jsonify({"success": True, "message": "分类和标签更新成功"})
     
     except Exception as e:

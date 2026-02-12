@@ -70,7 +70,7 @@
 
         <!-- 账单表格 -->
         <div class="table-container">
-            <el-table :data="paginatedBills" style="width: 100%" border stripe :max-height="560"
+            <el-table :data="paginatedBills" style="width: 100%" stripe :max-height="560"
                 @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
                 v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">

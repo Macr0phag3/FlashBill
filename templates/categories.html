@@ -3,12 +3,57 @@
 {% block head %}
 {{ super() }}
 <!-- 注：Vue/Element Plus 已在 base.html 引入，此处仅引入额外样式 -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/element-plus/element-plus.css') }}" />
+<style>
+    /* 默认颜色的 ColorPicker 样式 (当值为 null/空时显示蓝色) */
+    .el-color-picker.default-color .el-color-picker__trigger {
+        border-color: var(--el-color-primary);
+    }
+
+    .el-color-picker.default-color .el-color-picker__color {
+        border-color: var(--el-color-primary);
+    }
+
+    .el-color-picker.default-color .el-color-picker__color-inner {
+        background-color: var(--el-color-primary) !important;
+    }
+
+    /* 隐藏颜色选择器右侧图标（下箭头/清空） */
+    .el-color-picker .el-color-picker__icon {
+        display: none;
+    }
+
+    .el-color-picker .el-color-picker__trigger {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* 标签关闭图标颜色跟随文字颜色 (仅限自定义颜色的标签) */
+    .el-tag.is-custom-color .el-tag__close {
+        color: inherit !important;
+    }
+
+    .el-tag.is-custom-color .el-tag__close:hover {
+        background-color: var(--tag-bg-color) !important;
+        color: var(--tag-icon-color) !important;
+    }
+
+    .icon-picker-btn,
+    .icon-picker-btn:hover,
+    .icon-picker-btn:focus,
+    .icon-picker-btn:active {
+        border: none !important;
+        box-shadow: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block page_loader %}
+{% include 'loader.html' %}
 {% endblock %}
 
 {% block content %}
 <!-- ==================== 分类管理界面 ==================== -->
-<div id="app">
+<div id="app" v-cloak>
     <el-card class="mb-3">
         <template #header>
             <div class="d-flex justify-content-between align-items-center">
@@ -21,12 +66,45 @@
         </template>
 
         <!-- 分类表格 -->
-        <div class="categories-table-container">
-            <el-table :data="categories" style="width: 100%" border stripe height="100%">
+        <div class="categories-table-container" v-loading="loading">
+            <el-table :data="categories" style="width: 100%" stripe height="100%">
                 <!-- 分类名称列 -->
-                <el-table-column label="分类名称" width="120" align="center" header-align="center">
+                <el-table-column label="分类名称" width="180" align="center" header-align="center">
                     <template #default="scope">
-                        <el-input v-model="scope.row.name" size="small" placeholder="请输入分类名称"></el-input>
+                        <div class="d-flex align-items-center gap-2">
+                            <el-popover trigger="click" placement="bottom-start" :width="260"
+                                @show="handleIconPopoverShow(scope.$index)">
+                                <template #reference>
+                                    <el-button size="small" circle class="icon-picker-btn">
+                                        <el-icon size="16" :style="{ color: scope.row.color || defaultTagColor }">
+                                            <component :is="scope.row.icon || defaultCategoryIcon" />
+                                        </el-icon>
+                                    </el-button>
+                                </template>
+                                <div class="d-flex align-items-center gap-2">
+                                    <el-color-picker v-model="scope.row.color" size="small" :teleported="false"
+                                        :class="{ 'default-color': !scope.row.color }"></el-color-picker>
+                                    <el-select v-model="scope.row.icon" placeholder="选择图标" filterable clearable
+                                        size="small" style="flex: 1" :teleported="false"
+                                        :ref="el => setIconSelectRef(scope.$index, el)">
+                                        <el-option v-for="iconName in iconList" :key="iconName" :label="iconName"
+                                            :value="iconName">
+                                            <span style="float: left">
+                                                <el-icon>
+                                                    <component :is="iconName" />
+                                                </el-icon>
+                                            </span>
+                                            <span
+                                                style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                                                [[ iconName ]]
+                                            </span>
+                                        </el-option>
+                                    </el-select>
+                                </div>
+                            </el-popover>
+                            <el-input v-model="scope.row.name" size="small" placeholder="请输入分类名称"
+                                style="width: 96px"></el-input>
+                        </div>
                     </template>
                 </el-table-column>
 
@@ -37,9 +115,10 @@
                             <div class="d-flex flex-wrap align-items-center gap-2" style="flex: 1;">
                                 <el-tag v-for="(tag, tagIndex) in scope.row.tags" :key="tagIndex" closable
                                     :type="getTagType(scope.row.name, tag)"
-                                    :class="{ 'tag-deleted': isDeletedTag(scope.row.name, tag) }"
-                                    :style="isDeletedTag(scope.row.name, tag) ? { opacity: 0.7 } : {}"
-                                    @close="handleTagClose(scope.$index, tagIndex, scope.row.name, tag)"
+                                    :style="getTagStyle(scope.row.name, tag, scope.row.color)" :class="{ 
+                                        'tag-deleted': isDeletedTag(scope.row.name, tag),
+                                        'is-custom-color': !getTagType(scope.row.name, tag) && scope.row.color 
+                                    }" @close="handleTagClose(scope.$index, tagIndex, scope.row.name, tag)"
                                     class="tag-item">
                                     [[ tag ]]
                                 </el-tag>
@@ -68,15 +147,47 @@
 
 <!-- ==================== Vue 应用逻辑 ==================== -->
 <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, onMounted, nextTick } = Vue;
     const { ElMessage, ElMessageBox } = ElementPlus;
+    // 获取所有 Element Plus 图标组件
+    const ElementPlusIcons = ElementPlusIconsVue;
 
     const app = createApp({
         delimiters: ['[[', ']]'],
         setup() {
             const categories = ref([]);
+            const loading = ref(false);
             const newTagItems = ref(new Set()); // 追踪新增的标签项
             const deletedTagItems = ref(new Set()); // 追踪软删除的标签项
+            const iconSelectRefs = ref({});
+
+            // 图标列表（从 ElementPlusIconsVue 获取所有图标名称）
+            const iconList = Object.keys(ElementPlusIcons);
+            const defaultCategoryIcon = iconList.includes('Coin') ? 'Coin' : 'Grid';
+            const defaultTagColor = '#409EFF';
+
+            const setIconSelectRef = (index, el) => {
+                if (el) {
+                    iconSelectRefs.value[index] = el;
+                } else {
+                    delete iconSelectRefs.value[index];
+                }
+            };
+
+            const handleIconPopoverShow = (index) => {
+                nextTick(() => {
+                    const selectRef = iconSelectRefs.value[index];
+                    if (selectRef?.focus) selectRef.focus();
+                });
+            };
+
+            const runWhenIdle = (fn) => {
+                if (window.requestIdleCallback) {
+                    window.requestIdleCallback(fn, { timeout: 500 });
+                } else {
+                    setTimeout(fn, 0);
+                }
+            };
 
             // ==================== API 辅助函数 ====================
 
@@ -101,13 +212,27 @@
             // ==================== 数据加载 ====================
 
             /** 获取分类数据 */
-            const fetchCategories = async () => {
-                const data = await apiCall('get', '/api/categories');
-                if (data) {
-                    categories.value = Object.entries(data.categories).map(([name, tags]) => ({
-                        name, tags, inputVisible: false, inputValue: ''
-                    }));
-                    await checkCategoriesDiff(data.categories);
+            const fetchCategories = async (assign = true, withDiff = true) => {
+                loading.value = true;
+                try {
+                    const data = await apiCall('get', '/api/categories');
+                    if (data) {
+                        const meta = data.meta || {};
+                        const processed = Object.entries(data.categories).map(([name, tags]) => ({
+                            name,
+                            tags,
+                            icon: meta[name]?.icon || defaultCategoryIcon,
+                            color: meta[name]?.color || defaultTagColor,
+                            inputVisible: false,
+                            inputValue: ''
+                        }));
+                        if (assign) categories.value = processed;
+                        if (withDiff) await checkCategoriesDiff(data.categories);
+                        return { processed, rawCategories: data.categories };
+                    }
+                    return { processed: [], rawCategories: {} };
+                } finally {
+                    loading.value = false;
                 }
             };
 
@@ -221,7 +346,14 @@
 
             /** 添加新分类 */
             const addCategory = () => {
-                categories.value.unshift({ name: '', tags: [], inputVisible: false, inputValue: '' });
+                categories.value.unshift({
+                    name: '',
+                    tags: [],
+                    icon: defaultCategoryIcon,
+                    color: defaultTagColor,
+                    inputVisible: false,
+                    inputValue: ''
+                });
             };
 
             /** 删除分类 */
@@ -293,16 +425,59 @@
                 return '';
             };
 
+            /** Hex 转 RGBA 辅助函数 */
+            const hexToRgba = (hex, alpha) => {
+                let c;
+                if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                    c = hex.substring(1).split('');
+                    if (c.length == 3) {
+                        c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                    }
+                    c = '0x' + c.join('');
+                    return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+                }
+                return hex; // 如果已经是 rgba 或无效 hex，直接返回
+            }
+
+            /** 获取标签样式 (自定义颜色适配) */
+            const getTagStyle = (catName, tag, color) => {
+                const type = getTagType(catName, tag);
+                if (type) {
+                    return isDeletedTag(catName, tag) ? { opacity: 0.7 } : {};
+                }
+                const effectiveColor = color || defaultTagColor;
+                return {
+                    backgroundColor: hexToRgba(effectiveColor, 0.1),
+                    borderColor: hexToRgba(effectiveColor, 0.3),
+                    color: effectiveColor,
+                    '--tag-bg-color': hexToRgba(effectiveColor, 0.1), // 标签背景色，供 hover 使用
+                    '--tag-icon-color': effectiveColor // 标签文字颜色，供 hover 使用
+                };
+            };
+
             /** 保存分类到服务器 */
             const saveCategories = async () => {
                 const data = {};
+                const meta = {};
+
                 // 保存时过滤掉软删除的标签
                 categories.value.forEach(c => {
                     if (c.name.trim()) {
-                        data[c.name.trim()] = c.tags.filter(tag => !deletedTagItems.value.has(`${c.name}_${tag}`));
+                        const name = c.name.trim();
+                        data[name] = c.tags.filter(tag => !deletedTagItems.value.has(`${c.name}_${tag}`));
+
+                        // 收集元数据
+                        meta[name] = {
+                            icon: c.icon || defaultCategoryIcon,
+                            color: c.color || defaultTagColor
+                        };
                     }
                 });
-                const result = await apiCall('post', '/api/categories', { categories: data }, '保存成功');
+
+                const result = await apiCall('post', '/api/categories', {
+                    categories: data,
+                    meta: meta
+                }, '保存成功');
                 if (result) {
                     newTagItems.value.clear(); // 清空新增标签追踪
                     deletedTagItems.value.clear(); // 清空删除标签追踪
@@ -312,13 +487,85 @@
 
             // ==================== 生命周期 ====================
 
-            onMounted(fetchCategories);
+            onMounted(async () => {
+                const loader = document.getElementById('page-loader');
+                try {
+                    const { processed, rawCategories } = await fetchCategories(false, false);
+                    categories.value = [];
+                    loading.value = true;
 
-            return { categories, addCategory, removeCategory, showInput, handleInputConfirm, removeTag, restoreTag, handleTagClose, saveCategories, isNewTag, isDeletedTag, getTagType };
+                    // 先渲染基础行（不带 tags），降低首屏 DOM 压力
+                    const staged = processed.map((item) => ({
+                        ...item,
+                        __pendingTags: item.tags,
+                        tags: []
+                    }));
+
+                    // 参考 rules 页面：分块渲染，避免一次性渲染导致主线程卡顿
+                    const CATEGORY_CHUNK_SIZE = 2;
+                    const TAG_CHUNK_SIZE = 2;
+                    let currentIndex = 0;
+                    const renderCategoryChunk = () => {
+                        if (currentIndex < staged.length) {
+                            const chunk = staged.slice(currentIndex, currentIndex + CATEGORY_CHUNK_SIZE);
+                            categories.value.push(...chunk);
+                            currentIndex += CATEGORY_CHUNK_SIZE;
+                            requestAnimationFrame(renderCategoryChunk);
+                            return;
+                        }
+
+                        // 第二阶段：分块回填 tags，进一步平滑渲染
+                        let tagIndex = 0;
+                        const renderTagChunk = () => {
+                            const end = Math.min(tagIndex + TAG_CHUNK_SIZE, categories.value.length);
+                            for (let i = tagIndex; i < end; i++) {
+                                const row = categories.value[i];
+                                if (row && row.__pendingTags) {
+                                    row.tags = row.__pendingTags;
+                                    delete row.__pendingTags;
+                                }
+                            }
+                            tagIndex = end;
+                            if (tagIndex < categories.value.length) {
+                                requestAnimationFrame(renderTagChunk);
+                                return;
+                            }
+
+                            loading.value = false;
+
+                            if (loader) {
+                                loader.style.opacity = '0';
+                                setTimeout(() => loader.style.display = 'none', 300);
+                            }
+
+                            // 避免在 loader 动画期间做额外计算，延后到空闲时执行差异检查
+                            runWhenIdle(() => checkCategoriesDiff(rawCategories));
+                        };
+
+                        requestAnimationFrame(renderTagChunk);
+                    };
+
+                    requestAnimationFrame(renderCategoryChunk);
+                } catch (e) {
+                    console.error('Initial load failed', e);
+                    loading.value = false;
+                    if (loader) loader.style.display = 'none';
+                }
+            });
+
+            return {
+                categories, loading, addCategory, removeCategory, showInput, handleInputConfirm, removeTag, restoreTag,
+                handleTagClose, saveCategories, isNewTag, isDeletedTag, getTagType, iconList, getTagStyle,
+                setIconSelectRef, handleIconPopoverShow, defaultCategoryIcon, defaultTagColor
+            };
         }
     });
 
     app.use(ElementPlus);
+    // 注册所有图标组件
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+        app.component(key, component)
+    }
     app.mount('#app');
 </script>
 {% endblock %}

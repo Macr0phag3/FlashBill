@@ -24,6 +24,7 @@ from core.config import (
     WECHAT_FIELD_MAPPING,
     RULES_FILE,
     CATEGORIES_FILE,
+    CATEGORIES_META_FILE,
     # OpenAI 配置
     OPENAI_API_KEY,
     OPENAI_BASE_URL,
@@ -69,6 +70,16 @@ def load_categories() -> dict:
 def save_categories(categories: dict) -> None:
     """保存分类配置"""
     _save_json(CATEGORIES_FILE, categories, indent=4)
+
+
+def load_category_meta() -> dict:
+    """加载分类元数据（图标、颜色）"""
+    return _load_json(CATEGORIES_META_FILE, {})
+
+
+def save_category_meta(meta: dict) -> None:
+    """保存分类元数据（图标、颜色）"""
+    _save_json(CATEGORIES_META_FILE, meta, indent=4)
 
 
 # ==================== 自定义异常 ====================

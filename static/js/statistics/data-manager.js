@@ -37,6 +37,7 @@ const useStatisticsData = () => {
     const tagOptions = Vue.ref([]);
     const allTags = Vue.ref([]);
     const categoryTagMap = Vue.ref({});
+    const categoryMeta = Vue.ref({});
 
     // 筛选标签（用于界面展示）
     const filterTags = Vue.computed(() => {
@@ -159,13 +160,33 @@ const useStatisticsData = () => {
     };
 
     /**
+     * 加载分类元数据（图标、颜色）
+     */
+    const loadCategoryMeta = async () => {
+        try {
+            const response = await fetch('/api/categories');
+            const data = await response.json();
+            if (data.success && data.meta && typeof data.meta === 'object') {
+                categoryMeta.value = data.meta;
+                return;
+            }
+        } catch (error) {
+            console.warn('加载分类元数据失败:', error);
+        }
+        categoryMeta.value = {};
+    };
+
+    /**
      * 从后端加载数据
      */
     const loadData = async (params = {}) => {
         loading.value = true;
         try {
             const query = new URLSearchParams(params).toString();
-            const response = await fetch(`/api/statistics?${query}`);
+            const [response] = await Promise.all([
+                fetch(`/api/statistics?${query}`),
+                loadCategoryMeta()
+            ]);
             const data = await response.json();
 
             if (data.success) {
@@ -235,6 +256,7 @@ const useStatisticsData = () => {
         bookOptions,
         categoryOptions,
         tagOptions,
+        categoryMeta,
         filterTags,
         loadData,
         handleFilter,

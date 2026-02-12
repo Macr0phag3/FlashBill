@@ -28,7 +28,7 @@
 
         <!-- 规则表格 -->
         <div class="rules-table-container">
-            <el-table :data="rules" style="width: 100%" border stripe :max-height="656" @sort-change="handleSortChange"
+            <el-table :data="rules" style="width: 100%" stripe :max-height="656" @sort-change="handleSortChange"
                 :row-key="(row, index) => index">
                 <!-- 优先级列 -->
                 <el-table-column label="优先级" width="95" align="center" fixed="left" sortable="custom" prop="priority">

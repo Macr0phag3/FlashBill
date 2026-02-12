@@ -19,6 +19,7 @@ PROGRESS_FILE = DATA_DIR / "bills.process"
 # 配置文件路径
 RULES_FILE = DATA_DIR / "rules.json"
 CATEGORIES_FILE = DATA_DIR / "categories.json"
+CATEGORIES_META_FILE = DATA_DIR / "categories_meta.json"
 DB_FILE = DATA_DIR / "DB.xlsx"
 
 

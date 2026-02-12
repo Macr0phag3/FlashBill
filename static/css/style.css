@@ -19,6 +19,20 @@
     --shadow-color: rgba(0, 0, 0, 0.1);
     --font-primary: 'fusion-pixel', 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
     --el-font-family: var(--font-primary);
+    --el-border-radius-base: 0.625rem !important;
+}
+
+.el-dialog,
+.el-message-box {
+    border-radius: 1.5rem !important;
+}
+
+.el-popper {
+    border-radius: 0.625rem !important;
+}
+
+.el-tag {
+    border-radius: 0.45rem !important;
 }
 
 body {
@@ -149,7 +163,7 @@ html.dark {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    border-radius: 50px;
+    border-radius: 2rem;
     display: flex;
     align-items: center;
     padding: 0 20px;
@@ -808,13 +822,23 @@ html.dark .el-button--info.is-disabled:hover {
 /* ==================== Dark Mode for Element Plus Tables ==================== */
 
 html.dark .el-table {
-    --el-table-bg-color: #1d1d1d;
-    --el-table-tr-bg-color: #1d1d1d;
-    --el-table-header-bg-color: #262626;
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: transparent;
     --el-table-header-text-color: #e5eaf3;
     --el-table-row-hover-bg-color: #363636;
     --el-text-color-regular: #cfd3dc;
     --el-text-color-primary: #e5eaf3;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background: transparent;
+}
+
+/* 统一表格 hover 效果，避免 striped 行被透明背景覆盖 */
+.el-table__body tr:hover>td.el-table__cell,
+.el-table__body tr.hover-row>td.el-table__cell {
+    background-color: var(--el-table-row-hover-bg-color) !important;
 }
 
 /* ==================== Statistics Page Styles ==================== */
@@ -968,7 +992,7 @@ body>.container.mt-4 {
 .el-card {
     margin-bottom: 20px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.298);
-    border-radius: 20px !important;
+    border-radius: 2rem !important;
 }
 
 html.dark .el-card {
@@ -1371,4 +1395,18 @@ html.dark .timeline-item-card:hover {
 .el-tabs__item {
     font-size: 16px !important;
     font-weight: 500;
+}
+
+/* 去除频率排序下拉框的边框 */
+.freq-sort-select .el-input__wrapper {
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    /* 预留 1px 边框位，防止抖动 */
+}
+
+/* 去除 hover/focus 时的边框高亮 */
+.freq-sort-select .el-input__wrapper:hover,
+.freq-sort-select .el-input__wrapper.is-focus {
+    border: 1px solid var(--el-border-color) !important;
 }

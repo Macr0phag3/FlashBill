@@ -44,6 +44,12 @@ def tagging():
     return render_template("tagging.html")
 
 
+@app.route("/books")
+def books():
+    """账本管理页面"""
+    return render_template("books.html")
+
+
 # ==================== 启动应用 ====================
 if __name__ == "__main__":
     app.run(

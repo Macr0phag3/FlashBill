@@ -91,11 +91,11 @@
             <div style="position: relative;">
                 <!-- 频率排序控件 (仅在表格 Tab 显示) -->
                 <div v-show="activeTab === 'table'"
-                    style="position: absolute; right: 0; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px;">
+                    style="position: absolute; right: 0; top: 5px; z-index: 10; display: flex; align-items: center; gap: 10px;">
                     <el-checkbox v-model="tableFreqSortEmptyLast" label="空值置底" size="default"
                         @change="handleTableSearch" v-show="tableFreqSortField"></el-checkbox>
                     <el-select v-model="tableFreqSortField" placeholder="频率排序：无" style="width: 150px" clearable
-                        @change="handleTableSearch" size="default">
+                        @change="handleTableSearch" size="default" class="freq-sort-select">
                         <el-option label="频率排序：无" value=""></el-option>
                         <el-option label="按交易对方频率" value="counter_party"></el-option>
                         <el-option label="按商品说明频率" value="goods_desc"></el-option>
@@ -110,7 +110,7 @@
 
                 <el-tabs v-model="activeTab">
                     <el-tab-pane label="数据表格" name="table">
-                        <el-table :data="tableData" style="width: 100%" border stripe v-loading="loading"
+                        <el-table :data="tableData" style="width: 100%" stripe v-loading="loading"
                             height="calc(100vh - 340px)" @sort-change="handleSortChange"
                             :default-sort="{prop: 'date', order: 'descending'}">
                             <el-table-column type="index" label="序号" width="60" align="center"
@@ -129,9 +129,29 @@
                                     </span>
                                 </template>
                             </el-table-column>
-                            <el-table-column prop="category" label="类别" min-width="80" align="center" sortable="custom">
+                            <el-table-column prop="category" label="类别" min-width="60" align="left" sortable="custom">
+                                <template #default="{ row }">
+                                    <span v-if="row.category"
+                                        style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px;">
+                                        <el-tag size="default" effect="plain"
+                                            :style="getCategoryIconTagStyle(row.category)">
+                                            <el-icon size="16">
+                                                <component :is="getCategoryIconComponent(row.category)" />
+                                            </el-icon>
+                                        </el-tag>
+                                        <span style="color: var(--el-text-color-primary);" v-text="row.category"></span>
+                                    </span>
+                                    <span v-else style="color: var(--el-text-color-primary);">-</span>
+                                </template>
                             </el-table-column>
                             <el-table-column prop="tag" label="标签" min-width="80" align="center" sortable="custom">
+                                <template #default="{ row }">
+                                    <el-tag v-if="row.tag" size="default" effect="plain"
+                                        :style="getCategoryTagStyle(row.category)">
+                                        <span v-text="row.tag"></span>
+                                    </el-tag>
+                                    <span v-else>-</span>
+                                </template>
                             </el-table-column>
                             <el-table-column prop="counter_party" label="交易对方" min-width="180" align="center"
                                 sortable="custom">
@@ -144,7 +164,7 @@
                             <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
                                 <template #default="{ row }">
                                     <el-tag v-if="row.book" :type="getBookTagType(row.book)" effect="light"
-                                        size="small">
+                                        size="default">
                                         <span v-text="row.book"></span>
                                     </el-tag>
                                 </template>
@@ -295,8 +315,8 @@
                                 <!-- 时间跨度统计 -->
                                 <div class="time-span-container"
                                     style="flex: 1; min-width: 300px; height: calc(100vh - 293px); overflow: auto; margin: 0; padding: 0;">
-                                    <el-table :data="timeSpanData" style="width: 100%; margin: 0; padding: 0;" border
-                                        stripe height="100%">
+                                    <el-table :data="timeSpanData" style="width: 100%; margin: 0; padding: 0;" stripe
+                                        height="100%">
                                         <el-table-column prop="label" label="统计项" min-width="150"
                                             align="center"></el-table-column>
                                         <el-table-column prop="value" label="数值" min-width="120" align="center">
@@ -309,8 +329,8 @@
                                 <!-- 结果显示 - 使用表格 -->
                                 <div class="average-table-container"
                                     style="flex: 2; min-width: 500px; height: calc(100vh - 288px); overflow: auto; margin: 0; padding: 0;">
-                                    <el-table :data="averageResults" style="width: 100%; margin: 0; padding: 0;" border
-                                        stripe v-loading="loading" height="100%">
+                                    <el-table :data="averageResults" style="width: 100%; margin: 0; padding: 0;" stripe
+                                        v-loading="loading" height="100%">
                                         <el-table-column prop="name"
                                             :label="averageResults.length > 0 ? averageResults[0].nameLabel : '名称'"
                                             min-width="150" align="center">
@@ -411,10 +431,64 @@
                 loading,
                 filterForm,
                 yearOptions, monthOptions, bookOptions, categoryOptions, tagOptions,
+                categoryMeta,
                 filterTags,
                 loadData,
                 handleFilter, handleCategoryChange, resetFilter, removeFilterTag
             } = useStatisticsData();
+
+            const defaultCategoryColor = '#409EFF';
+            const fallbackCategoryIconComponent =
+                ElementPlusIconsVue.Coin || ElementPlusIconsVue.Grid || ElementPlusIconsVue.CollectionTag;
+
+            const getCategoryColor = (category) => {
+                if (!category) return defaultCategoryColor;
+                return categoryMeta.value?.[category]?.color || defaultCategoryColor;
+            };
+
+            const getCategoryIconComponent = (category) => {
+                if (!category) return fallbackCategoryIconComponent;
+                const iconName = categoryMeta.value?.[category]?.icon;
+                if (!iconName) return fallbackCategoryIconComponent;
+                const filledIcon = ElementPlusIconsVue[`${iconName}Filled`];
+                return filledIcon || ElementPlusIconsVue[iconName] || fallbackCategoryIconComponent;
+            };
+
+            const hexToRgba = (hex, alpha) => {
+                if (!hex) return `rgba(64,158,255,${alpha})`;
+                const normalized = hex.replace('#', '');
+                if (!/^[0-9A-Fa-f]{6}$/.test(normalized)) return hex;
+                const bigint = parseInt(normalized, 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return `rgba(${r},${g},${b},${alpha})`;
+            };
+
+            const getCategoryTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: color,
+                    borderColor: hexToRgba(color, 0.35),
+                    backgroundColor: hexToRgba(color, 0.1)
+                };
+            };
+
+            const getCategoryIconTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: '#FFFFFF',
+                    borderColor: color,
+                    backgroundColor: color,
+                    width: '24px',
+                    height: '24px',
+                    padding: '0',
+                    borderRadius: '2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                };
+            };
 
             // --- Tab 状态管理 ---
             // 持久化用户最后选择的 Tab
@@ -634,7 +708,8 @@
                 averageResults, timeSpanData, // Analysis
 
                 // Utils
-                formatDate, formatTime, formatAmount, getBookTagType
+                formatDate, formatTime, formatAmount, getBookTagType,
+                getCategoryColor, getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle
             };
         }
     });
