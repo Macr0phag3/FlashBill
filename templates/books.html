@@ -395,7 +395,7 @@
                             </template>
                         </el-table-column>
 
-                        <el-table-column label="固定配额" width="150" align="left" header-align="center">
+                        <el-table-column label="每月配额" width="150" align="left" header-align="center">
                             <template #default="scope">
                                 <div class="d-flex align-items-center gap-2" style="padding-left: 6px;">
                                     <el-input-number
@@ -466,9 +466,12 @@
                                 </div>
                                 <div class="score-stats">
                                     <div class="score-stat-line">
-                                        <span>累计月数</span><b>[[ activeMonthCount ]]</b>
-                                        <span>累计注入</span><b>[[ formatAmount(item.inflow) ]]</b>
-                                        <span>累计流出</span><b>[[ formatAmount(item.outflow) ]]</b>
+                                        <span>累计月数: </span><b>[[ activeMonthCount ]]</b>
+                                        <span>累计流出: </span><b>[[ formatAmount(item.outflow) ]]</b>
+                                        <span>剩余额度: </span>
+                                        <b
+                                            :style="{ color: item.remaining >= 0 ? 'var(--el-color-success)' : 'var(--el-color-danger)' }">[[
+                                            formatAmount(item.remaining) ]]</b>
                                     </div>
                                 </div>
                             </div>
