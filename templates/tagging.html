@@ -105,7 +105,10 @@
                         <el-input-number v-if="isEditing" v-model="scope.row.金额" :precision="2" :step="0.01"
                             size="small" @change="markModified(scope.row)" style="width: 90px"
                             :controls="false"></el-input-number>
-                        <span v-else>[[ formatAmount(scope.row.金额) ]]</span>
+                        <span v-else
+                            v-bind:style="{ color: scope.row.金额 < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
+                            <span>[[ formatAmount(scope.row.金额) ]]</span>
+                        </span>
                     </template>
                 </el-table-column>
                 <!-- 类别列 -->
@@ -116,7 +119,16 @@
                             @change="handleCategoryChange(scope.row)" filterable>
                             <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                         </el-select>
-                        <span v-else>[[ scope.row.类别 ]]</span>
+                        <span v-else-if="scope.row.类别"
+                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <el-tag size="default" effect="plain" :style="getCategoryIconTagStyle(scope.row.类别)">
+                                <el-icon size="16">
+                                    <component :is="getCategoryIconComponent(scope.row.类别)" />
+                                </el-icon>
+                            </el-tag>
+                            <span style="color: var(--el-text-color-primary);">[[ scope.row.类别 ]]</span>
+                        </span>
+                        <span v-else></span>
                     </template>
                 </el-table-column>
                 <!-- 标签列 -->
@@ -128,7 +140,12 @@
                             <el-option v-for="tag in getTagsForCategory(scope.row.类别)" :key="tag" :label="tag"
                                 :value="tag"></el-option>
                         </el-select>
-                        <span v-else>[[ scope.row.标签 ]]</span>
+                        <el-tag v-else-if="scope.row.标签 && scope.row.标签 !== '-'" size="default" effect="plain"
+                            :style="getCategoryTagStyle(scope.row.类别)">
+                            <span>[[ scope.row.标签 ]]</span>
+                        </el-tag>
+                        <span v-else-if="scope.row.标签 === '-'">[[ scope.row.标签 ]]</span>
+                        <span v-else></span>
                     </template>
                 </el-table-column>
                 <!-- 其他列 -->
@@ -369,6 +386,7 @@
             // 分类数据
             const categories = ref([]);
             const categoryTags = ref({});
+            const categoryMeta = ref({});
 
             // 分页状态
             const currentPage = ref(1);
@@ -448,6 +466,59 @@
                 const range = getMealTimeRange(meal);
                 if (meal === '夜宵') return (h >= 20 && h < 24) || (h >= 0 && h < 3);
                 return h >= range[0] && h < range[1];
+            };
+
+            const defaultCategoryColor = '#409EFF';
+            const fallbackCategoryIconComponent =
+                ElementPlusIconsVue.Coin || ElementPlusIconsVue.Grid || ElementPlusIconsVue.CollectionTag;
+
+            const getCategoryColor = (category) => {
+                if (!category) return defaultCategoryColor;
+                return categoryMeta.value?.[category]?.color || defaultCategoryColor;
+            };
+
+            const getCategoryIconComponent = (category) => {
+                if (!category) return fallbackCategoryIconComponent;
+                const iconName = categoryMeta.value?.[category]?.icon;
+                if (!iconName) return fallbackCategoryIconComponent;
+                const filledIcon = ElementPlusIconsVue[`${iconName}Filled`];
+                return filledIcon || ElementPlusIconsVue[iconName] || fallbackCategoryIconComponent;
+            };
+
+            const hexToRgba = (hex, alpha) => {
+                if (!hex) return `rgba(64,158,255,${alpha})`;
+                const normalized = hex.replace('#', '');
+                if (!/^[0-9A-Fa-f]{6}$/.test(normalized)) return hex;
+                const bigint = parseInt(normalized, 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return `rgba(${r},${g},${b},${alpha})`;
+            };
+
+            const getCategoryTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: color,
+                    borderColor: hexToRgba(color, 0.35),
+                    backgroundColor: hexToRgba(color, 0.1)
+                };
+            };
+
+            const getCategoryIconTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: '#FFFFFF',
+                    borderColor: color,
+                    backgroundColor: color,
+                    width: '24px',
+                    height: '24px',
+                    padding: '0',
+                    borderRadius: '2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                };
             };
 
             /** 搜索匹配 */
@@ -561,6 +632,7 @@
                 if (data) {
                     categories.value = Object.keys(data.categories);
                     categoryTags.value = data.categories;
+                    categoryMeta.value = data.meta || {};
                 }
             };
 
@@ -893,7 +965,9 @@
 
             // ==================== 生命周期 ====================
 
-            onMounted(checkProgress);
+            onMounted(async () => {
+                await Promise.all([checkProgress(), fetchCategories()]);
+            });
 
             // ==================== 返回模板绑定 ====================
 
@@ -924,6 +998,7 @@
                 handleExport, handleClearCache,
                 resetFilters, frequencySortField, // 导出
                 filterCategory, filterTag, formatAmount,
+                getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle,
                 UploadFilled, Plus, WarningFilled
             };
         }
