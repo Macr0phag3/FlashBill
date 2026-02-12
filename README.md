@@ -6,7 +6,9 @@
 
 自动化 & 智能化的记账助手，基于 Python Flask + Vue 3 + Element Plus 的个人记账分析工具。支持支付宝/微信账单导入、自动规则打标、AI 智能分类以及多维度统计分析。
 
-（本项目属于 vibe coding 项目，基于 Antigravity 与内置 LLM 协作开发）
+（本项目属于 vibe coding 的一个项目，基于 Antigravity 以及各种 LLM 开发，配套的文章见: [🚧 施工中]
+
+~~有什么 bug 和大模型说去吧~~
 
 ## 🤖 AI Native & Robust Testing
 
