@@ -13,6 +13,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/element-plus/element-plus-dark.css') }}">
     <!-- 自定义样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- 页面专属样式（统一前置加载，确保主题样式可覆盖） -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/books.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/categories.css') }}">
+    <!-- 当前激活主题样式（由主题初始化脚本动态更新 href） -->
+    <link rel="stylesheet" id="app-theme-style" href="{{ url_for('static', filename='themes/light/theme.css') }}">
 
     <!-- ==================== 脚本库 ==================== -->
     <script src="{{ url_for('static', filename='vendor/vue/vue.global.js') }}"></script>
@@ -20,13 +26,16 @@
     <script src="{{ url_for('static', filename='vendor/element-plus/icons-vue.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/axios/axios.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
 
     <!-- ==================== 主题初始化（防止闪烁，需在 body 渲染前执行） ==================== -->
     <script>
+        window.__STATIC_BASE_URL__ = "{{ url_for('static', filename='') }}";
+        window.__THEME_REGISTRY__ = {{ theme_registry | tojson }};
+
         (function () {
-            const theme = localStorage.getItem('theme') || 'light';
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
+            if (window.ThemeManager) {
+                window.ThemeManager.bootstrap();
             }
         })();
     </script>
@@ -42,44 +51,38 @@
     <!-- ==================== 导航栏 ==================== -->
     <header class="app-header-wrapper">
         <div class="header-split-container">
-            <!-- 岛屿 1: Logo -->
-            <a href="/" class="nav-island island-logo">
-                记账助手
-            </a>
+            <div class="header-left-group">
+                <!-- 岛屿 1: Logo -->
+                <a href="/" class="nav-island island-logo">
+                    记账助手
+                </a>
+            </div>
 
             <!-- 岛屿 2: 导航菜单 (居中) -->
-            <nav class="nav-island island-menu">
+            <nav class="nav-island island-menu nav-menu">
+                <a href="/" class="nav-link" id="home-tab">首页</a>
                 <a href="/statistics" class="nav-link" id="statistics-tab">统计分析</a>
-                <a href="/tagging" class="nav-link" id="home-tab">新增记账</a>
+                <a href="/tagging" class="nav-link" id="tagging-tab">新增记账</a>
                 <a href="/rules" class="nav-link" id="rules-tab">规则管理</a>
                 <a href="/categories" class="nav-link" id="categories-tab">分类管理</a>
                 <a href="/books" class="nav-link" id="books-tab">账本管理</a>
             </nav>
 
-            <!-- 右侧容器 -->
             <div class="header-right-group">
-                <!-- 岛屿 3: 信息展示 -->
-                <div class="nav-island island-info duration-text" id="record-keeping-duration">
-                </div>
-
-                <!-- 岛屿 4: 主题切换 -->
-                <div class="nav-island island-theme">
-                    <button class="theme-toggle-btn" id="darkModeToggle" type="button" aria-label="切换深色模式">
-                        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                            viewBox="0 0 16 16" fill="currentColor">
-                            <path
-                                d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
-                        </svg>
-                        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                            viewBox="0 0 16 16" fill="currentColor" style="display: none;">
-                            <path
-                                d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z" />
-                        </svg>
-                    </button>
-                </div>
+                <!-- 岛屿 3: 设置按钮（右侧） -->
+                <button class="nav-island island-settings" id="settingsToggleBtn" aria-label="打开设置">
+                    <svg class="settings-gear-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </button>
             </div>
 
-            <!-- 移动端汉堡菜单按钮 (保留但需要重新样式化) -->
+            <!-- 移动端汉堡菜单按钮 -->
             <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="打开菜单">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
                     <path fill-rule="evenodd"
@@ -94,15 +97,46 @@
         {% block content %}{% endblock %}
     </div>
 
+    <!-- ==================== 设置弹窗 ==================== -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-modal">
+            <div class="settings-header">
+                <span class="settings-title">设置</span>
+                <button class="settings-close-btn" id="settingsCloseBtn" aria-label="关闭设置">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="settings-body">
+                <!-- 主题设置区域 -->
+                <div class="settings-section">
+                    <div class="settings-section-title">主题</div>
+                    <div class="settings-section-content" id="settingsThemeSelectContainer">
+                        <el-select v-model="currentTheme" @change="onThemeChange" aria-label="切换主题"
+                            popper-class="settings-theme-popper" style="width: 100%" v-cloak>
+                            <el-option v-for="theme in themes" :key="theme.id" :label="theme.name || theme.id"
+                                :value="theme.id">
+                            </el-option>
+                        </el-select>
+                        <!-- Fallback for non-Vue env -->
+                        <select v-if="false" class="settings-select" id="settingsThemeSelect"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== 页面脚本 ==================== -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            initThemeToggle();
             initActiveNav();
-            initRecordDuration();
             initMobileMenu();
             initLogoAnimation();
             initNavTextGlitch();
+            initSettingsPanel();
         });
 
         /**
@@ -110,8 +144,8 @@
          * 使用事件委托 (Event Delegation) 以支持动态生成的元素 (如 Vue 渲染的 el-tabs)
          */
         function initNavTextGlitch() {
-            // 目标选择器：导航链接、信息岛、以及 Element Plus 的 Tab 标签
-            const selector = '.island-menu .nav-link, .island-info, .el-tabs__item';
+            // 目标选择器：导航链接，以及 Element Plus 的 Tab 标签
+            const selector = '.island-menu .nav-link, .el-tabs__item';
             const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:.=*+-<>";
 
             // 在 body 上监听 mouseover (冒泡)
@@ -224,37 +258,6 @@
         }
 
         /**
-         * 初始化主题切换功能
-         */
-        function initThemeToggle() {
-            const toggle = document.getElementById('darkModeToggle');
-            const html = document.documentElement;
-            const iconMoon = toggle.querySelector('.icon-moon');
-            const iconSun = toggle.querySelector('.icon-sun');
-
-            // 根据当前主题设置图标
-            const updateIcon = () => {
-                const isDark = html.classList.contains('dark');
-                iconMoon.style.display = isDark ? 'none' : 'block';
-                iconSun.style.display = isDark ? 'block' : 'none';
-            };
-            updateIcon();
-
-            // 点击切换主题
-            toggle.addEventListener('click', () => {
-                const isDark = html.classList.contains('dark');
-                if (isDark) {
-                    html.classList.remove('dark');
-                    localStorage.setItem('theme', 'light');
-                } else {
-                    html.classList.add('dark');
-                    localStorage.setItem('theme', 'dark');
-                }
-                updateIcon();
-            });
-        }
-
-        /**
          * 初始化导航栏活动状态
          */
         function initActiveNav() {
@@ -282,7 +285,7 @@
                 el.style.fontSize = ''; // 恢复默认字体大小
                 const days = Math.ceil((new Date() - new Date(firstDate)) / 86400000);
                 const years = (days / 365).toFixed(1);
-                el.textContent = `第一笔账至今 ${days} 天（${years} 年）`;
+                el.textContent = `已记账 ${days} 天（${years} 年）`;
             }
         }
 
@@ -297,6 +300,84 @@
                 menuBtn.addEventListener('click', () => {
                     navMenu.classList.toggle('show');
                 });
+            }
+        }
+
+        /**
+         * 初始化设置面板（弹窗开关 + 主题选择器）
+         */
+        function initSettingsPanel() {
+            const overlay = document.getElementById('settingsOverlay');
+            const toggleBtn = document.getElementById('settingsToggleBtn');
+            const closeBtn = document.getElementById('settingsCloseBtn');
+            if (!overlay || !toggleBtn) return;
+
+            // 打开弹窗
+            const openSettings = () => {
+                overlay.classList.add('is-visible');
+                document.body.style.overflow = 'hidden';
+            };
+
+            // 关闭弹窗
+            const closeSettings = () => {
+                overlay.classList.remove('is-visible');
+                document.body.style.overflow = '';
+            };
+
+            toggleBtn.addEventListener('click', openSettings);
+            if (closeBtn) closeBtn.addEventListener('click', closeSettings);
+
+            // 点击遮罩层关闭
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeSettings();
+            });
+
+            // ESC 键关闭
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && overlay.classList.contains('is-visible')) {
+                    closeSettings();
+                }
+            });
+
+            // 初始化弹窗内的主题选择器（使用 Vue 接管以支持 Element Plus）
+            if (window.Vue && window.ElementPlus && window.ThemeManager) {
+                const settingsApp = Vue.createApp({
+                    setup() {
+                        const themes = Vue.ref([]);
+                        const currentTheme = Vue.ref('');
+
+                        Vue.onMounted(() => {
+                            const registry = window.ThemeManager.getThemes();
+                            themes.value = registry.length > 0 ? registry : [
+                                { id: 'light', name: '默认主题' }
+                            ];
+                            currentTheme.value = window.ThemeManager.getCurrentThemeId();
+
+                            // 监听其他页面可能触发的主题变化
+                            window.addEventListener('app:theme-change', (e) => {
+                                if (e.detail && e.detail.themeId) {
+                                    currentTheme.value = e.detail.themeId;
+                                }
+                            });
+                        });
+
+                        const onThemeChange = (val) => {
+                            window.ThemeManager.applyTheme(val);
+                        };
+
+                        return {
+                            themes,
+                            currentTheme,
+                            onThemeChange
+                        };
+                    }
+                });
+
+                settingsApp.use(window.ElementPlus);
+                settingsApp.mount('#settingsThemeSelectContainer');
+            } else if (window.ThemeManager) {
+                // fall back 到原生初始化
+                window.ThemeManager.initThemeSelector('settingsThemeSelect');
             }
         }
     </script>

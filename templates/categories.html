@@ -3,48 +3,6 @@
 {% block head %}
 {{ super() }}
 <!-- 注：Vue/Element Plus 已在 base.html 引入，此处仅引入额外样式 -->
-<style>
-    /* 默认颜色的 ColorPicker 样式 (当值为 null/空时显示蓝色) */
-    .el-color-picker.default-color .el-color-picker__trigger {
-        border-color: var(--el-color-primary);
-    }
-
-    .el-color-picker.default-color .el-color-picker__color {
-        border-color: var(--el-color-primary);
-    }
-
-    .el-color-picker.default-color .el-color-picker__color-inner {
-        background-color: var(--el-color-primary) !important;
-    }
-
-    /* 隐藏颜色选择器右侧图标（下箭头/清空） */
-    .el-color-picker .el-color-picker__icon {
-        display: none;
-    }
-
-    .el-color-picker .el-color-picker__trigger {
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* 标签关闭图标颜色跟随文字颜色 (仅限自定义颜色的标签) */
-    .el-tag.is-custom-color .el-tag__close {
-        color: inherit !important;
-    }
-
-    .el-tag.is-custom-color .el-tag__close:hover {
-        background-color: var(--tag-bg-color) !important;
-        color: var(--tag-icon-color) !important;
-    }
-
-    .icon-picker-btn,
-    .icon-picker-btn:hover,
-    .icon-picker-btn:focus,
-    .icon-picker-btn:active {
-        border: none !important;
-        box-shadow: none !important;
-    }
-</style>
 {% endblock %}
 
 {% block page_loader %}
@@ -67,7 +25,7 @@
 
         <!-- 分类表格 -->
         <div class="categories-table-container" v-loading="loading">
-            <el-table :data="categories" style="width: 100%" stripe height="100%">
+            <el-table :data="categories" class="categories-table-full" stripe height="100%">
                 <!-- 分类名称列 -->
                 <el-table-column label="分类名称" width="180" align="center" header-align="center">
                     <template #default="scope">
@@ -85,17 +43,16 @@
                                     <el-color-picker v-model="scope.row.color" size="small" :teleported="false"
                                         :class="{ 'default-color': !scope.row.color }"></el-color-picker>
                                     <el-select v-model="scope.row.icon" placeholder="选择图标" filterable clearable
-                                        size="small" style="flex: 1" :teleported="false"
+                                        size="small" class="categories-icon-select" :teleported="false"
                                         :ref="el => setIconSelectRef(scope.$index, el)">
                                         <el-option v-for="iconName in iconList" :key="iconName" :label="iconName"
                                             :value="iconName">
-                                            <span style="float: left">
+                                            <span class="categories-icon-option-left">
                                                 <el-icon>
                                                     <component :is="iconName" />
                                                 </el-icon>
                                             </span>
-                                            <span
-                                                style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                                            <span class="categories-icon-option-right">
                                                 [[ iconName ]]
                                             </span>
                                         </el-option>
@@ -103,7 +60,7 @@
                                 </div>
                             </el-popover>
                             <el-input v-model="scope.row.name" size="small" placeholder="请输入分类名称"
-                                style="width: 96px"></el-input>
+                                class="categories-name-input"></el-input>
                         </div>
                     </template>
                 </el-table-column>
@@ -112,7 +69,7 @@
                 <el-table-column label="标签" header-align="center">
                     <template #default="scope">
                         <div class="d-flex align-items-center gap-2">
-                            <div class="d-flex flex-wrap align-items-center gap-2" style="flex: 1;">
+                            <div class="d-flex flex-wrap align-items-center gap-2 categories-tags-wrap">
                                 <el-tag v-for="(tag, tagIndex) in scope.row.tags" :key="tagIndex" closable
                                     :type="getTagType(scope.row.name, tag)"
                                     :style="getTagStyle(scope.row.name, tag, scope.row.color)" :class="{ 
@@ -125,7 +82,7 @@
                             </div>
                             <el-input v-if="scope.row.inputVisible" v-model="scope.row.inputValue" class="tag-input"
                                 size="small" @keyup.enter="handleInputConfirm(scope.row.name)"
-                                @blur="handleInputConfirm(scope.row.name)" style="width: 100px">
+                                @blur="handleInputConfirm(scope.row.name)">
                             </el-input>
                             <el-button v-else class="button-new-tag" size="small" @click="showInput(scope.$index)">
                                 + 新标签
@@ -240,10 +197,10 @@
 
             /** 差异类型映射 */
             const DIFF_TYPES = {
-                missing_category: { text: '缺失分类', color: 'var(--el-color-danger)' },
-                missing_tags: { text: '缺失标签', color: 'var(--el-color-warning)' },
-                extra_category: { text: '多余分类', color: 'var(--el-color-success)' },
-                extra_tags: { text: '多余标签', color: 'var(--el-color-primary)' }
+                missing_category: { text: '缺失分类' },
+                missing_tags: { text: '缺失标签' },
+                extra_category: { text: '多余分类' },
+                extra_tags: { text: '多余标签' }
             };
 
             /** 检查分类与 DB.xlsx 的差异 */
@@ -303,28 +260,28 @@
                 })[d.type];
 
                 const rows = diffs.map(d => {
-                    const { text, color } = DIFF_TYPES[d.type];
+                    const { text } = DIFF_TYPES[d.type];
                     return `<tr>
-                    <td style="border:1px solid var(--el-border-color);padding:8px">
-                        <span style="color:${color};font-weight:bold">${text}</span>
+                    <td class="categories-diff-cell">
+                        <span class="categories-diff-type categories-diff-type-${d.type}">${text}</span>
                     </td>
-                    <td style="border:1px solid var(--el-border-color);padding:8px">${d.category}</td>
-                    <td style="border:1px solid var(--el-border-color);padding:8px">${getDetail(d)}</td>
+                    <td class="categories-diff-cell">${d.category}</td>
+                    <td class="categories-diff-cell">${getDetail(d)}</td>
                 </tr>`;
                 }).join('');
 
                 const html = `
-                <div style="max-height:400px;overflow-y:auto">
-                    <table style="width:100%;border-collapse:collapse;font-size:12px">
-                        <thead><tr style="background:var(--el-fill-color-light)">
-                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">类型</th>
-                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">分类</th>
-                            <th style="border:1px solid var(--el-border-color);padding:8px;text-align:left">差异详情</th>
+                <div class="categories-diff-wrap">
+                    <table class="categories-diff-table">
+                        <thead><tr class="categories-diff-head-row">
+                            <th class="categories-diff-head">类型</th>
+                            <th class="categories-diff-head">分类</th>
+                            <th class="categories-diff-head">差异详情</th>
                         </tr></thead>
                         <tbody>${rows}</tbody>
                     </table>
                 </div>
-                <div style="margin-top:15px;padding-top:15px;border-top:1px solid var(--el-border-color);color:var(--el-text-color-secondary);font-size:12px">
+                <div class="categories-diff-footer">
                     共发现 ${diffs.length} 处差异
                 </div>`;
 

@@ -1,0 +1,173 @@
+/* 内置浅色主题: 与当前浅色模式保持一致 */
+html[data-theme='light'] {
+    color-scheme: light;
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    --el-font-family: var(--font-primary);
+    --bg-color: #ffffff;
+    --bg-color-secondary: #f5f7fa;
+    --el-dialog-bg-color: rgba(255, 255, 255, 0.75);
+    --el-messagebox-bg-color: rgba(255, 255, 255, 0.75);
+    --text-color: #303133;
+    --text-color-secondary: #303133;
+    --border-color: #dcdfe6;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --theme-picker-border: rgba(0, 119, 255, 0.55);
+    --theme-picker-shadow: rgba(0, 119, 255, 0.35);
+    --theme-picker-text: rgba(0, 119, 255, 0.9);
+    --theme-picker-bg: rgba(255, 255, 255, 0.75);
+
+    --text-muted-color: #909399;
+
+    --nav-island-bg: rgba(255, 255, 255, 0.75);
+    --nav-island-border: 1px solid rgba(0, 0, 0, 0.05);
+    --nav-island-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+
+    --island-logo-text: #ebfc2e;
+    --island-logo-bg: #409eff;
+    --island-logo-shadow: 0 0 20px #409eff;
+
+    --island-menu-bg: var(--nav-island-bg);
+    --island-menu-shadow: 0 0 15px rgba(0, 0, 0, 0.324);
+    --island-menu-border-top: 1px solid transparent;
+
+    --island-info-bg: var(--nav-island-bg);
+    --island-info-shadow: 0 0 20px rgba(0, 0, 0, 0.324);
+    --island-info-border-top: 1px solid transparent;
+
+    --island-theme-bg: transparent;
+    --island-theme-color: rgba(0, 119, 255, 0.75);
+    --island-theme-shadow: 0 0 20px rgba(0, 119, 255, 0.75);
+    --island-theme-border: 1px solid rgba(0, 119, 255, 0.75);
+    --island-theme-hover-shadow: 0 0 10px rgba(0, 119, 255, 0.9);
+    --theme-toggle-btn-color: inherit;
+    --nav-link-active-bg: var(--el-color-primary-light-9);
+
+    --app-card-shadow: 0 0 20px rgba(0, 0, 0, 0.298);
+    --app-card-border-top: 1px solid transparent;
+    --timeline-dot-shadow: 0 0 10px rgba(0, 0, 0, 0.298);
+    --timeline-item-bg: transparent;
+    --timeline-item-hover-shadow: 0 2px 6px rgba(123, 128, 127, 0.779);
+    --text-selection-popup-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+
+    --table-header-text-color: var(--el-text-color-primary);
+    --table-row-hover-bg-color: var(--el-fill-color-light);
+    --table-text-color-regular: var(--el-text-color-regular);
+    --table-text-color-primary: var(--el-text-color-primary);
+
+    --home-default-category-color: #409eff;
+    --home-default-book-color: #409eff;
+    --home-quota-fallback-1: #2fc98f;
+    --home-quota-fallback-2: #31c5f8;
+    --home-quota-fallback-3: #5a8cff;
+    --home-icon-tag-text: #ffffff;
+
+    --home-box-card-bg-color: #ffffff;
+    --home-box-card-bg-image: none;
+    --home-box-card-border: 1px solid var(--el-border-color-light);
+
+    --home-summary-card-bg: var(--el-bg-color);
+    --home-summary-card-border: 1px solid var(--el-border-color-light);
+    --home-summary-card-shadow: var(--app-card-shadow);
+    --home-summary-card-first-bg: var(--home-summary-card-bg);
+    --home-summary-card-first-border: var(--home-summary-card-border);
+    --home-summary-card-second-bg: var(--home-summary-card-bg);
+    --home-summary-card-second-border: var(--home-summary-card-border);
+    --home-summary-card-third-bg: var(--home-summary-card-bg);
+    --home-summary-card-third-border: var(--home-summary-card-border);
+
+    --home-duration-purple: #8b5cf6;
+    --home-duration-green: #22c55e;
+    --home-empty-text: #7c8aa3;
+    --home-heatmap-empty-text: #8b949e;
+    --home-tooltip-dot-color: #2f8cff;
+
+    --home-trend-card-bg: #ffffff;
+    --home-trend-card-border: 1px solid var(--el-border-color-light);
+    --home-trend-card-shadow: var(--app-card-shadow);
+    --home-trend-line-glow-strong: rgba(56, 157, 255, 0.2);
+    --home-trend-line-glow-soft: rgba(56, 157, 255, 0.2);
+
+    --home-quota-card-bg: transparent;
+    --home-quota-card-border: none;
+    --home-quota-card-shadow: none;
+
+    --home-table-card-bg: var(--el-bg-color);
+    --home-table-card-border: 1px solid var(--el-border-color-light);
+    --home-table-card-shadow: var(--app-card-shadow);
+
+    --home-calendar-text: #303133;
+    --home-calendar-tooltip-bg: rgba(255, 255, 255, 0.9);
+    --home-calendar-tooltip-border: #e4e7ed;
+    --home-calendar-tooltip-text: #303133;
+    --home-calendar-border: #dcdfe6;
+    --home-calendar-dot-border: rgba(48, 49, 51, 0.28);
+
+    --home-chart-text: var(--el-text-color-primary);
+    --home-chart-axis-label: var(--el-text-color-regular);
+    --home-chart-split-line: rgba(52, 74, 106, 0.3);
+    --home-chart-tooltip-bg: rgba(255, 255, 255, 0.92);
+    --home-chart-tooltip-border: #e4e7ed;
+    --home-chart-tooltip-text: #303133;
+    --home-chart-tooltip-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    --home-chart-axis-line-color: #1a2940;
+
+    --home-chart-line-gradient-start: rgba(47, 140, 255, 0.05);
+    --home-chart-line-gradient-end: #2f8cff;
+    --home-chart-bar-gradient-top: #2f8cff;
+    --home-chart-bar-gradient-bottom: rgba(47, 140, 255, 0.18);
+    --home-chart-bar-border: rgba(47, 140, 255, 0.45);
+    --home-chart-line-point: #2f8cff;
+    --home-chart-moving-dot: #ff5c60;
+    --home-chart-moving-dot-border: #ff5c60;
+    --home-chart-line-shadow-color: transparent;
+    --home-chart-line-shadow-blur: 0;
+    --home-chart-line-shadow-offset-y: 0;
+
+    --home-chart-gauge-axis-line: rgba(120, 141, 173, 0.28);
+    --home-chart-gauge-empty: rgba(120, 141, 173, 0.45);
+    --home-chart-gauge-over-limit: #ff9ea1;
+    --home-chart-gauge-normal: #409eff;
+    --home-chart-gauge-title: var(--el-text-color-primary);
+    --home-chart-gauge-detail: var(--el-text-color-primary);
+    --home-chart-gauge-detail-amount: var(--el-text-color-primary);
+    --home-chart-gauge-empty-title: #8ea0bf;
+    --home-chart-gauge-empty-detail: #7f90ac;
+
+    --home-heatmap-level-1: #89c0ed;
+    --home-heatmap-level-2: #64b5f6;
+    --home-heatmap-level-3: #1e88e5;
+    --home-heatmap-level-4: #0d47a1;
+    --home-heatmap-level-5: #e4bfa4;
+    --home-heatmap-level-6: #fac858;
+    --home-heatmap-level-7: #fc8452;
+    --home-heatmap-level-8: #f43b09;
+    --home-heatmap-level-9: #b67ef9;
+    --home-heatmap-level-10: #c407f8;
+
+    --books-default-color: #409eff;
+    --books-score-palette: #6a6bff, #21d29b, #24d8ff;
+    --books-ring-shadow-fallback: #6a6bff;
+
+    /* 设置弹窗 */
+    --settings-overlay-bg: rgba(0, 0, 0, 0.35);
+    --settings-modal-bg: rgba(255, 254, 254, 0.887);
+    --settings-modal-border: 1px solid rgba(0, 0, 0, 0.08);
+    --settings-modal-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    --settings-header-border: 1px solid rgba(0, 0, 0, 0.06);
+    --settings-title-color: #303133;
+    --settings-close-color: #909399;
+    --settings-close-hover-color: #303133;
+    --settings-section-title-color: #606266;
+    --settings-select-bg: #f5f7fa;
+    --settings-select-border: 1px solid #dcdfe6;
+    --settings-select-color: #303133;
+    --settings-select-hover-border: 1px solid #409eff;
+    --settings-btn-color: #303133;
+    --settings-btn-hover-color: #409eff;
+
+    /* 柱状图偏差条 */
+    --home-bar-above-color: #d97706;
+    --home-bar-below-color: #16a34a;
+    --home-bar-glow-blur: 8;
+    --home-bar-glow-alpha: 0.35;
+}

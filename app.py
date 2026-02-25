@@ -4,8 +4,9 @@
 Flask 应用初始化和 Blueprint 注册
 """
 import os
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template
 
+from core.themes import load_theme_registry
 from routes.categories import categories_bp
 from routes.rules import rules_bp
 from routes.bills import bills_bp
@@ -33,11 +34,17 @@ app.register_blueprint(progress_bp)
 app.register_blueprint(statistics_bp)
 
 
+@app.context_processor
+def inject_theme_registry():
+    """注入前端主题注册表，供模板和主题切换器使用"""
+    return {"theme_registry": load_theme_registry(app.static_folder)}
+
+
 # ==================== 首页路由 ====================
 @app.route("/")
 def index():
-    """首页重定向到统计页面"""
-    return redirect("/statistics")
+    """首页"""
+    return render_template("home.html")
 
 
 @app.route("/tagging")
@@ -50,6 +57,6 @@ def tagging():
 if __name__ == "__main__":
     app.run(
         debug=os.getenv("FLASK_DEBUG", "1") == "1",
-        host="0.0.0.0",
+        host="0.0.0.0" if os.getenv("PUBLIC", "") else "127.0.0.1",
         port=int(os.getenv("PORT", "8000")),
     )

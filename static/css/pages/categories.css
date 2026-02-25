@@ -1,0 +1,40 @@
+/* 默认颜色的 ColorPicker 样式 (当值为 null/空时显示蓝色) */
+.el-color-picker.default-color .el-color-picker__trigger {
+    border-color: var(--el-color-primary);
+}
+
+.el-color-picker.default-color .el-color-picker__color {
+    border-color: var(--el-color-primary);
+}
+
+.el-color-picker.default-color .el-color-picker__color-inner {
+    background-color: var(--el-color-primary) !important;
+}
+
+/* 隐藏颜色选择器右侧图标（下箭头/清空） */
+.el-color-picker .el-color-picker__icon {
+    display: none;
+}
+
+.el-color-picker .el-color-picker__trigger {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* 标签关闭图标颜色跟随文字颜色 (仅限自定义颜色的标签) */
+.el-tag.is-custom-color .el-tag__close {
+    color: inherit !important;
+}
+
+.el-tag.is-custom-color .el-tag__close:hover {
+    background-color: var(--tag-bg-color) !important;
+    color: var(--tag-icon-color) !important;
+}
+
+.icon-picker-btn,
+.icon-picker-btn:hover,
+.icon-picker-btn:focus,
+.icon-picker-btn:active {
+    border: none !important;
+    box-shadow: none !important;
+}

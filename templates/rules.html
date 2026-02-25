@@ -28,7 +28,7 @@
 
         <!-- 规则表格 -->
         <div class="rules-table-container">
-            <el-table :data="rules" style="width: 100%" stripe :max-height="656" @sort-change="handleSortChange"
+            <el-table :data="rules" class="rules-table-full" stripe :max-height="656" @sort-change="handleSortChange"
                 :row-key="(row, index) => index">
                 <!-- 优先级列 -->
                 <el-table-column label="优先级" width="95" align="center" fixed="left" sortable="custom" prop="priority">
@@ -59,7 +59,7 @@
                 <!-- 类别列 -->
                 <el-table-column prop="category" label="类别" width="120" align="center" sortable="custom" fixed="left">
                     <template #default="scope">
-                        <el-select v-model="scope.row.category" size="small" style="width: 80px" clearable
+                        <el-select v-model="scope.row.category" size="small" class="rules-select-80" clearable
                             @change="handleCategoryChange(scope.$index)">
                             <el-option v-for="cat in categories" :key="cat.name" :label="cat.name" :value="cat.name" />
                         </el-select>
@@ -68,7 +68,7 @@
                 <!-- 标签列 -->
                 <el-table-column prop="tag" label="标签" width="120" align="center" sortable="custom" fixed="left">
                     <template #default="scope">
-                        <el-select v-model="scope.row.tag" size="small" style="width: 80px" clearable
+                        <el-select v-model="scope.row.tag" size="small" class="rules-select-80" clearable
                             @change="val => handleTagChange(val, scope.$index)">
                             <el-option v-for="tag in getTagsForCategory(scope.row.category)" :key="tag" :label="tag"
                                 :value="tag" />
@@ -78,7 +78,7 @@
                 <!-- 匹配字段列 -->
                 <el-table-column prop="key" label="匹配字段" width="130" align="center" sortable="custom" fixed="left">
                     <template #default="scope">
-                        <el-select v-model="scope.row.key" size="small" style="width: 100px" clearable>
+                        <el-select v-model="scope.row.key" size="small" class="rules-select-100" clearable>
                             <el-option v-for="f in MATCH_FIELDS" :key="f.value" :label="f.label" :value="f.value" />
                         </el-select>
                     </template>
@@ -86,7 +86,7 @@
                 <!-- 匹配模式列 -->
                 <el-table-column prop="match_mode" label="匹配模式" width="100" align="center" fixed="left">
                     <template #default="scope">
-                        <el-select v-model="scope.row.match_mode" size="small" style="width: 75px" clearable>
+                        <el-select v-model="scope.row.match_mode" size="small" class="rules-select-75" clearable>
                             <el-option v-for="m in MATCH_MODES" :key="m.value" :label="m.label" :value="m.value" />
                         </el-select>
                     </template>
@@ -98,7 +98,7 @@
                             <el-tooltip
                                 content="若标签为 -，在自动打标时<br>将根据账单时间自动归类为<br>早/午/晚餐与夜宵<br>早餐：06:00-11:30<br>午餐：11:30-13:30<br>晚餐：17:30-20:00<br>夜宵：20:00-03:00"
                                 placement="top" raw-content>
-                                <el-icon style="margin-left: 1px; cursor: pointer; color: #909399;">
+                                <el-icon class="rules-tooltip-icon">
                                     <component :is="QuestionFilled" />
                                 </el-icon>
                             </el-tooltip>
@@ -106,7 +106,7 @@
                     </template>
                     <template #default="scope">
                         <el-select v-model="scope.row.time_based" multiple collapse-tags collapse-tags-tooltip clearable
-                            placeholder="类型" size="small" style="width: 100px"
+                            placeholder="类型" size="small" class="rules-select-100"
                             @change="val => handleTimeBasedChange(val, scope.$index)">
                             <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t" />
                         </el-select>
@@ -128,7 +128,7 @@
                             <el-button v-if="!scope.row.inputVisible" class="button-new-tag" size="small"
                                 @click="showInput(scope.$index)">+ 新增</el-button>
                             <el-input v-if="scope.row.inputVisible" v-model="scope.row.inputValue" size="small"
-                                style="width: 120px" @keyup.enter="handleInputConfirm(scope.$index)"
+                                class="rules-rule-input" @keyup.enter="handleInputConfirm(scope.$index)"
                                 @blur="handleInputConfirm(scope.$index)" ref="ruleInput"></el-input>
                             <el-tag v-for="(item, idx) in scope.row.rule" :key="idx"
                                 :type="getRuleTagType(scope.$index, item)" effect="light" closable
@@ -160,13 +160,13 @@
                 </el-radio-group>
             </el-form-item>
             <el-form-item label="匹配字段">
-                <el-select v-model="ruleForm.key" placeholder="请选择匹配字段" style="width: 120px">
+                <el-select v-model="ruleForm.key" placeholder="请选择匹配字段" class="rules-dialog-select-120">
                     <el-option v-for="f in MATCH_FIELDS" :key="f.value" :label="f.label" :value="f.value"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="时间归类">
                 <el-select v-model="ruleForm.time_based" multiple collapse-tags collapse-tags-tooltip placeholder="选择时段"
-                    :disabled="ruleForm.category !== '食'" style="width: 80px">
+                    :disabled="ruleForm.category !== '食'" class="rules-dialog-select-80">
                     <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t"></el-option>
                 </el-select>
             </el-form-item>

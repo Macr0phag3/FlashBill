@@ -24,14 +24,6 @@
    - 避免 AI 后续改动代码或者测试时，导致 DB.xlsx 出现非预期的改动，这是作为本项目的数据库，数据安全很重要，因此最好不提供这个功能
    - 打标完成之后，可以通过导出的账单人工审核对账，为自动打标或者 ai 打标的问题兜底
 
-## 🆕 最近更新（2026-02-12）
-
-- 新增 **账本管理页面**：支持账本配额、图标、颜色管理，并提供配额开销得分环可视化。
-- 新增 **分类元数据**：分类管理支持图标和颜色配置，统计页会自动加载并展示。
-- 优化 **新增记账表格**：金额、类别、标签样式与统计页数据表格保持一致。
-- 优化 **初始化脚本**：默认账本调整为“日常开销/零花钱”，并新增分类图标与颜色的初始化逻辑。
-- 优化 **得分环动画**：环形进度动画更平滑，观感更强。
-
 ## ✨ 功能特性
 
 - **账单导入**：
@@ -121,6 +113,11 @@ python app.py
 
 启动后访问：[http://localhost:8000](http://localhost:8000)
 
+如需局域网/公网监听，可使用：
+```bash
+PUBLIC=1 python app.py
+```
+
 在支付宝/微信申请导出账单之后，上传即可触发自动打标。
 
 ## ☁️ Render 免费部署（示例站）
@@ -148,7 +145,7 @@ python app.py
 
 Render 会自动读取 `render.yaml`，使用以下命令启动：
 - Build Command: `pip install -r requirements.txt`
-- Start Command: `python setup.py && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`
+- Start Command: `export PUBLIC=1 && python setup.py && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120`
 
 ### 3. 访问示例站
 

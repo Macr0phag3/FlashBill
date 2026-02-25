@@ -4,6 +4,36 @@
 
 没错，这也是 AI 写的
 
+## [2026-02-25]
+
+### 新增功能 (Features)
+- **首页重构 (Home Dashboard)**
+  - `/` 从重定向统计页改为独立首页（`templates/home.html`）。
+  - 新增首页综合看板：累计记账天数/笔数、环比、本月总支出、趋势线、最近消费、热力图、月度柱状图、账本配额仪表盘。
+- **主题系统升级 (Theme System)**
+  - 新增 `core/themes.py`，后端自动扫描 `static/themes/*/manifest.json` 并注入前端主题注册表。
+  - 新增前端主题管理器 `static/js/theme-manager.js`：支持首屏无闪烁切换、`localStorage` 持久化、`app:theme-change` 事件广播。
+  - 新增内置主题包：`light`、`dark`、`cyberpunk`。
+  - 新增设置弹窗主题切换入口（替代旧的导航栏明暗切换按钮）。
+
+### 优化与修复 (Improvements & Fixes)
+- **样式体系重构**
+  - 将大量页面内联样式迁移为类名与样式文件，提升可维护性与主题覆盖能力。
+  - 新增页面级样式目录：`static/css/pages/home.css`、`books.css`、`categories.css`。
+  - 扩展全局设计变量体系（颜色、阴影、图表、卡片、导航等），为多主题统一适配提供基础。
+- **页面 UI 一致性**
+  - `statistics` / `tagging` / `rules` / `categories` / `index` / `books` 多页面完成样式类化与视觉统一。
+  - 快速创建规则弹框背景改为与设置弹框一致（复用 `--settings-modal-bg`）。
+- **启动与部署**
+  - `app.py` 新增 `PUBLIC` 环境变量控制：默认仅监听 `127.0.0.1`，设置 `PUBLIC=1` 时监听 `0.0.0.0`。
+  - `render.yaml` 启动命令更新为 `export PUBLIC=1 && ...`，确保 Render 公网可访问。
+- **资源整理**
+  - 旧全局字体资源移出 `static/fonts`，改为按主题包管理（例如 `static/themes/dark/fusion-pixel.woff2`）。
+
+### 文档与测试 (Docs & Tests)
+- 新增主题研发手册：`主题研发手册.md`（主题目录规范、manifest 规范、变量清单、开发流程）。
+- 新增主题加载测试：`tests/test_themes.py`（覆盖主题发现、排序与字段默认值行为）。
+
 ## [2026-02-12]
 
 ### 新增功能 (Features)

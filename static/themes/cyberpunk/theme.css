@@ -1,0 +1,503 @@
+/* 赛博朋克主题: 硬边 + 霓虹 + 扫描线 */
+@font-face {
+    font-family: 'Orbitron';
+    src: url('Orbitron-VariableFont_wght.woff2') format('woff2');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+html[data-theme='cyberpunk'] {
+    color-scheme: dark;
+
+    /* ── 字体 ── */
+    --font-primary: 'Orbitron', 'Courier New', 'fusion-pixel', monospace;
+    --el-font-family: var(--font-primary);
+
+    /* ── 全局基础 ── */
+    --bg-color: #080810;
+    --bg-color-secondary: #0e0e1a;
+    --el-dialog-bg-color: rgba(14, 14, 26, 0.75);
+    --el-messagebox-bg-color: rgba(14, 14, 26, 0.75);
+    --text-color: #e8e8ff;
+    --text-color-secondary: #a0a0cc;
+    --border-color: rgba(0, 255, 255, 0.2);
+    --shadow-color: rgba(0, 0, 0, 0.6);
+    --text-muted-color: #5a5a7a;
+
+    /* ── 主题选择器 ── */
+    --theme-picker-border: #ff0080;
+    --theme-picker-shadow: rgba(255, 0, 128, 0.5);
+    --theme-picker-text: #ff0080;
+    --theme-picker-bg: rgba(8, 8, 16, 0.92);
+
+    /* ── 导航岛屿 ── */
+    --nav-island-bg: rgba(8, 8, 16, 0.92);
+    --nav-island-border: 2px solid rgba(0, 255, 255, 0.25);
+    --nav-island-shadow:
+        0 0 12px rgba(0, 255, 255, 0.2),
+        0 0 40px rgba(255, 0, 128, 0.1),
+        inset 0 1px 0 rgba(0, 255, 255, 0.1);
+
+    --island-logo-text: #080810;
+    --island-logo-bg: #ff0080;
+    --island-logo-shadow:
+        0 0 20px rgba(255, 0, 128, 0.8),
+        0 0 60px rgba(255, 0, 128, 0.3);
+
+    --island-menu-bg: rgba(8, 8, 16, 0.92);
+    --island-menu-shadow:
+        0 0 12px rgba(0, 255, 255, 0.2),
+        0 0 40px rgba(255, 0, 128, 0.08),
+        inset 0 1px 0 rgba(0, 255, 255, 0.1);
+    --island-menu-border-top: 2px solid rgba(0, 255, 255, 0.25);
+
+    --island-info-bg: rgba(8, 8, 16, 0.92);
+    --island-info-shadow:
+        0 0 12px rgba(0, 255, 255, 0.2),
+        inset 0 1px 0 rgba(0, 255, 255, 0.1);
+    --island-info-border-top: 2px solid rgba(0, 255, 255, 0.25);
+
+    --island-theme-bg: rgba(8, 8, 16, 0.92);
+    --island-theme-color: #00ffff;
+    --island-theme-shadow:
+        0 0 15px rgba(0, 255, 255, 0.6),
+        0 0 40px rgba(0, 255, 255, 0.2);
+    --island-theme-border: 2px solid #00ffff;
+    --island-theme-hover-shadow:
+        0 0 20px rgba(0, 255, 255, 0.8),
+        0 0 60px rgba(0, 255, 255, 0.3);
+    --theme-toggle-btn-color: #00ffff;
+    --nav-link-active-bg: rgba(0, 255, 255, 0.15);
+
+    /* ── 卡片 / 表格 / 时间线 ── */
+    --app-card-shadow:
+        0 0 10px rgba(0, 255, 255, 0.12),
+        0 0 30px rgba(255, 0, 128, 0.06),
+        inset 0 1px 0 rgba(0, 255, 255, 0.08);
+    --app-card-border-top: 2px solid rgba(0, 255, 255, 0.2);
+    --timeline-dot-shadow:
+        0 0 8px rgba(0, 255, 255, 0.5),
+        0 0 20px rgba(0, 255, 255, 0.2);
+    --timeline-item-bg: rgba(14, 14, 26, 0.8);
+    --timeline-item-hover-shadow:
+        0 0 16px rgba(0, 255, 255, 0.2),
+        0 2px 12px rgba(0, 0, 0, 0.5);
+    --text-selection-popup-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+
+    --table-header-text-color: #00ffff;
+    --table-row-hover-bg-color: rgba(0, 255, 255, 0.08);
+    --table-text-color-regular: #a0a0cc;
+    --table-text-color-primary: #e8e8ff;
+
+    /* ── 首页 ── */
+    --home-default-category-color: #00ffff;
+    --home-default-book-color: #ff0080;
+    --home-quota-fallback-1: #00ffab;
+    --home-quota-fallback-2: #00d4ff;
+    --home-quota-fallback-3: #a855f7;
+    --home-icon-tag-text: #ffffff;
+
+    --home-box-card-bg-color: #0a0a14;
+    --home-box-card-bg-image:
+        radial-gradient(ellipse at 80% 0%, rgba(255, 0, 128, 0.15) 0px, transparent 50%),
+        radial-gradient(ellipse at 20% 100%, rgba(0, 255, 255, 0.12) 0px, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.06) 0px, transparent 60%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.015) 2px, rgba(0, 255, 255, 0.015) 4px);
+    --home-box-card-border: 2px solid rgba(0, 255, 255, 0.12);
+
+    --home-summary-card-bg: rgba(0, 255, 255, 0.03);
+    --home-summary-card-border: 2px solid rgba(0, 255, 255, 0.18);
+    --home-summary-card-shadow: 0 0 15px rgba(0, 255, 255, 0.06);
+    --home-summary-card-first-bg: linear-gradient(135deg, rgba(255, 0, 128, 0.15) 0%, rgba(168, 85, 247, 0.12) 100%);
+    --home-summary-card-first-border: 2px solid rgba(255, 0, 128, 0.3);
+    --home-summary-card-second-bg: linear-gradient(135deg, rgba(0, 255, 255, 0.12) 0%, rgba(0, 255, 171, 0.10) 100%);
+    --home-summary-card-second-border: 2px solid rgba(0, 255, 255, 0.3);
+
+    --home-duration-purple: #c084fc;
+    --home-duration-green: #00ffab;
+    --home-empty-text: #3a3a5a;
+    --home-heatmap-empty-text: #3a3a5a;
+    --home-tooltip-dot-color: #00ffff;
+
+    --home-trend-card-bg: rgba(0, 255, 255, 0.02);
+    --home-trend-card-border: 2px solid rgba(0, 255, 255, 0.18);
+    --home-trend-card-shadow: 0 0 15px rgba(0, 255, 255, 0.05);
+    --home-trend-line-glow-strong: rgba(0, 255, 255, 0.7);
+    --home-trend-line-glow-soft: rgba(0, 255, 255, 0.35);
+
+    --home-quota-card-bg: rgba(255, 0, 128, 0.02);
+    --home-quota-card-border: 2px solid rgba(255, 0, 128, 0.18);
+    --home-quota-card-shadow: 0 0 15px rgba(255, 0, 128, 0.05);
+
+    --home-table-card-bg: rgba(0, 255, 255, 0.02);
+    --home-table-card-border: 2px solid rgba(0, 255, 255, 0.18);
+    --home-table-card-shadow: 0 0 15px rgba(0, 255, 255, 0.05);
+
+    /* ── 首页日历 ── */
+    --home-calendar-text: #a0a0cc;
+    --home-calendar-tooltip-bg: rgba(8, 8, 16, 0.96);
+    --home-calendar-tooltip-border: rgba(0, 255, 255, 0.3);
+    --home-calendar-tooltip-text: #e8e8ff;
+    --home-calendar-border: rgba(0, 255, 255, 0.1);
+    --home-calendar-dot-border: rgba(0, 255, 255, 0.4);
+
+    /* ── 首页图表 ── */
+    --home-chart-text: #e8e8ff;
+    --home-chart-axis-label: #5a5a7a;
+    --home-chart-split-line: rgba(0, 255, 255, 0.05);
+    --home-chart-tooltip-bg: rgba(8, 8, 16, 0.96);
+    --home-chart-tooltip-border: rgba(0, 255, 255, 0.3);
+    --home-chart-tooltip-text: #e8e8ff;
+    --home-chart-tooltip-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
+    --home-chart-axis-line-color: rgba(0, 255, 255, 0.08);
+
+    --home-chart-line-gradient-start: rgba(0, 255, 255, 0.01);
+    --home-chart-line-gradient-end: #00ffff;
+    --home-chart-line-point: #00ffff;
+    --home-chart-moving-dot: #ff0080;
+    --home-chart-moving-dot-border: #ff0080;
+    --home-chart-line-shadow-color: rgba(0, 255, 255, 0.6);
+    --home-chart-line-shadow-blur: 24;
+    --home-chart-line-shadow-offset-y: 3;
+
+    /* ── 仪表盘 ── */
+    --home-chart-gauge-axis-line: rgba(0, 255, 255, 0.1);
+    --home-chart-gauge-empty: rgba(0, 255, 255, 0.18);
+    --home-chart-gauge-over-limit: #ff0080;
+    --home-chart-gauge-normal: #00ffff;
+    --home-chart-gauge-title: #e8e8ff;
+    --home-chart-gauge-detail: #e8e8ff;
+    --home-chart-gauge-detail-amount: #00ffff;
+    --home-chart-gauge-empty-title: #3a3a5a;
+    --home-chart-gauge-empty-detail: #3a3a5a;
+
+    /* ── 热力图 ── */
+    --home-heatmap-level-1: #0d2a33;
+    --home-heatmap-level-2: #0a4a55;
+    --home-heatmap-level-3: #007a7a;
+    --home-heatmap-level-4: #00cccc;
+    --home-heatmap-level-5: #3d1a4d;
+    --home-heatmap-level-6: #7a1a6a;
+    --home-heatmap-level-7: #cc0066;
+    --home-heatmap-level-8: #ff0080;
+    --home-heatmap-level-9: #6622aa;
+    --home-heatmap-level-10: #aa00ff;
+
+    /* ── 账本页 ── */
+    --books-default-color: #00ffff;
+    --books-score-palette: #ff0080, #00ffff, #a855f7;
+    --books-ring-shadow-fallback: #ff0080;
+
+    /* 设置弹窗 */
+    --settings-overlay-bg: rgba(0, 0, 0, 0.7);
+    --settings-modal-bg: rgba(14, 14, 26, 0.2);
+    --settings-modal-border: 2px solid rgba(0, 255, 255, 0.25);
+    --settings-modal-shadow:
+        0 0 30px rgba(0, 255, 255, 0.12),
+        0 0 60px rgba(255, 0, 128, 0.06);
+    --settings-modal-radius: 4px;
+    --settings-header-border: 1px solid rgba(0, 255, 255, 0.15);
+    --settings-title-color: #00ffff;
+    --settings-close-color: #5a5a7a;
+    --settings-close-hover-color: #ff0080;
+    --settings-section-title-color: #00ffff;
+    --settings-select-bg: rgba(0, 255, 255, 0.05);
+    --settings-select-border: 1px solid rgba(0, 255, 255, 0.2);
+    --settings-select-color: #e8e8ff;
+    --settings-select-hover-border: 1px solid #00ffff;
+    --settings-btn-color: #e8e8ff;
+    --settings-btn-hover-color: #00ffff;
+
+    /* 柱状图偏差条 */
+    --home-bar-above-color: #ff0080;
+    --home-bar-below-color: #00ffab;
+    --home-bar-glow-blur: 18;
+    --home-bar-glow-alpha: 0.8;
+}
+
+/* ==================== 赛博朋克：硬边几何覆盖 ==================== */
+/* 将所有圆角改为硬边切角风格 */
+
+html[data-theme='cyberpunk'] .nav-island {
+    border-radius: 4px;
+    clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+}
+
+html[data-theme='cyberpunk'] .island-logo {
+    border-radius: 4px;
+}
+
+/* 设置弹窗：赛博朋克硬边 + 霓虹发光 */
+html[data-theme='cyberpunk'] .settings-modal {
+    border-radius: 4px;
+}
+
+html[data-theme='cyberpunk'] .settings-select {
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+html[data-theme='cyberpunk'] .settings-select:focus {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+html[data-theme='cyberpunk'] .settings-close-btn {
+    border-radius: 2px;
+}
+
+html[data-theme='cyberpunk'] .settings-close-btn:hover {
+    background: rgba(255, 0, 128, 0.1);
+    text-shadow: 0 0 8px rgba(255, 0, 128, 0.5);
+}
+
+html[data-theme='cyberpunk'] .el-card {
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 255, 255, 0.15) !important;
+}
+
+html[data-theme='cyberpunk'] .el-dialog,
+html[data-theme='cyberpunk'] .el-message-box {
+    border-radius: 4px !important;
+    border: 2px solid rgba(0, 255, 255, 0.25) !important;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.12), 0 0 60px rgba(255, 0, 128, 0.06) !important;
+}
+
+html[data-theme='cyberpunk'] .el-popper {
+    border-radius: 4px !important;
+}
+
+html[data-theme='cyberpunk'] .el-tag {
+    border-radius: 2px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+html[data-theme='cyberpunk'] .el-input__wrapper {
+    border-radius: 4px !important;
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.15) inset !important;
+}
+
+html[data-theme='cyberpunk'] .el-input__wrapper:hover {
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.35) inset, 0 0 8px rgba(0, 255, 255, 0.1) !important;
+}
+
+html[data-theme='cyberpunk'] .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px #00ffff inset, 0 0 12px rgba(0, 255, 255, 0.2) !important;
+}
+
+html[data-theme='cyberpunk'] .el-select__wrapper {
+    border-radius: 4px !important;
+}
+
+html[data-theme='cyberpunk'] .el-button {
+    border-radius: 4px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+}
+
+html[data-theme='cyberpunk'] .el-button:hover {
+    box-shadow: 0 0 12px currentColor;
+}
+
+/* 导航链接：硬边 + 悬停发光 */
+html[data-theme='cyberpunk'] .nav-link {
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+html[data-theme='cyberpunk'] .nav-link:hover {
+    background-color: rgba(0, 255, 255, 0.08);
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+html[data-theme='cyberpunk'] .nav-link.active {
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+    border-bottom: 2px solid #00ffff;
+}
+
+/* 表格：霓虹边框 */
+html[data-theme='cyberpunk'] .el-table {
+    border-radius: 4px;
+}
+
+html[data-theme='cyberpunk'] .el-table th.el-table__cell {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+}
+
+/* 分页器 */
+html[data-theme='cyberpunk'] .el-pagination .el-pager li {
+    border-radius: 2px !important;
+}
+
+html[data-theme='cyberpunk'] .el-pagination .el-pager li.is-active {
+    background-color: rgba(0, 255, 255, 0.15) !important;
+    color: #00ffff !important;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+}
+
+/* Tab 标签页 */
+html[data-theme='cyberpunk'] .el-tabs__item.is-active {
+    color: #00ffff !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+html[data-theme='cyberpunk'] .el-tabs__active-bar {
+    background-color: #00ffff !important;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+/* 扫描线背景效果（应用到 body） */
+html[data-theme='cyberpunk'] body {
+    background-color: #080810;
+    background-image:
+        repeating-linear-gradient(0deg,
+            transparent,
+            transparent 3px,
+            rgba(0, 255, 255, 0.008) 3px,
+            rgba(0, 255, 255, 0.008) 6px);
+}
+
+/* 滚动条：赛博风 */
+html[data-theme='cyberpunk'] ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+html[data-theme='cyberpunk'] ::-webkit-scrollbar-track {
+    background: #080810;
+}
+
+html[data-theme='cyberpunk'] ::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.25);
+    border-radius: 0;
+}
+
+html[data-theme='cyberpunk'] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.45);
+    box-shadow: 0 0 6px rgba(0, 255, 255, 0.3);
+}
+
+/* ==================== Element Plus 按钮覆盖 ==================== */
+
+html[data-theme='cyberpunk'] .el-button--primary {
+    --el-button-bg-color: rgba(0, 255, 255, 0.1);
+    --el-button-border-color: rgba(0, 255, 255, 0.4);
+    --el-button-text-color: #00ffff;
+    --el-button-hover-bg-color: rgba(0, 255, 255, 0.2);
+    --el-button-hover-border-color: #00ffff;
+    --el-button-hover-text-color: #00ffff;
+    --el-button-active-bg-color: rgba(0, 255, 255, 0.25);
+    --el-button-active-border-color: #00ffff;
+    --el-button-active-text-color: #00ffff;
+}
+
+html[data-theme='cyberpunk'] .el-button--success {
+    --el-button-bg-color: rgba(0, 255, 171, 0.1);
+    --el-button-border-color: rgba(0, 255, 171, 0.4);
+    --el-button-text-color: #00ffab;
+    --el-button-hover-bg-color: rgba(0, 255, 171, 0.2);
+    --el-button-hover-border-color: #00ffab;
+    --el-button-hover-text-color: #00ffab;
+    --el-button-active-bg-color: rgba(0, 255, 171, 0.25);
+    --el-button-active-border-color: #00ffab;
+    --el-button-active-text-color: #00ffab;
+}
+
+html[data-theme='cyberpunk'] .el-button--warning {
+    --el-button-bg-color: rgba(255, 200, 0, 0.1);
+    --el-button-border-color: rgba(255, 200, 0, 0.4);
+    --el-button-text-color: #ffc800;
+    --el-button-hover-bg-color: rgba(255, 200, 0, 0.2);
+    --el-button-hover-border-color: #ffc800;
+    --el-button-hover-text-color: #ffc800;
+    --el-button-active-bg-color: rgba(255, 200, 0, 0.25);
+    --el-button-active-border-color: #ffc800;
+    --el-button-active-text-color: #ffc800;
+}
+
+html[data-theme='cyberpunk'] .el-button--danger {
+    --el-button-bg-color: rgba(255, 0, 128, 0.1);
+    --el-button-border-color: rgba(255, 0, 128, 0.4);
+    --el-button-text-color: #ff0080;
+    --el-button-hover-bg-color: rgba(255, 0, 128, 0.2);
+    --el-button-hover-border-color: #ff0080;
+    --el-button-hover-text-color: #ff0080;
+    --el-button-active-bg-color: rgba(255, 0, 128, 0.25);
+    --el-button-active-border-color: #ff0080;
+    --el-button-active-text-color: #ff0080;
+}
+
+html[data-theme='cyberpunk'] .el-button--info {
+    --el-button-bg-color: rgba(168, 85, 247, 0.1);
+    --el-button-border-color: rgba(168, 85, 247, 0.4);
+    --el-button-text-color: #a855f7;
+    --el-button-hover-bg-color: rgba(168, 85, 247, 0.2);
+    --el-button-hover-border-color: #a855f7;
+    --el-button-hover-text-color: #a855f7;
+    --el-button-active-bg-color: rgba(168, 85, 247, 0.25);
+    --el-button-active-border-color: #a855f7;
+    --el-button-active-text-color: #a855f7;
+}
+
+/* Disabled 按钮 */
+html[data-theme='cyberpunk'] .el-button--primary.is-disabled,
+html[data-theme='cyberpunk'] .el-button--primary.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(0, 255, 255, 0.04);
+    --el-button-disabled-border-color: rgba(0, 255, 255, 0.1);
+    --el-button-disabled-text-color: rgba(0, 255, 255, 0.25);
+}
+
+html[data-theme='cyberpunk'] .el-button--success.is-disabled,
+html[data-theme='cyberpunk'] .el-button--success.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(0, 255, 171, 0.04);
+    --el-button-disabled-border-color: rgba(0, 255, 171, 0.1);
+    --el-button-disabled-text-color: rgba(0, 255, 171, 0.25);
+}
+
+html[data-theme='cyberpunk'] .el-button--warning.is-disabled,
+html[data-theme='cyberpunk'] .el-button--warning.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(255, 200, 0, 0.04);
+    --el-button-disabled-border-color: rgba(255, 200, 0, 0.1);
+    --el-button-disabled-text-color: rgba(255, 200, 0, 0.25);
+}
+
+html[data-theme='cyberpunk'] .el-button--danger.is-disabled,
+html[data-theme='cyberpunk'] .el-button--danger.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(255, 0, 128, 0.04);
+    --el-button-disabled-border-color: rgba(255, 0, 128, 0.1);
+    --el-button-disabled-text-color: rgba(255, 0, 128, 0.25);
+}
+
+html[data-theme='cyberpunk'] .el-button--info.is-disabled,
+html[data-theme='cyberpunk'] .el-button--info.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(168, 85, 247, 0.04);
+    --el-button-disabled-border-color: rgba(168, 85, 247, 0.1);
+    --el-button-disabled-text-color: rgba(168, 85, 247, 0.25);
+}
+
+/* ==================== Element Plus 表格覆盖 ==================== */
+
+html[data-theme='cyberpunk'] .el-table {
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: transparent;
+    --el-table-header-text-color: var(--table-header-text-color);
+    --el-table-row-hover-bg-color: var(--table-row-hover-bg-color);
+    --el-text-color-regular: var(--table-text-color-regular);
+    --el-text-color-primary: var(--table-text-color-primary);
+}
+
+/* ==================== 首页 box-card 覆盖 ==================== */
+
+html[data-theme='cyberpunk'] .box-card {
+    background-color: var(--home-box-card-bg-color) !important;
+    background-image: var(--home-box-card-bg-image) !important;
+    border: var(--home-box-card-border) !important;
+}

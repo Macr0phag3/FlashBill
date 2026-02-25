@@ -1,0 +1,409 @@
+/* 内置深色主题: 与当前 dark mode 保持一致 */
+@font-face {
+    font-family: 'fusion-pixel';
+    src: url('fusion-pixel.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+html[data-theme='dark'] {
+    color-scheme: dark;
+    --font-primary: 'fusion-pixel', 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    --el-font-family: var(--font-primary);
+    --bg-color: #141414;
+    --bg-color-secondary: #1d1d1d;
+    --el-dialog-bg-color: rgba(29, 29, 29, 0.75);
+    --el-messagebox-bg-color: rgba(29, 29, 29, 0.75);
+    --text-color: #e5eaf3;
+    --text-color-secondary: #d2d2d2;
+    --border-color: #e5eaf3;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --theme-picker-border: rgb(255, 196, 2);
+    --theme-picker-shadow: rgba(255, 196, 2, 0.45);
+    --theme-picker-text: #ffd700;
+    --theme-picker-bg: rgba(20, 20, 20, 0.75);
+
+    --text-muted-color: #909399;
+
+    --nav-island-bg: rgba(20, 20, 20, 0.75);
+    --nav-island-border: 1px solid rgba(255, 255, 255, 0.11);
+    --nav-island-shadow:
+        -2px -3px 3px rgba(255, 255, 255, 0.169),
+        -5px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+
+    --island-logo-text: #ebfc2e;
+    --island-logo-bg: #409eff;
+    --island-logo-shadow: 0 0 20px #409eff;
+
+    --island-menu-bg: rgba(20, 20, 20, 0.75);
+    --island-menu-shadow:
+        -2px -3px 3px rgba(255, 255, 255, 0.169),
+        -5px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    --island-menu-border-top: 1px solid rgba(255, 255, 255, 0.11);
+
+    --island-info-bg: rgba(20, 20, 20, 0.75);
+    --island-info-shadow:
+        -2px -3px 3px rgba(255, 255, 255, 0.169),
+        -5px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    --island-info-border-top: 1px solid rgba(255, 255, 255, 0.11);
+
+    --island-theme-bg: rgba(20, 20, 20, 0.75);
+    --island-theme-color: #ffd700;
+    --island-theme-shadow: 0 0 20px rgb(255, 196, 2);
+    --island-theme-border: 1px solid rgb(255, 196, 2);
+    --island-theme-hover-shadow: 0 0 10px rgb(255, 196, 2);
+    --theme-toggle-btn-color: #ffd700;
+    --nav-link-active-bg: rgba(64, 158, 255, 0.2);
+
+    --app-card-shadow:
+        -5px -5px 5px rgba(255, 255, 255, 0.169),
+        -10px -10px 20px rgba(255, 255, 255, 0.1),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.5);
+    --app-card-border-top: 1px solid rgba(255, 255, 255, 0.11);
+    --timeline-dot-shadow: 0 0 10px rgba(255, 255, 255, 0.298);
+    --timeline-item-bg: var(--bg-color-secondary);
+    --timeline-item-hover-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --text-selection-popup-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+
+    --table-header-text-color: #e5eaf3;
+    --table-row-hover-bg-color: rgba(64, 158, 255, 0.12);
+    --table-text-color-regular: #cfd3dc;
+    --table-text-color-primary: #e5eaf3;
+
+    --home-default-category-color: #409eff;
+    --home-default-book-color: #409eff;
+    --home-quota-fallback-1: #2fc98f;
+    --home-quota-fallback-2: #31c5f8;
+    --home-quota-fallback-3: #5a8cff;
+    --home-icon-tag-text: #ffffff;
+
+    --home-box-card-bg-color: #0a101b;
+    --home-box-card-bg-image:
+        radial-gradient(at 90% 5%, rgba(156, 39, 176, 0.18) 0px, transparent 50%),
+        radial-gradient(at 75% 20%, rgba(84, 160, 255, 0.18) 0px, transparent 50%),
+        radial-gradient(at 10% 90%, rgba(29, 209, 161, 0.18) 0px, transparent 50%),
+        radial-gradient(at 30% 75%, rgba(68, 206, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(84, 160, 255, 0.12) 0px, transparent 50%);
+    --home-box-card-border: 1px solid #1b2b42;
+
+    --home-summary-card-bg: transparent;
+    --home-summary-card-border: none;
+    --home-summary-card-shadow: none;
+    /* 右上角多层发光，颜色与各卡片 icon 颜色一致 */
+    --home-summary-card-first-bg:
+        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.5) 0%, transparent 15%),
+        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.25) 15%, transparent 35%),
+        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.12) 35%, transparent 70%);
+    --home-summary-card-first-border: none;
+    --home-summary-card-second-bg:
+        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.5) 0%, transparent 15%),
+        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.25) 15%, transparent 35%),
+        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.12) 35%, transparent 70%);
+    --home-summary-card-second-border: none;
+    --home-summary-card-third-bg:
+        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.5) 0%, transparent 15%),
+        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.25) 15%, transparent 35%),
+        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.12) 35%, transparent 70%);
+    --home-summary-card-third-border: none;
+    --home-summary-card-fourth-bg:
+        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.5) 0%, transparent 15%),
+        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.25) 15%, transparent 35%),
+        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.12) 35%, transparent 70%);
+    --home-summary-card-fourth-border: none;
+
+    --home-duration-purple: #a78bfa;
+    --home-duration-green: #4ade80;
+    --home-duration-orange: #fbbf24;
+    --home-empty-text: #7c8aa3;
+    --home-heatmap-empty-text: #8b949e;
+    --home-tooltip-dot-color: #2f8cff;
+
+    --home-trend-card-bg: linear-gradient(to bottom left, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+    --home-trend-card-border: none;
+    --home-trend-card-shadow: none;
+    --home-trend-line-glow-strong: rgba(56, 157, 255, 0.72);
+    --home-trend-line-glow-soft: rgba(56, 157, 255, 0.1);
+
+    --home-quota-card-bg: transparent;
+    --home-quota-card-border: none;
+    --home-quota-card-shadow: none;
+
+    --home-table-card-bg: linear-gradient(to top right, rgba(74, 222, 128, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+    --home-table-card-border: none;
+    --home-table-card-shadow: none;
+
+    --home-calendar-text: #dee2e6;
+    --home-calendar-tooltip-bg: rgba(0, 0, 0, 0.8);
+    --home-calendar-tooltip-border: #4c4d4f;
+    --home-calendar-tooltip-text: #ffffff;
+    --home-calendar-border: #4c4d4f;
+    --home-calendar-dot-border: rgba(222, 226, 230, 0.55);
+
+    --home-chart-text: var(--el-text-color-primary);
+    --home-chart-axis-label: var(--el-text-color-regular);
+    --home-chart-split-line: rgba(52, 74, 106, 0.3);
+    --home-chart-tooltip-bg: rgba(12, 19, 33, 0.95);
+    --home-chart-tooltip-border: #243754;
+    --home-chart-tooltip-text: var(--el-text-color-primary);
+    --home-chart-tooltip-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --home-chart-axis-line-color: #1a2940;
+
+    --home-chart-line-gradient-start: rgba(47, 140, 255, 0.05);
+    --home-chart-line-gradient-end: #2f8cff;
+    --home-chart-bar-gradient-top: #8ecbff;
+    --home-chart-bar-gradient-bottom: rgba(142, 203, 255, 0.20);
+    --home-chart-bar-border: rgba(142, 203, 255, 0.5);
+    --home-chart-line-point: #2f8cff;
+    --home-chart-moving-dot: #ff5c60;
+    --home-chart-moving-dot-border: #ff5c60;
+    --home-chart-line-shadow-color: rgba(56, 157, 255, 0.48);
+    --home-chart-line-shadow-blur: 18;
+    --home-chart-line-shadow-offset-y: 5;
+
+    --home-chart-gauge-axis-line: rgba(120, 141, 173, 0.28);
+    --home-chart-gauge-empty: rgba(120, 141, 173, 0.45);
+    --home-chart-gauge-over-limit: #ff9ea1;
+    --home-chart-gauge-normal: #e7f4ff;
+    --home-chart-gauge-title: var(--el-text-color-primary);
+    --home-chart-gauge-detail: var(--el-text-color-primary);
+    --home-chart-gauge-detail-amount: var(--el-text-color-primary);
+    --home-chart-gauge-empty-title: #8ea0bf;
+    --home-chart-gauge-empty-detail: #7f90ac;
+
+    --home-heatmap-level-1: #89c0ed;
+    --home-heatmap-level-2: #64b5f6;
+    --home-heatmap-level-3: #1e88e5;
+    --home-heatmap-level-4: #0d47a1;
+    --home-heatmap-level-5: #e4bfa4;
+    --home-heatmap-level-6: #fac858;
+    --home-heatmap-level-7: #fc8452;
+    --home-heatmap-level-8: #f43b09;
+    --home-heatmap-level-9: #b67ef9;
+    --home-heatmap-level-10: #c407f8;
+
+    --books-default-color: #409eff;
+    --books-score-palette: #6a6bff, #21d29b, #24d8ff;
+    --books-ring-shadow-fallback: #6a6bff;
+
+    /* 设置弹窗 */
+    --settings-overlay-bg: rgba(0, 0, 0, 0.6);
+    --settings-modal-bg: rgba(29, 29, 29, 0.2);
+    --settings-modal-border: 1px solid rgba(255, 255, 255, 0.1);
+    --settings-modal-shadow:
+        0 16px 48px rgba(0, 0, 0, 0.5),
+        -4px -4px 12px rgba(255, 255, 255, 0.04);
+    --settings-header-border: 1px solid rgba(255, 255, 255, 0.08);
+    --settings-title-color: #e5eaf3;
+    --settings-close-color: #909399;
+    --settings-close-hover-color: #e5eaf3;
+    --settings-section-title-color: #a0a0a0;
+    --settings-select-bg: #2a2a2a;
+    --settings-select-border: 1px solid rgba(255, 255, 255, 0.12);
+    --settings-select-color: #e5eaf3;
+    --settings-select-hover-border: 1px solid #409eff;
+    --settings-btn-color: #e5eaf3;
+    --settings-btn-hover-color: #fbbf24;
+
+    /* 柱状图偏差条 */
+    --home-bar-above-color: #fbbf24;
+    --home-bar-below-color: #4ade80;
+    --home-bar-glow-blur: 14;
+    --home-bar-glow-alpha: 0.65;
+}
+
+/* ==================== Element Plus 按钮覆盖 ==================== */
+/* 暗色模式按钮采用标签风格：半透明底色 + 彩色文字 */
+
+html[data-theme='dark'] .el-button--primary {
+    --el-button-bg-color: var(--el-color-primary-light-9);
+    --el-button-border-color: var(--el-color-primary-light-5);
+    --el-button-text-color: var(--el-color-primary);
+    --el-button-hover-bg-color: var(--el-color-primary-light-7);
+    --el-button-hover-border-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-primary);
+    --el-button-active-bg-color: var(--el-color-primary-light-8);
+    --el-button-active-border-color: var(--el-color-primary);
+    --el-button-active-text-color: var(--el-color-primary);
+}
+
+html[data-theme='dark'] .el-button--success {
+    --el-button-bg-color: var(--el-color-success-light-9);
+    --el-button-border-color: var(--el-color-success-light-5);
+    --el-button-text-color: var(--el-color-success);
+    --el-button-hover-bg-color: var(--el-color-success-light-7);
+    --el-button-hover-border-color: var(--el-color-success);
+    --el-button-hover-text-color: var(--el-color-success);
+    --el-button-active-bg-color: var(--el-color-success-light-8);
+    --el-button-active-border-color: var(--el-color-success);
+    --el-button-active-text-color: var(--el-color-success);
+}
+
+html[data-theme='dark'] .el-button--warning {
+    --el-button-bg-color: var(--el-color-warning-light-9);
+    --el-button-border-color: var(--el-color-warning-light-5);
+    --el-button-text-color: var(--el-color-warning);
+    --el-button-hover-bg-color: var(--el-color-warning-light-7);
+    --el-button-hover-border-color: var(--el-color-warning);
+    --el-button-hover-text-color: var(--el-color-warning);
+    --el-button-active-bg-color: var(--el-color-warning-light-8);
+    --el-button-active-border-color: var(--el-color-warning);
+    --el-button-active-text-color: var(--el-color-warning);
+}
+
+html[data-theme='dark'] .el-button--danger {
+    --el-button-bg-color: var(--el-color-danger-light-9);
+    --el-button-border-color: var(--el-color-danger-light-5);
+    --el-button-text-color: var(--el-color-danger);
+    --el-button-hover-bg-color: var(--el-color-danger-light-7);
+    --el-button-hover-border-color: var(--el-color-danger);
+    --el-button-hover-text-color: var(--el-color-danger);
+    --el-button-active-bg-color: var(--el-color-danger-light-8);
+    --el-button-active-border-color: var(--el-color-danger);
+    --el-button-active-text-color: var(--el-color-danger);
+}
+
+html[data-theme='dark'] .el-button--info {
+    --el-button-bg-color: var(--el-color-info-light-9);
+    --el-button-border-color: var(--el-color-info-light-5);
+    --el-button-text-color: var(--el-color-info);
+    --el-button-hover-bg-color: var(--el-color-info-light-7);
+    --el-button-hover-border-color: var(--el-color-info);
+    --el-button-hover-text-color: var(--el-color-info);
+    --el-button-active-bg-color: var(--el-color-info-light-8);
+    --el-button-active-border-color: var(--el-color-info);
+    --el-button-active-text-color: var(--el-color-info);
+}
+
+/* Disabled 按钮：同色系但更暗淡，与可点击按钮形成对比 */
+html[data-theme='dark'] .el-button--primary.is-disabled,
+html[data-theme='dark'] .el-button--primary.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-primary-light-9);
+    --el-button-disabled-border-color: var(--el-color-primary-light-7);
+    --el-button-disabled-text-color: var(--el-color-primary-light-5);
+}
+
+html[data-theme='dark'] .el-button--success.is-disabled,
+html[data-theme='dark'] .el-button--success.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-success-light-9);
+    --el-button-disabled-border-color: var(--el-color-success-light-7);
+    --el-button-disabled-text-color: var(--el-color-success-light-5);
+}
+
+html[data-theme='dark'] .el-button--warning.is-disabled,
+html[data-theme='dark'] .el-button--warning.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-warning-light-9);
+    --el-button-disabled-border-color: var(--el-color-warning-light-7);
+    --el-button-disabled-text-color: var(--el-color-warning-light-5);
+}
+
+html[data-theme='dark'] .el-button--danger.is-disabled,
+html[data-theme='dark'] .el-button--danger.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-danger-light-9);
+    --el-button-disabled-border-color: var(--el-color-danger-light-7);
+    --el-button-disabled-text-color: var(--el-color-danger-light-5);
+}
+
+html[data-theme='dark'] .el-button--info.is-disabled,
+html[data-theme='dark'] .el-button--info.is-disabled:hover {
+    --el-button-disabled-bg-color: var(--el-color-info-light-9);
+    --el-button-disabled-border-color: var(--el-color-info-light-7);
+    --el-button-disabled-text-color: var(--el-color-info-light-5);
+}
+
+/* ==================== Element Plus 表格覆盖 ==================== */
+
+html[data-theme='dark'] .el-table {
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: transparent;
+    --el-table-header-text-color: var(--table-header-text-color);
+    --el-table-row-hover-bg-color: var(--table-row-hover-bg-color);
+    --el-text-color-regular: var(--table-text-color-regular);
+    --el-text-color-primary: var(--table-text-color-primary);
+}
+
+/* ==================== 首页 box-card 覆盖 ==================== */
+
+html[data-theme='dark'] .box-card {
+    background-color: var(--home-box-card-bg-color) !important;
+    background-image: var(--home-box-card-bg-image) !important;
+    border: var(--home-box-card-border) !important;
+}
+
+/* 其他页面（记账/规则/分类/账本）的卡片背景与首页统一 */
+html[data-theme='dark'] .el-card.mb-3 {
+    background-color: var(--home-box-card-bg-color) !important;
+    background-image: var(--home-box-card-bg-image) !important;
+    border: var(--home-box-card-border) !important;
+}
+
+/* 首页4个小卡片毛玻璃效果 */
+html[data-theme='dark'] .home-grid-2x2 .home-card,
+html[data-theme='dark'] .home-trend-card,
+html[data-theme='dark'] .home-table-card {
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    background-color: rgba(255, 255, 255, 0.015) !important;
+    border: none !important;
+}
+
+/* ==================== Element Plus 弹出层及下拉框覆盖 ==================== */
+html[data-theme='dark'] .el-popper.is-light,
+html[data-theme='dark'] .el-popper.is-dark,
+html[data-theme='dark'] .el-popper {
+    backdrop-filter: blur(18px) saturate(1.4) !important;
+    background-color: rgba(44, 43, 43, 0.095) !important;
+    color: var(--text-color) !important;
+}
+
+html[data-theme='dark'] .el-popper[data-popper-placement^='bottom'] .el-popper__arrow::before,
+html[data-theme='dark'] .el-popper[data-popper-placement^='top'] .el-popper__arrow::before,
+html[data-theme='dark'] .el-popper[data-popper-placement^='left'] .el-popper__arrow::before,
+html[data-theme='dark'] .el-popper[data-popper-placement^='right'] .el-popper__arrow::before {
+    backdrop-filter: blur(18px) saturate(1.4) !important;
+    background-color: rgba(20, 20, 20, 0.75) !important;
+}
+
+html[data-theme='dark'] .el-select-dropdown__item {
+    color: var(--text-color) !important;
+}
+
+html[data-theme='dark'] .el-select-dropdown__item.hover,
+html[data-theme='dark'] .el-select-dropdown__item:hover {
+    background-color: rgba(64, 158, 255, 0.2) !important;
+    color: #409eff !important;
+}
+
+html[data-theme='dark'] .el-picker-panel,
+html[data-theme='dark'] .el-picker-panel__body-wrapper,
+html[data-theme='dark'] .el-date-picker {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+/* ==================== 组合输入框前后置内容覆盖 ==================== */
+html[data-theme='dark'] .el-input-group__prepend,
+html[data-theme='dark'] .el-input-group__append {
+    background-color: transparent !important;
+}
+
+html[data-theme='dark'] .el-input-group__prepend .el-select:hover .el-input__wrapper,
+html[data-theme='dark'] .el-input-group__prepend .el-select .el-input__wrapper,
+html[data-theme='dark'] .el-input-group__append .el-select:hover .el-input__wrapper,
+html[data-theme='dark'] .el-input-group__append .el-select .el-input__wrapper {
+    background-color: transparent !important;
+}
+
+/* ==================== 账本管理页面卡片底色调浅 ==================== */
+html[data-theme='dark'] .quota-card,
+html[data-theme='dark'] .score-panel {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}

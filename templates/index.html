@@ -15,7 +15,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <span>账单数据</span>
                 <div class="d-flex gap-2">
-                    <el-select v-model="billType" placeholder="选择账单类型" style="width: 100px;">
+                    <el-select v-model="billType" placeholder="选择账单类型" class="index-select-100">
                         <el-option label="支付宝" value="alipay"></el-option>
                         <el-option label="微信" value="wechat"></el-option>
                     </el-select>
@@ -49,15 +49,16 @@
                     :disabled="!isEditing || !selectedBills.length">批量打标</el-button>
                 <el-button type="primary" @click="handleAutoTag" :disabled="hasCache || !bills.length">自动打标</el-button>
                 <el-input v-model="searchQuery" placeholder="搜索内容（null 为空值）" clearable @input="handleFilterChange"
-                    style="width: 170px;"></el-input>
-                <el-select v-model="searchField" placeholder="选择字段" @change="handleFilterChange" style="width: 100px;">
+                    class="index-input-170"></el-input>
+                <el-select v-model="searchField" placeholder="选择字段" @change="handleFilterChange"
+                    class="index-select-100">
                     <el-option label="全部字段" value="all"></el-option>
                     <el-option label="交易对方" value="交易对方"></el-option>
                     <el-option label="商品说明" value="商品说明"></el-option>
                     <el-option label="类别" value="类别"></el-option>
                     <el-option label="标签" value="标签"></el-option>
                 </el-select>
-                <el-select v-model="mealType" placeholder="餐点类型" @change="handleFilterChange" style="width: 100px;"
+                <el-select v-model="mealType" placeholder="餐点类型" @change="handleFilterChange" class="index-select-100"
                     clearable>
                     <el-option label="时段选择" value=""></el-option>
                     <el-option label="早餐" value="早餐"></el-option>
@@ -70,7 +71,7 @@
 
         <!-- 账单表格 -->
         <div class="table-container">
-            <el-table :data="paginatedBills" style="width: 100%" stripe :max-height="560"
+            <el-table :data="paginatedBills" class="index-table-full" stripe :max-height="560"
                 @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
                 v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">
@@ -89,7 +90,7 @@
                 <el-table-column prop="金额" label="金额" width="120" align="center" sortable="custom">
                     <template #default="scope">
                         <el-input-number v-if="isEditing" v-model="scope.row.金额" :precision="2" :step="0.01"
-                            size="small" @change="markModified(scope.row)" style="width: 90px"
+                            size="small" @change="markModified(scope.row)" class="index-input-number-90"
                             :controls="false"></el-input-number>
                         <span v-else>[[ formatAmount(scope.row.金额) ]]</span>
                     </template>
@@ -98,7 +99,7 @@
                 <el-table-column prop="类别" label="类别" width="120" align="center" :filters="categoryFilterOptions"
                     :filter-method="filterCategory">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" style="width: 80px" clearable
+                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" class="index-select-80" clearable
                             @change="handleCategoryChange(scope.row)" filterable>
                             <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                         </el-select>
@@ -109,7 +110,7 @@
                 <el-table-column prop="标签" label="标签" width="120" align="center" :filters="tagFilterOptions"
                     :filter-method="filterTag">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" style="width: 80px" clearable
+                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" class="index-select-80" clearable
                             @change="markModified(scope.row)" filterable>
                             <el-option v-for="tag in getTagsForCategory(scope.row.类别)" :key="tag" :label="tag"
                                 :value="tag"></el-option>
@@ -123,21 +124,21 @@
                 <el-table-column prop="备注" label="备注" min-width="50">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.备注" size="small" @change="markModified(scope.row)"
-                            style="width: 150px"></el-input>
+                            class="index-field-150"></el-input>
                         <span v-else>[[ scope.row.备注 ]]</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="命中规则" label="命中规则" min-width="150">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.命中规则" size="small"
-                            @change="markModified(scope.row)" style="width: 150px"></el-input>
+                            @change="markModified(scope.row)" class="index-field-150"></el-input>
                         <span v-else>[[ scope.row.命中规则 ]]</span>
                     </template>
                 </el-table-column>
             </el-table>
 
             <!-- 分页器 -->
-            <div class="pagination-container" style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <div class="pagination-container index-pagination-compact">
                 <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
                     :page-sizes="[100, 500, 1000, 5000, 10000]" layout="total, sizes, prev, pager, next, jumper"
                     :total="filteredBillsData.length" @size-change="val => { pageSize = val; currentPage = 1; }"
@@ -151,12 +152,12 @@
     <el-dialog v-model="batchTagDialogVisible" title="批量打标" width="500px" :close-on-click-modal="false">
         <el-form :model="batchTagForm" label-width="80px">
             <el-form-item label="类别">
-                <el-select v-model="batchTagForm.category" placeholder="请选择类别" style="width: 100%">
+                <el-select v-model="batchTagForm.category" placeholder="请选择类别" class="index-select-full">
                     <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="标签">
-                <el-select v-model="batchTagForm.tag" placeholder="请选择标签" style="width: 100%">
+                <el-select v-model="batchTagForm.tag" placeholder="请选择标签" class="index-select-full">
                     <el-option v-for="tag in categoryTags[batchTagForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>

@@ -1,0 +1,1691 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="app" v-cloak>
+    <el-card class="box-card">
+        <div class="home-layout">
+            <!-- 第一层：20% -->
+            <el-card class="home-card home-card-top">
+                <div class="home-top-bar">
+                    <div class="home-top-text">
+                        <div class="home-top-title">首页</div>
+                    </div>
+                    <div class="home-top-quota-wrap">
+                        <div id="homeTopQuotaGaugeChart" class="home-quota-chart home-top-quota-chart"></div>
+                        <div class="home-quota-empty home-top-quota-empty" v-if="quotaGaugeError"
+                            v-text="quotaGaugeError"></div>
+                    </div>
+                </div>
+            </el-card>
+
+            <div class="home-main-stack">
+                <!-- 第二层：40% -->
+                <div class="home-row home-row-second">
+                    <div class="home-col">
+                        <div class="home-grid-2x2">
+                            <el-card class="home-card home-duration-card">
+                                <div class="home-duration-content">
+                                    <div class="home-duration-icon-row">
+                                        <span class="home-duration-icon" aria-hidden="true">
+                                            <el-icon size="25">
+                                                <component :is="TimerIcon" />
+                                            </el-icon>
+                                        </span>
+                                    </div>
+                                    <div class="home-duration-desc">累计记账天数</div>
+                                    <div class="home-duration-value home-duration-value-purple"
+                                        v-text="recordDurationValueText"></div>
+                                </div>
+                            </el-card>
+                            <el-card class="home-card home-duration-card">
+                                <div class="home-duration-content">
+                                    <div class="home-duration-icon-row">
+                                        <span class="home-duration-icon home-duration-icon-green" aria-hidden="true">
+                                            <el-icon size="25">
+                                                <component :is="NotebookIcon" />
+                                            </el-icon>
+                                        </span>
+                                    </div>
+                                    <div class="home-duration-desc">累计记账笔数</div>
+                                    <div class="home-duration-value home-duration-value-green"
+                                        v-text="recordBillCountText"></div>
+                                </div>
+                            </el-card>
+                            <el-card class="home-card home-duration-card">
+                                <div class="home-duration-content">
+                                    <div class="home-duration-icon-row">
+                                        <span class="home-duration-icon"
+                                            :class="monthChangeDirection === 'up' ? 'home-mom-icon-red' : monthChangeDirection === 'down' ? 'home-mom-icon-green' : ''"
+                                            aria-hidden="true">
+                                            <el-icon v-if="monthChangeDirection === 'up'" size="25">
+                                                <component :is="TopIcon" />
+                                            </el-icon>
+                                            <el-icon v-else-if="monthChangeDirection === 'down'" size="25">
+                                                <component :is="BottomIcon" />
+                                            </el-icon>
+                                            <el-icon v-else size="25">
+                                                <component :is="MinusIcon" />
+                                            </el-icon>
+                                        </span>
+                                    </div>
+                                    <div class="home-duration-desc">相比上月</div>
+                                    <div class="home-duration-value"
+                                        :class="monthChangeDirection === 'up' ? 'home-mom-value-red' : monthChangeDirection === 'down' ? 'home-mom-value-green' : ''"
+                                        v-text="monthChangeText"></div>
+                                </div>
+                            </el-card>
+                            <el-card class="home-card home-duration-card">
+                                <div class="home-duration-content">
+                                    <div class="home-duration-icon-row">
+                                        <span class="home-duration-icon home-duration-icon-orange" aria-hidden="true">
+                                            <el-icon size="25">
+                                                <component :is="CoinIcon" />
+                                            </el-icon>
+                                        </span>
+                                    </div>
+                                    <div class="home-duration-desc">本月总支出</div>
+                                    <div class="home-duration-value home-duration-value-orange" v-text="monthTotalText">
+                                    </div>
+                                </div>
+                            </el-card>
+                        </div>
+                    </div>
+                    <div class="home-col">
+                        <el-card class="home-card home-trend-card">
+                            <div id="homeExpenseTrendChart" class="home-trend-chart"></div>
+                            <div class="home-trend-empty" v-if="trendError" v-text="trendError"></div>
+                        </el-card>
+                    </div>
+                </div>
+
+                <!-- 第三层：40% -->
+                <div class="home-row home-row-third">
+                    <div class="home-col">
+                        <el-card class="home-card home-table-card">
+                            <div class="home-table-wrap">
+                                <div class="home-table-title">最近消费</div>
+                                <el-table class="home-consume-table" :data="homeTableData" stripe
+                                    v-loading="homeTableLoading" :empty-text="homeTableLoading ? ' ' : '暂无数据'"
+                                    element-loading-background="transparent" class="home-consume-table-frame"
+                                    height="calc(100% - 35px)" size="small">
+                                    <el-table-column prop="date" label="日期" min-width="130"
+                                        align="center"></el-table-column>
+                                    <el-table-column prop="amount" label="金额" min-width="110" align="center">
+                                        <template #default="{ row }">
+                                            <span
+                                                :class="Number(row.amount) < 0 ? 'stats-amount-negative' : 'stats-amount-positive'"
+                                                v-text="formatTableAmount(row.amount)">
+                                            </span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="category" label="类别" min-width="95" align="left"
+                                        header-align="left">
+                                        <template #default="{ row }">
+                                            <span v-if="row.category" class="home-inline-start">
+                                                <el-tag size="small" effect="plain"
+                                                    :style="getCategoryIconTagStyle(row.category)">
+                                                    <el-icon size="14">
+                                                        <component :is="getCategoryIconComponent(row.category)" />
+                                                    </el-icon>
+                                                </el-tag>
+                                                <span class="home-text-primary" v-text="row.category"></span>
+                                            </span>
+                                            <span v-else>-</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="tag" label="标签" min-width="85" align="center">
+                                        <template #default="{ row }">
+                                            <el-tag v-if="row.tag" size="small" effect="plain"
+                                                :style="getCategoryTagStyle(row.category)">
+                                                <span v-text="row.tag"></span>
+                                            </el-tag>
+                                            <span v-else>-</span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="book" label="账本" min-width="120" align="center">
+                                        <template #default="{ row }">
+                                            <el-tag v-if="row.book" size="small" effect="plain"
+                                                :style="getBookTagStyle(row.book)">
+                                                <span class="home-inline-center-sm">
+                                                    <el-icon size="14">
+                                                        <component :is="getBookIconComponent(row.book)" />
+                                                    </el-icon>
+                                                    <span v-text="row.book"></span>
+                                                </span>
+                                            </el-tag>
+                                            <span v-else>-</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div class="home-col home-grid-rows-2">
+                        <el-card class="home-card home-heatmap-card">
+                            <div class="home-heatmap-wrap">
+                                <div id="homeExpenseHeatmapChart" class="home-heatmap-chart"></div>
+                                <div class="home-heatmap-empty" v-if="heatmapError" v-text="heatmapError"></div>
+                            </div>
+                        </el-card>
+                        <el-card class="home-card home-monthly-bar-card">
+                            <div class="home-monthly-bar-wrap">
+                                <div id="homeMonthlyExpenseBarChart" class="home-monthly-bar-chart"></div>
+                                <div class="home-monthly-bar-empty" v-if="monthlyBarError" v-text="monthlyBarError">
+                                </div>
+                            </div>
+                        </el-card>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </el-card>
+</div>
+
+
+<script src="{{ url_for('static', filename='vendor/echarts/echarts.min.js') }}"></script>
+<script>
+    const { createApp, ref, onMounted, onBeforeUnmount, nextTick } = Vue;
+
+    const parseDate = (value) => {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const formatIntegerText = (value) => Math.max(0, Math.round(value)).toLocaleString('zh-CN');
+
+    const formatShortDate = (date) => {
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${mm}-${dd}`;
+    };
+
+    const formatTrendAmount = (value) => {
+        const num = Number(value) || 0;
+        if (num >= 10000) return `¥${(num / 10000).toFixed(1)}w`;
+        return `¥${Math.round(num).toLocaleString('zh-CN')}`;
+    };
+
+    const formatTableAmount = (value) => {
+        const num = Number(value) || 0;
+        return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const app = createApp({
+        setup() {
+            const recordDurationValueText = ref('0');
+            const recordBillCountText = ref('0');
+            const homeTableData = ref([]);
+            const homeTableLoading = ref(true);
+            const monthChangeText = ref('--');
+            const monthChangeDirection = ref('flat');
+            const monthTotalText = ref('¥0');
+            const trendError = ref('');
+            const monthlyBarError = ref('');
+            const heatmapError = ref('');
+            const quotaGaugeError = ref('');
+            const quotaGaugeBooks = ref([]);
+            const categoryMeta = ref({});
+            const bookMeta = ref({});
+            const quotaBookConfig = ref({});
+            let trendChart = null;
+            let monthlyBarChart = null;
+            let heatmapChart = null;
+            let quotaGaugeChart = null;
+            let onResize = null;
+            let movingDotRaf = null;
+            let dotStartAt = null;
+            let durationAnimRaf = null;
+            let countAnimRaf = null;
+            let momAnimRaf = null;
+            let monthTotalAnimRaf = null;
+            let quotaGaugeAnimRaf = null;
+            let heatmapGlitchInterval = null;
+            let onThemeChange = null;
+            let themeRerenderTimer = null;
+            let trendLineGlowApplyFn = null;
+            let trendLineGlowHooked = false;
+            let cachedRows = [];
+            let cachedSeries = [];
+            let cachedMonthlySeries = [];
+            const fallbackCategoryIconComponent =
+                ElementPlusIconsVue.Coin || ElementPlusIconsVue.Grid || ElementPlusIconsVue.CollectionTag;
+            const fallbackBookIconComponent =
+                ElementPlusIconsVue.Coin || ElementPlusIconsVue.Wallet || ElementPlusIconsVue.CollectionTag;
+            const getCssVar = (name) => {
+                return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            };
+            const getCssVarOr = (name, fallback) => getCssVar(name) || fallback;
+            const getCssNumber = (name, fallback = 0) => {
+                const parsed = Number.parseFloat(getCssVar(name));
+                return Number.isFinite(parsed) ? parsed : fallback;
+            };
+            const getHeatmapLevelColors = () => {
+                const defaults = [
+                    '#89c0ed',
+                    '#64b5f6',
+                    '#1e88e5',
+                    '#0d47a1',
+                    '#e4bfa4',
+                    '#fac858',
+                    '#fc8452',
+                    '#f43b09',
+                    '#b67ef9',
+                    '#c407f8',
+                ];
+                return defaults.map((fallback, index) =>
+                    getCssVarOr(`--home-heatmap-level-${index + 1}`, fallback)
+                );
+            };
+            const getDefaultCategoryColor = () => getCssVarOr('--home-default-category-color', '#409EFF');
+            const getDefaultBookColor = () => getCssVarOr('--home-default-book-color', '#409EFF');
+            const getQuotaGaugeFallbackColors = () => ([
+                getCssVarOr('--home-quota-fallback-1', '#2fc98f'),
+                getCssVarOr('--home-quota-fallback-2', '#31c5f8'),
+                getCssVarOr('--home-quota-fallback-3', '#5a8cff'),
+            ]);
+
+            const loadCategoryMeta = async () => {
+                try {
+                    const response = await fetch('/api/categories');
+                    const data = await response.json();
+                    if (data?.success && data.meta && typeof data.meta === 'object') {
+                        categoryMeta.value = data.meta;
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('加载分类配置失败:', error);
+                }
+                categoryMeta.value = {};
+            };
+
+            const loadBookMeta = async () => {
+                try {
+                    const { data } = await axios.get('/api/books');
+                    if (data?.success) {
+                        bookMeta.value = data.meta && typeof data.meta === 'object' ? data.meta : {};
+                        quotaBookConfig.value = data.books && typeof data.books === 'object' ? data.books : {};
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('加载账本配置失败:', error);
+                }
+                bookMeta.value = {};
+                quotaBookConfig.value = {};
+            };
+
+            const hexToRgba = (hex, alpha) => {
+                const fallbackHex = getDefaultCategoryColor();
+                if (!hex) hex = fallbackHex;
+                const normalized = String(hex).replace('#', '');
+                if (!/^[0-9A-Fa-f]{6}$/.test(normalized)) return `rgba(64,158,255,${alpha})`;
+                const bigint = parseInt(normalized, 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return `rgba(${r},${g},${b},${alpha})`;
+            };
+
+            const getCategoryColor = (category) => {
+                const fallback = getDefaultCategoryColor();
+                if (!category) return fallback;
+                return categoryMeta.value?.[category]?.color || fallback;
+            };
+
+            const getCategoryIconComponent = (category) => {
+                if (!category) return fallbackCategoryIconComponent;
+                const iconName = categoryMeta.value?.[category]?.icon;
+                if (!iconName) return fallbackCategoryIconComponent;
+                const filledIcon = ElementPlusIconsVue[`${iconName}Filled`];
+                return filledIcon || ElementPlusIconsVue[iconName] || fallbackCategoryIconComponent;
+            };
+
+            const getCategoryTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: color,
+                    borderColor: hexToRgba(color, 0.35),
+                    backgroundColor: hexToRgba(color, 0.1)
+                };
+            };
+
+            const getCategoryIconTagStyle = (category) => {
+                const color = getCategoryColor(category);
+                return {
+                    color: getCssVarOr('--home-icon-tag-text', '#FFFFFF'),
+                    borderColor: color,
+                    backgroundColor: color,
+                    width: '22px',
+                    height: '22px',
+                    padding: '0',
+                    borderRadius: '2px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                };
+            };
+
+            const getBookColor = (book) => {
+                const fallback = getDefaultBookColor();
+                if (!book) return fallback;
+                return bookMeta.value?.[book]?.color || fallback;
+            };
+
+            const getBookIconComponent = (book) => {
+                if (!book) return fallbackBookIconComponent;
+                const iconName = bookMeta.value?.[book]?.icon;
+                if (!iconName) return fallbackBookIconComponent;
+                const filledIcon = ElementPlusIconsVue[`${iconName}Filled`];
+                return filledIcon || ElementPlusIconsVue[iconName] || fallbackBookIconComponent;
+            };
+
+            const getBookTagStyle = (book) => {
+                const color = getBookColor(book);
+                return {
+                    color: color,
+                    borderColor: hexToRgba(color, 0.35),
+                    backgroundColor: hexToRgba(color, 0.1)
+                };
+            };
+
+            const stopNumberAnimations = () => {
+                if (durationAnimRaf) {
+                    cancelAnimationFrame(durationAnimRaf);
+                    durationAnimRaf = null;
+                }
+                if (countAnimRaf) {
+                    cancelAnimationFrame(countAnimRaf);
+                    countAnimRaf = null;
+                }
+                if (momAnimRaf) {
+                    cancelAnimationFrame(momAnimRaf);
+                    momAnimRaf = null;
+                }
+                if (monthTotalAnimRaf) {
+                    cancelAnimationFrame(monthTotalAnimRaf);
+                    monthTotalAnimRaf = null;
+                }
+            };
+
+            const stopQuotaGaugeAnimation = () => {
+                if (quotaGaugeAnimRaf) {
+                    cancelAnimationFrame(quotaGaugeAnimRaf);
+                    quotaGaugeAnimRaf = null;
+                }
+            };
+
+            const stopHeatmapAnimation = () => {
+                if (heatmapGlitchInterval) {
+                    clearInterval(heatmapGlitchInterval);
+                    heatmapGlitchInterval = null;
+                }
+            };
+
+            const animateNumberFromZero = (toValue, durationMs, onUpdate, onDone) => {
+                const target = Math.max(0, Number(toValue) || 0);
+                const totalDuration = Math.max(200, durationMs || 1000);
+                let startTs = null;
+
+                const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+                const tick = (ts) => {
+                    if (startTs === null) startTs = ts;
+                    const progress = Math.min((ts - startTs) / totalDuration, 1);
+                    const eased = easeOut(progress);
+                    onUpdate(target * eased);
+
+                    if (progress < 1) {
+                        return requestAnimationFrame(tick);
+                    }
+                    onUpdate(target);
+                    if (typeof onDone === 'function') onDone();
+                    return null;
+                };
+
+                return requestAnimationFrame(tick);
+            };
+
+            const getDurationDaysFromRows = (rows) => {
+                const dates = rows
+                    .map(item => parseDate(item.date))
+                    .filter(Boolean)
+                    .sort((a, b) => a - b);
+
+                if (dates.length === 0) return 0;
+                localStorage.setItem('firstBillDate', dates[0].toISOString());
+                return Math.max(1, Math.ceil((Date.now() - dates[0].getTime()) / 86400000));
+            };
+
+            const animateSummaryCards = (rows) => {
+                stopNumberAnimations();
+
+                const billCount = Array.isArray(rows) ? rows.length : 0;
+                const durationDays = getDurationDaysFromRows(rows || []);
+
+                recordDurationValueText.value = '0';
+                recordBillCountText.value = '0';
+
+                durationAnimRaf = animateNumberFromZero(durationDays, 1100, (val) => {
+                    recordDurationValueText.value = formatIntegerText(val);
+                });
+
+                countAnimRaf = animateNumberFromZero(billCount, 1000, (val) => {
+                    recordBillCountText.value = formatIntegerText(val);
+                });
+            };
+
+            const updateDurationTextByRows = (rows) => {
+                animateSummaryCards(rows);
+            };
+
+            const calculateMonthChange = (rows) => {
+                if (!rows || rows.length === 0) {
+                    monthChangeText.value = '--';
+                    monthChangeDirection.value = 'flat';
+                    return;
+                }
+
+                // 以账单最后一笔的月份作为「当前月」
+                let latestDate = null;
+                for (const item of rows) {
+                    const d = parseDate(item.date);
+                    if (d && (!latestDate || d > latestDate)) latestDate = d;
+                }
+                if (!latestDate) {
+                    monthChangeText.value = '--';
+                    monthChangeDirection.value = 'flat';
+                    return;
+                }
+
+                const curYear = latestDate.getFullYear();
+                const curMonth = latestDate.getMonth(); // 0-indexed
+                const prevDate = new Date(curYear, curMonth - 1, 1);
+                const prevYear = prevDate.getFullYear();
+                const prevMonth = prevDate.getMonth();
+
+                let curTotal = 0;
+                let prevTotal = 0;
+                for (const item of rows) {
+                    const d = parseDate(item.date);
+                    if (!d) continue;
+                    const amount = Math.abs(Number(item.amount) || 0);
+                    const y = d.getFullYear();
+                    const m = d.getMonth();
+                    if (y === curYear && m === curMonth) curTotal += amount;
+                    else if (y === prevYear && m === prevMonth) prevTotal += amount;
+                }
+
+                if (prevTotal === 0) {
+                    if (curTotal === 0) {
+                        monthChangeText.value = '--';
+                        monthChangeDirection.value = 'flat';
+                        monthTotalText.value = '¥0.00';
+                    } else {
+                        monthChangeText.value = '新增';
+                        monthChangeDirection.value = 'up';
+                        // 本月总支出动画
+                        monthTotalText.value = '¥0';
+                        if (monthTotalAnimRaf) cancelAnimationFrame(monthTotalAnimRaf);
+                        monthTotalAnimRaf = animateNumberFromZero(curTotal, 1000, (val) => {
+                            monthTotalText.value = `¥${val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        });
+                    }
+                    return;
+                }
+
+                const changePercent = ((curTotal - prevTotal) / prevTotal) * 100;
+                const absPercent = Math.abs(changePercent);
+                const sign = changePercent > 0 ? '+' : changePercent < 0 ? '-' : '';
+
+                if (changePercent > 0.5) monthChangeDirection.value = 'up';
+                else if (changePercent < -0.5) monthChangeDirection.value = 'down';
+                else monthChangeDirection.value = 'flat';
+
+                // 数字动画：从 0 跑到目标百分比
+                monthChangeText.value = `${sign}0.0%`;
+                if (momAnimRaf) cancelAnimationFrame(momAnimRaf);
+                momAnimRaf = animateNumberFromZero(absPercent, 900, (val) => {
+                    monthChangeText.value = `${sign}${val.toFixed(1)}%`;
+                });
+
+                // 本月总支出动画
+                monthTotalText.value = '¥0';
+                if (monthTotalAnimRaf) cancelAnimationFrame(monthTotalAnimRaf);
+                monthTotalAnimRaf = animateNumberFromZero(curTotal, 1000, (val) => {
+                    monthTotalText.value = `¥${val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                });
+            };
+
+            const buildHomeTableRows = (rows, limit = 30) => {
+                return (rows || [])
+                    .map(item => ({
+                        date: item.date || '',
+                        amount: Number(item.amount) || 0,
+                        category: item.category || '',
+                        tag: item.tag || '',
+                        book: item.book || ''
+                    }))
+                    .sort((a, b) => {
+                        const da = parseDate(a.date);
+                        const db = parseDate(b.date);
+                        return (db?.getTime?.() || 0) - (da?.getTime?.() || 0);
+                    })
+                    .slice(0, limit);
+            };
+
+            const buildRecentExpenseSeries = (rows) => {
+                const parsed = rows
+                    .map(item => ({
+                        date: parseDate(item.date),
+                        amount: Number(item.amount) || 0
+                    }))
+                    .filter(item => item.date);
+
+                if (!parsed.length) return [];
+
+                // 找到最后一笔账单的年月
+                const latest = parsed.reduce((max, item) => item.date > max ? item.date : max, parsed[0].date);
+                const targetYear = latest.getFullYear();
+                const targetMonth = latest.getMonth();
+
+                // 筛选同月数据，按天汇总
+                const dayMap = new Map();
+                for (const item of parsed) {
+                    if (item.date.getFullYear() === targetYear && item.date.getMonth() === targetMonth) {
+                        const day = item.date.getDate();
+                        dayMap.set(day, (dayMap.get(day) || 0) + Math.abs(item.amount));
+                    }
+                }
+
+                // 按天排序输出
+                return Array.from(dayMap.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([day, value]) => ({
+                        value,
+                        label: `${day}日`,
+                        fullDate: `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                    }));
+            };
+
+            const toMonthKey = (date) => {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}`;
+            };
+
+            const buildMonthlyExpenseSeries = (rows) => {
+                const monthMap = new Map();
+                for (const item of rows || []) {
+                    const date = parseDate(item.date);
+                    if (!date) continue;
+                    const key = toMonthKey(date);
+                    const amount = Math.abs(Number(item.amount) || 0);
+                    monthMap.set(key, (monthMap.get(key) || 0) + amount);
+                }
+
+                return Array.from(monthMap.entries())
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .slice(-24)
+                    .map(([month, value]) => ({
+                        month,
+                        label: month.slice(2),
+                        value
+                    }));
+            };
+
+            const calculateMonthDivisor = (start, end) => {
+                if (!start || !end) return 1;
+                let months = (end.getFullYear() - start.getFullYear()) * 12;
+                months += end.getMonth() - start.getMonth();
+                return Math.max(1, months + 1);
+            };
+
+            const getActiveMonthCountFromRows = (rows) => {
+                let startDate = null;
+                let endDate = null;
+                for (const item of rows || []) {
+                    const date = parseDate(item.date);
+                    if (!date) continue;
+                    if (!startDate || date < startDate) startDate = date;
+                    if (!endDate || date > endDate) endDate = date;
+                }
+                return calculateMonthDivisor(startDate, endDate);
+            };
+
+            const buildBookSpendingMap = (rows) => {
+                const map = {};
+                for (const item of rows || []) {
+                    const name = String(item.book || '').trim();
+                    if (!name) continue;
+                    const amount = Math.abs(Number(item.amount) || 0);
+                    map[name] = (map[name] || 0) + amount;
+                }
+                return map;
+            };
+
+            const buildQuotaGaugeBooks = (rows) => {
+                const activeMonthCount = getActiveMonthCountFromRows(rows);
+                const spendingMap = buildBookSpendingMap(rows);
+                const fallbackColors = getQuotaGaugeFallbackColors();
+                const fixedQuotaBooks = Object.entries(quotaBookConfig.value || {})
+                    .map(([rawName, config]) => {
+                        const name = String(rawName || '').trim();
+                        const monthlyQuotaRaw = config && typeof config === 'object'
+                            ? config.fixed_quota
+                            : config;
+                        const monthlyQuota = Number(monthlyQuotaRaw || 0);
+                        return { name, monthlyQuota };
+                    })
+                    .filter(item => item.name && item.monthlyQuota > 0)
+                    .slice(0, 3);
+
+                return fixedQuotaBooks.map((item, index) => {
+                    const totalQuota = item.monthlyQuota * activeMonthCount;
+                    const spent = Number(spendingMap[item.name] || 0);
+                    const rawPercent = totalQuota > 0 ? (spent / totalQuota) * 100 : 0;
+                    return {
+                        ...item,
+                        totalQuota,
+                        spent,
+                        rawPercent: Math.max(0, rawPercent),
+                        arcPercent: Math.max(0, Math.min(100, rawPercent)),
+                        color: getBookColor(item.name) || fallbackColors[index % fallbackColors.length]
+                    };
+                });
+            };
+
+            const toDateKey = (date) => {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            };
+
+            const getCalendarChartColors = () => {
+                return {
+                    textColor: getCssVarOr('--home-calendar-text', '#303133'),
+                    tooltipBg: getCssVarOr('--home-calendar-tooltip-bg', 'rgba(255, 255, 255, 0.9)'),
+                    tooltipBorder: getCssVarOr('--home-calendar-tooltip-border', '#E4E7ED'),
+                    tooltipText: getCssVarOr('--home-calendar-tooltip-text', '#303133'),
+                    borderColor: getCssVarOr('--home-calendar-border', '#DCDFE6'),
+                    dotBorderColor: getCssVarOr('--home-calendar-dot-border', 'rgba(48, 49, 51, 0.28)'),
+                };
+            };
+
+            const getChartColors = () => {
+                return {
+                    text: getCssVarOr('--home-chart-text', '#303133'),
+                    axisLabel: getCssVarOr('--home-chart-axis-label', '#606266'),
+                    splitLine: getCssVarOr('--home-chart-split-line', 'rgba(52, 74, 106, 0.30)'),
+                    tooltipBg: getCssVarOr('--home-chart-tooltip-bg', 'rgba(12, 19, 33, 0.95)'),
+                    tooltipBorder: getCssVarOr('--home-chart-tooltip-border', '#243754'),
+                    tooltipText: getCssVarOr('--home-chart-tooltip-text', '#303133'),
+                    tooltipShadow: getCssVarOr('--home-chart-tooltip-shadow', '0 8px 24px rgba(0,0,0,.15)'),
+                    axisLine: getCssVarOr('--home-chart-axis-line-color', '#1a2940'),
+                    gaugeTitle: getCssVarOr('--home-chart-gauge-title', '#303133'),
+                    gaugeDetail: getCssVarOr('--home-chart-gauge-detail', '#303133'),
+                    gaugeDetailAmount: getCssVarOr('--home-chart-gauge-detail-amount', '#303133'),
+                    gaugeAxisLine: getCssVarOr('--home-chart-gauge-axis-line', 'rgba(120, 141, 173, 0.28)'),
+                    gaugeEmpty: getCssVarOr('--home-chart-gauge-empty', 'rgba(120, 141, 173, 0.45)'),
+                    gaugeOverLimit: getCssVarOr('--home-chart-gauge-over-limit', '#ff9ea1'),
+                    gaugeNormal: getCssVarOr('--home-chart-gauge-normal', '#409eff'),
+                    gaugeEmptyTitle: getCssVarOr('--home-chart-gauge-empty-title', '#8ea0bf'),
+                    gaugeEmptyDetail: getCssVarOr('--home-chart-gauge-empty-detail', '#7f90ac'),
+                    lineGradientStart: getCssVarOr('--home-chart-line-gradient-start', 'rgba(47, 140, 255, 0.05)'),
+                    lineGradientEnd: getCssVarOr('--home-chart-line-gradient-end', '#2f8cff'),
+                    barGradientTop: getCssVarOr('--home-chart-bar-gradient-top', '#2f8cff'),
+                    barGradientBottom: getCssVarOr('--home-chart-bar-gradient-bottom', 'rgba(47, 140, 255, 0.18)'),
+                    barBorder: getCssVarOr('--home-chart-bar-border', 'rgba(47, 140, 255, 0.45)'),
+                    linePoint: getCssVarOr('--home-chart-line-point', '#2f8cff'),
+                    movingDot: getCssVarOr('--home-chart-moving-dot', '#ff5c60'),
+                    movingDotBorder: getCssVarOr('--home-chart-moving-dot-border', '#ff5c60'),
+                    lineShadowColor: getCssVarOr('--home-chart-line-shadow-color', 'transparent'),
+                    lineShadowBlur: getCssNumber('--home-chart-line-shadow-blur', 0),
+                    lineShadowOffsetY: getCssNumber('--home-chart-line-shadow-offset-y', 0)
+                };
+            };
+
+            const getLatestCalendarWindowRows = (rows, dayCount = 730) => {
+                const latestBillDate = (rows || []).reduce((latest, item) => {
+                    const parsed = parseDate(item.date);
+                    if (!parsed) return latest;
+                    parsed.setHours(0, 0, 0, 0);
+                    if (!latest || parsed > latest) return parsed;
+                    return latest;
+                }, null);
+
+                const end = latestBillDate ? new Date(latestBillDate) : new Date();
+                end.setHours(0, 0, 0, 0);
+                const start = new Date(end);
+                start.setDate(end.getDate() - (dayCount - 1));
+
+                return {
+                    start,
+                    end,
+                    rows: (rows || []).filter((item) => {
+                        const parsed = parseDate(item.date);
+                        if (!parsed) return false;
+                        parsed.setHours(0, 0, 0, 0);
+                        return parsed >= start && parsed <= end;
+                    })
+                };
+            };
+
+            const processCalendarDataByYear = (data) => {
+                const dailyData = {};
+                (data || []).forEach(item => {
+                    if (!item.date) return;
+                    const dateObj = parseDate(item.date);
+                    if (!dateObj) return;
+
+                    const dateKey = toDateKey(dateObj);
+                    if (!dailyData[dateKey]) dailyData[dateKey] = 0;
+                    dailyData[dateKey] += Math.abs(Number(item.amount) || 0);
+                });
+
+                const yearlyData = {};
+                Object.entries(dailyData).forEach(([date, amount]) => {
+                    const year = date.split('-')[0];
+                    if (!yearlyData[year]) yearlyData[year] = [];
+                    yearlyData[year].push([date, amount]);
+                });
+                return yearlyData;
+            };
+
+            const renderRecentMonthHeatmap = (rows) => {
+                const container = document.getElementById('homeExpenseHeatmapChart');
+                if (!container || !window.echarts) return;
+                const chartFontFamily = getComputedStyle(document.body).fontFamily || "'fusion-pixel', sans-serif";
+                const colors = getCalendarChartColors();
+
+                if (!heatmapChart) {
+                    heatmapChart = echarts.init(container);
+                }
+                stopHeatmapAnimation();
+
+                const { rows: latestRows, end: latestWindowEnd } = getLatestCalendarWindowRows(rows, 730);
+                if (!latestRows.length) {
+                    if (!heatmapError.value) heatmapError.value = '近2年暂无账单数据';
+                    heatmapChart.clear();
+                    return;
+                }
+
+                heatmapError.value = '';
+                const yearlyData = processCalendarDataByYear(latestRows);
+                const endYear = latestWindowEnd.getFullYear();
+                const availableYears = [endYear, endYear - 1];
+                const TOP_PADDING = 10;
+                const yearBlockHeight = 78;
+                const yearOverlap = 22;
+                const yearBlockStep = Math.max(1, yearBlockHeight - yearOverlap);
+                const BOTTOM_PADDING = 12;
+                const heatmapDotBorderColor = colors.dotBorderColor;
+                const heatmapLevelColors = getHeatmapLevelColors();
+                const allDateDotsByYear = {};
+                availableYears.forEach((year) => {
+                    const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+                    const days = isLeap ? 366 : 365;
+                    const dots = [];
+                    for (let i = 0; i < days; i++) {
+                        const d = new Date(year, 0, i + 1);
+                        dots.push([toDateKey(d), 0]);
+                    }
+                    allDateDotsByYear[year] = dots;
+                });
+                const totalHeight = TOP_PADDING
+                    + Math.max(0, availableYears.length - 1) * yearBlockStep
+                    + yearBlockHeight
+                    + BOTTOM_PADDING;
+                container.style.height = `${Math.max(160, totalHeight)}px`;
+                heatmapChart.resize();
+
+                const buildBaseDotSeries = () => availableYears.map((year, index) => ({
+                    name: '日期底点',
+                    type: 'scatter',
+                    coordinateSystem: 'calendar',
+                    calendarIndex: index,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    data: allDateDotsByYear[year] || [],
+                    itemStyle: { color: 'transparent', borderWidth: 1, borderColor: heatmapDotBorderColor },
+                    tooltip: { show: false },
+                    silent: true,
+                    z: 1
+                }));
+
+                const getBaseOption = () => ({
+                    animation: false,
+                    backgroundColor: 'transparent',
+                    textStyle: { fontFamily: chartFontFamily },
+                    tooltip: {
+                        appendToBody: true,
+                        confine: false,
+                        position: 'top',
+                        backgroundColor: colors.tooltipBg,
+                        borderColor: colors.tooltipBorder,
+                        borderWidth: 1,
+                        textStyle: { color: colors.tooltipText, fontFamily: chartFontFamily },
+                        formatter: (params) => {
+                            if (!params?.value || params.value[1] === undefined || params.value[1] === null) return '';
+                            const [date, amount] = params.value;
+                            return `${date}<br/>支出: ${formatTrendAmount(amount)}`;
+                        }
+                    },
+                    visualMap: {
+                        show: false,
+                        type: 'piecewise',
+                        seriesIndex: availableYears.map((_, index) => availableYears.length + index),
+                        orient: 'horizontal',
+                        left: 'center',
+                        top: 0,
+                        itemWidth: 10,
+                        itemHeight: 10,
+                        textStyle: { color: colors.textColor, fontFamily: chartFontFamily, fontSize: 10 },
+                        pieces: [
+                            { min: 0.01, max: 10, label: '<10', color: heatmapLevelColors[0] },
+                            { min: 10, max: 100, label: '<100', color: heatmapLevelColors[1] },
+                            { min: 100, max: 200, label: '<200', color: heatmapLevelColors[2] },
+                            { min: 200, max: 300, label: '<300', color: heatmapLevelColors[3] },
+                            { min: 300, max: 500, label: '<500', color: heatmapLevelColors[4] },
+                            { min: 500, max: 1000, label: '<1000', color: heatmapLevelColors[5] },
+                            { min: 1000, max: 3000, label: '<3000', color: heatmapLevelColors[6] },
+                            { min: 3000, max: 5000, label: '<5000', color: heatmapLevelColors[7] },
+                            { min: 5000, max: 10000, label: '<10000', color: heatmapLevelColors[8] },
+                            { min: 10000, label: '爆表', color: heatmapLevelColors[9] }
+                        ]
+                    },
+                    calendar: availableYears.map((year, index) => ({
+                        top: TOP_PADDING + index * yearBlockStep,
+                        left: 0,
+                        right: 0,
+                        orient: 'horizontal',
+                        cellSize: [8, 8],
+                        range: year,
+                        itemStyle: { borderWidth: 0, color: 'transparent' },
+                        yearLabel: { show: false },
+                        dayLabel: { show: false, firstDay: 1, nameMap: 'cn' },
+                        monthLabel: { show: false, nameMap: 'cn', position: 'start' },
+                        splitLine: { show: false }
+                    })),
+                    series: [
+                        ...buildBaseDotSeries(),
+                        ...availableYears.map((year, index) => ({
+                            name: '近2年开销',
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            calendarIndex: index,
+                            data: [],
+                            itemStyle: { borderRadius: 999, borderWidth: 0, borderColor: 'transparent' },
+                            z: 2
+                        }))
+                    ]
+                });
+
+                heatmapChart.setOption(getBaseOption(), true);
+
+                const DURATION = 2000;
+                const LOCK_TIMES = {};
+                const START_TIME = Date.now();
+
+                availableYears.forEach(year => {
+                    const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+                    const days = isLeap ? 366 : 365;
+                    for (let i = 0; i < days; i++) {
+                        const d = new Date(year, 0, i + 1);
+                        const dateKey = toDateKey(d);
+                        LOCK_TIMES[dateKey] = Math.random() * DURATION;
+                    }
+                });
+
+                const runProgressiveFrame = () => {
+                    const elapsed = Date.now() - START_TIME;
+
+                    if (elapsed > DURATION + 100) {
+                        stopHeatmapAnimation();
+                        const finalSeries = [
+                            ...buildBaseDotSeries(),
+                            ...availableYears.map((year, index) => ({
+                                name: '近2年开销',
+                                type: 'heatmap',
+                                coordinateSystem: 'calendar',
+                                calendarIndex: index,
+                                data: yearlyData[year] || [],
+                                itemStyle: { borderRadius: 999, borderWidth: 0, borderColor: 'transparent' },
+                                z: 2
+                            }))
+                        ];
+                        if (heatmapChart) heatmapChart.setOption({ series: finalSeries });
+                        return;
+                    }
+
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    const noiseAlpha = progress;
+                    const heatmapFrameSeries = availableYears.map((year, index) => {
+                        const yearData = [];
+                        const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+                        const days = isLeap ? 366 : 365;
+
+                        for (let i = 0; i < days; i++) {
+                            const d = new Date(year, 0, i + 1);
+                            const dateKey = toDateKey(d);
+
+                            if (elapsed >= LOCK_TIMES[dateKey]) {
+                                const realVal = (yearlyData[year] || []).find(item => item[0] === dateKey);
+                                if (realVal) yearData.push(realVal);
+                            } else {
+                                const randomVal = Math.pow(10, Math.random() * 3.5);
+                                yearData.push({
+                                    value: [dateKey, randomVal],
+                                    itemStyle: { opacity: noiseAlpha, borderRadius: 999, borderWidth: 0, borderColor: 'transparent' }
+                                });
+                            }
+                        }
+
+                        return {
+                            name: '近2年开销',
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            calendarIndex: index,
+                            data: yearData,
+                            itemStyle: { borderRadius: 999, borderWidth: 0, borderColor: 'transparent' },
+                            z: 2
+                        };
+                    });
+
+                    if (heatmapChart) heatmapChart.setOption({ series: [...buildBaseDotSeries(), ...heatmapFrameSeries] });
+                };
+
+                runProgressiveFrame();
+                heatmapGlitchInterval = setInterval(runProgressiveFrame, 60);
+            };
+
+            const renderExpenseChart = (series) => {
+                const container = document.getElementById('homeExpenseTrendChart');
+                if (!container || !window.echarts) return;
+                const chartFontFamily = getComputedStyle(document.body).fontFamily || "'fusion-pixel', sans-serif";
+                const colors = getChartColors();
+
+                if (!trendChart) {
+                    trendChart = echarts.init(container);
+                }
+
+                const lineData = series.map((item, index) => [index, item.value]);
+                const maxX = Math.max(series.length - 1, 0);
+                const xGridInterval = maxX >= 5 ? 5 : 1;
+
+                trendChart.setOption({
+                    animationDuration: 650,
+                    textStyle: { fontFamily: chartFontFamily },
+                    grid: { top: 38, right: 18, bottom: 28, left: 16, containLabel: true },
+                    legend: {
+                        show: true,
+                        top: 0,
+                        left: 'center',
+                        itemWidth: 18,
+                        itemHeight: 4,
+                        textStyle: {
+                            color: colors.text,
+                            fontFamily: chartFontFamily
+                        },
+                        data: ['开销']
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        appendToBody: true,
+                        confine: false,
+                        backgroundColor: colors.tooltipBg,
+                        borderColor: colors.tooltipBorder,
+                        borderWidth: 1,
+                        textStyle: { color: colors.tooltipText, fontFamily: chartFontFamily },
+                        extraCssText: `box-shadow: ${colors.tooltipShadow}; border-radius: 10px;`,
+                        formatter: (params) => {
+                            if (!params || !params.length) return '';
+                            const p = params.find(item => item.seriesName === '开销') || params[0];
+                            const xRaw = Array.isArray(p.value) ? p.value[0] : p.axisValue;
+                            const idx = Math.max(0, Math.min(series.length - 1, Math.round(Number(xRaw) || 0)));
+                            const row = series[idx];
+                            const value = row ? row.value : (Array.isArray(p.value) ? p.value[1] : p.value);
+                            return `${row ? row.fullDate : ''}<br/><span class="home-trend-tooltip-dot">●</span> 开销 ${formatTrendAmount(value)}`;
+                        }
+                    },
+                    xAxis: {
+                        type: 'value',
+                        boundaryGap: false,
+                        min: 0,
+                        max: maxX,
+                        interval: xGridInterval,
+                        minInterval: 1,
+                        axisTick: { show: false },
+                        axisLine: { lineStyle: { color: colors.axisLine, opacity: 0.3 } },
+                        axisLabel: {
+                            color: colors.axisLabel,
+                            margin: 14,
+                            fontSize: 14,
+                            fontFamily: chartFontFamily,
+                            formatter: (v) => {
+                                const idx = Math.round(v);
+                                if (!Number.isInteger(idx) || idx < 0 || idx >= series.length) return '';
+                                return series[idx].label;
+                            }
+                        },
+                        splitLine: { show: true, lineStyle: { color: colors.splitLine } }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { color: colors.axisLabel, formatter: (v) => formatTrendAmount(v), fontFamily: chartFontFamily, fontSize: 14 }
+                    },
+                    series: [{
+                        name: '开销',
+                        type: 'line',
+                        zlevel: 2,
+                        smooth: 0.45,
+                        symbol: 'none',
+                        data: lineData,
+                        z: 3,
+                        lineStyle: {
+                            width: 3.2,
+                            cap: 'round',
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                { offset: 0, color: colors.lineGradientStart },
+                                { offset: 1, color: colors.lineGradientEnd }
+                            ]),
+                            shadowColor: colors.lineShadowColor,
+                            shadowBlur: colors.lineShadowBlur,
+                            shadowOffsetY: colors.lineShadowOffsetY
+                        },
+                        itemStyle: { color: colors.linePoint }
+                    }, {
+                        name: '开销动点',
+                        type: 'scatter',
+                        zlevel: 3,
+                        coordinateSystem: 'cartesian2d',
+                        symbol: 'circle',
+                        symbolSize: 10,
+                        data: series.length ? [[0, series[0].value]] : [],
+                        itemStyle: {
+                            color: colors.movingDot,
+                            borderColor: colors.movingDotBorder,
+                            borderWidth: 2
+                        },
+                        tooltip: { show: false },
+                        z: 10,
+                        animationDurationUpdate: 0,
+                        animationEasingUpdate: 'linear'
+                    }]
+                });
+            };
+
+            const renderMonthlyExpenseBarChart = (series, monthlyAvg) => {
+                const container = document.getElementById('homeMonthlyExpenseBarChart');
+                if (!container || !window.echarts) return;
+                const chartFontFamily = getComputedStyle(document.body).fontFamily || "'fusion-pixel', sans-serif";
+                const colors = getChartColors();
+
+                if (!monthlyBarChart) {
+                    monthlyBarChart = echarts.init(container);
+                }
+
+                const xData = (series || []).map(item => item.label);
+                const rawValues = (series || []).map(item => item.value);
+                // 使用数据分析页同款月均开销作为基线
+                const avg = typeof monthlyAvg === 'number' && monthlyAvg > 0 ? monthlyAvg : (rawValues.length ? rawValues.reduce((s, v) => s + v, 0) / rawValues.length : 0);
+                const barAboveColor = getCssVarOr('--home-bar-above-color', '#f59e0b');
+                const barBelowColor = getCssVarOr('--home-bar-below-color', '#22c55e');
+                const barGlowBlur = getCssNumber('--home-bar-glow-blur', 12);
+                const barGlowAlpha = getCssNumber('--home-bar-glow-alpha', 0.6);
+                const deviationData = rawValues.map((v, i) => {
+                    const diff = v - avg;
+                    const isAbove = diff >= 0;
+                    const barColor = isAbove ? barAboveColor : barBelowColor;
+                    return {
+                        value: diff,
+                        itemStyle: {
+                            borderRadius: isAbove ? [6, 6, 0, 0] : [0, 0, 6, 6],
+                            borderColor: barColor,
+                            borderWidth: 1,
+                            color: barColor,
+                            shadowColor: hexToRgba(barColor, barGlowAlpha),
+                            shadowBlur: barGlowBlur,
+                            shadowOffsetY: 2
+                        }
+                    };
+                });
+
+                monthlyBarChart.setOption({
+                    animationDuration: 500,
+                    textStyle: { fontFamily: chartFontFamily },
+                    grid: { top: 8, right: 8, bottom: 60, left: 5 },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' },
+                        appendToBody: true,
+                        confine: false,
+                        backgroundColor: colors.tooltipBg,
+                        borderColor: colors.tooltipBorder,
+                        borderWidth: 1,
+                        textStyle: { color: colors.tooltipText, fontFamily: chartFontFamily },
+                        extraCssText: `box-shadow: ${colors.tooltipShadow}; border-radius: 10px;`,
+                        formatter: (params) => {
+                            if (!params?.length) return '';
+                            const p = params[0];
+                            const idx = Math.max(0, Math.min((series || []).length - 1, Number(p.dataIndex) || 0));
+                            const row = series?.[idx];
+                            const value = row ? row.value : Number(p.value) || 0;
+                            return `${row?.month || p.axisValue}<br/>支出 ${formatTrendAmount(value)}`;
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: xData,
+                        show: false
+                    },
+                    yAxis: {
+                        type: 'value',
+                        show: false
+                    },
+                    series: [{
+                        name: '月支出',
+                        type: 'bar',
+                        data: deviationData,
+                        barMaxWidth: 26
+                    }]
+                }, true);
+            };
+
+            const renderQuotaGaugeChart = (books, animProgress = 1) => {
+                const container = document.getElementById('homeTopQuotaGaugeChart');
+                if (!container || !window.echarts) return;
+                const chartFontFamily = getComputedStyle(document.body).fontFamily || "'fusion-pixel', sans-serif";
+                const colors = getChartColors();
+
+                if (!quotaGaugeChart) {
+                    quotaGaugeChart = echarts.init(container);
+                }
+
+                const slots = Array.from({ length: 3 }, (_, index) => books[index] || null);
+                const isNarrowGauge = (container.clientWidth || 0) < 520;
+                const centers = isNarrowGauge
+                    ? [['24%', '62%'], ['50%', '62%'], ['76%', '62%']]
+                    : [['40%', '62%'], ['64%', '62%'], ['88%', '62%']];
+                const fallbackColors = getQuotaGaugeFallbackColors();
+
+                const series = slots.map((item, index) => {
+                    const color = item?.color || fallbackColors[index % fallbackColors.length];
+                    const animatedRawPercent = item ? Math.max(0, item.rawPercent * Math.max(0, animProgress)) : 0;
+                    const animatedArcPercent = item ? Math.max(0, Math.min(100, item.arcPercent * Math.max(0, animProgress))) : 0;
+                    const percentText = item ? `${Math.round(animatedRawPercent)}%` : '--';
+                    const amountText = item
+                        ? `剩余 ${formatTrendAmount(item.totalQuota - item.spent)}`
+                        : '未配置';
+                    const nameText = item ? item.name : '未设置';
+                    const finalDetailColor = item
+                        ? (item.rawPercent >= 100 ? colors.gaugeOverLimit : colors.gaugeNormal)
+                        : colors.gaugeDetail;
+
+
+                    return {
+                        type: 'gauge',
+                        center: centers[index],
+                        radius: 48,
+                        startAngle: 210,
+                        endAngle: -30,
+                        min: 0,
+                        max: 100,
+                        splitNumber: 6,
+                        animationDuration: 0,
+                        progress: {
+                            show: true,
+                            roundCap: true,
+                            width: 10,
+                            itemStyle: {
+                                color: item ? color : colors.gaugeEmpty,
+                                shadowColor: item ? hexToRgba(color, 0.9) : colors.gaugeEmpty,
+                                shadowBlur: item ? 12 : 0
+                            }
+                        },
+                        axisLine: {
+                            roundCap: true,
+                            lineStyle: {
+                                width: 10,
+                                color: [[1, colors.gaugeAxisLine]]
+                            }
+                        },
+                        axisTick: {
+                            show: false,
+                        },
+                        splitLine: {
+                            show: false,
+                        },
+                        axisLabel: { show: false },
+                        pointer: { show: false },
+                        anchor: { show: false },
+                        title: {
+                            show: false,
+                            offsetCenter: [0, '66%'],
+                            color: item ? colors.gaugeTitle : colors.gaugeEmptyTitle,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            fontFamily: chartFontFamily,
+                            formatter: nameText
+                        },
+                        detail: {
+                            show: true,
+                            offsetCenter: [0, '0%'],
+                            valueAnimation: true,
+                            color: finalDetailColor,
+                            fontFamily: chartFontFamily,
+                            width: 100,
+                            lineHeight: 18,
+                            formatter: () => `{name|${nameText}}\n{pct|${percentText}}\n{amt|${amountText}}`,
+                            rich: {
+                                name: {
+                                    fontSize: 11,
+                                    fontWeight: 500,
+                                    color: item ? colors.gaugeDetail : colors.gaugeEmptyDetail,
+                                    lineHeight: 14,
+                                    align: 'center'
+                                },
+                                pct: {
+                                    fontSize: 22,
+                                    fontWeight: 700,
+                                    color: finalDetailColor,
+                                    lineHeight: 24,
+                                    align: 'center'
+                                },
+                                amt: {
+                                    fontSize: 11,
+                                    color: item ? colors.gaugeDetailAmount : colors.gaugeEmptyDetail,
+                                    lineHeight: 14,
+                                    align: 'center'
+                                }
+                            }
+                        },
+                        data: [{ value: animatedArcPercent }],
+                        tooltip: {
+                            show: !!item,
+                            formatter: () => (
+                                `${item.name}<br/>` +
+                                `每月配额 ${formatTrendAmount(item.monthlyQuota)}<br/>` +
+                                `累计配额 ${formatTrendAmount(item.totalQuota)}<br/>` +
+                                `累计开销 ${formatTrendAmount(item.spent)}`
+                            )
+                        }
+                    };
+                });
+
+                quotaGaugeChart.setOption({
+                    animation: false,
+                    animationDuration: 0,
+                    textStyle: { fontFamily: chartFontFamily },
+                    series,
+                    tooltip: {
+                        appendToBody: true,
+                        confine: false,
+                        backgroundColor: colors.tooltipBg,
+                        borderColor: colors.tooltipBorder,
+                        textStyle: { color: colors.tooltipText, fontFamily: chartFontFamily },
+                        extraCssText: `box-shadow: ${colors.tooltipShadow}; border-radius: 10px;`,
+                    }
+                });
+            };
+
+            const triggerQuotaGaugeAnimation = (books) => {
+                stopQuotaGaugeAnimation();
+
+                const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+                if (prefersReducedMotion || !books?.length) {
+                    renderQuotaGaugeChart(books || [], 1);
+                    return;
+                }
+
+                const duration = 1000;
+                const start = performance.now();
+                const easeOutBack = (t) => {
+                    const c1 = 1;
+                    const c3 = c1 + 1;
+                    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+                };
+
+                const tick = (now) => {
+                    const t = Math.min(1, (now - start) / duration);
+                    renderQuotaGaugeChart(books, easeOutBack(t));
+                    if (t < 1) {
+                        quotaGaugeAnimRaf = requestAnimationFrame(tick);
+                    } else {
+                        quotaGaugeAnimRaf = null;
+                        renderQuotaGaugeChart(books, 1);
+                    }
+                };
+
+                quotaGaugeAnimRaf = requestAnimationFrame(tick);
+            };
+
+            const buildPathMetrics = (series) => {
+                const dataPoints = (series || []).map((item, index) => [index, item.value]);
+                if (!trendChart || dataPoints.length <= 1) {
+                    return {
+                        dataPoints,
+                        cumulative: [0],
+                        totalLength: 0
+                    };
+                }
+
+                const pixelPoints = dataPoints.map(point =>
+                    trendChart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, point)
+                );
+
+                const cumulative = [0];
+                for (let i = 1; i < pixelPoints.length; i++) {
+                    const prev = pixelPoints[i - 1];
+                    const curr = pixelPoints[i];
+                    const dx = (curr?.[0] ?? 0) - (prev?.[0] ?? 0);
+                    const dy = (curr?.[1] ?? 0) - (prev?.[1] ?? 0);
+                    cumulative[i] = cumulative[i - 1] + Math.hypot(dx, dy);
+                }
+
+                return {
+                    dataPoints,
+                    cumulative,
+                    totalLength: cumulative[cumulative.length - 1] || 0
+                };
+            };
+
+            const getInterpolatedPoint = (metrics, progress) => {
+                const dataPoints = metrics?.dataPoints || [];
+                if (dataPoints.length === 0) return [0, 0];
+                if (dataPoints.length === 1 || !metrics.totalLength) return dataPoints[0];
+
+                const cumulative = metrics.cumulative;
+                const target = Math.max(0, Math.min(1, progress)) * metrics.totalLength;
+
+                let segmentIndex = 0;
+                while (segmentIndex < cumulative.length - 1 && cumulative[segmentIndex + 1] < target) {
+                    segmentIndex += 1;
+                }
+
+                const startDist = cumulative[segmentIndex];
+                const endDist = cumulative[segmentIndex + 1] ?? startDist;
+                const segmentLen = Math.max(endDist - startDist, 1e-6);
+                const t = (target - startDist) / segmentLen;
+
+                const [x0, y0] = dataPoints[segmentIndex];
+                const [x1, y1] = dataPoints[Math.min(segmentIndex + 1, dataPoints.length - 1)];
+                return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+            };
+
+            const stopMovingDot = () => {
+                if (movingDotRaf) {
+                    cancelAnimationFrame(movingDotRaf);
+                    movingDotRaf = null;
+                }
+                dotStartAt = null;
+            };
+
+            const startMovingDot = (series) => {
+                stopMovingDot();
+                if (!trendChart || !series || series.length === 0) return;
+                const metrics = buildPathMetrics(series);
+                const moveMs = Math.max(series.length * 110, 3600);
+                const pauseMs = 1000;
+                const loopMs = moveMs + pauseMs;
+
+                const tick = (ts) => {
+                    if (!trendChart) return;
+                    if (dotStartAt === null) dotStartAt = ts;
+                    const elapsed = (ts - dotStartAt) % loopMs;
+
+                    let pointData = [];
+                    if (elapsed <= moveMs) {
+                        const progress = elapsed / moveMs;
+                        const [x, y] = getInterpolatedPoint(metrics, progress);
+                        pointData = [[x, y]];
+                    }
+
+                    trendChart.setOption({
+                        series: [
+                            {},
+                            {
+                                data: pointData
+                            }
+                        ]
+                    });
+                    movingDotRaf = requestAnimationFrame(tick);
+                };
+
+                movingDotRaf = requestAnimationFrame(tick);
+            };
+
+            const rerenderChartsFromCache = () => {
+                const rows = Array.isArray(cachedRows) ? cachedRows : [];
+
+                if (!rows.length) {
+                    stopMovingDot();
+                    quotaGaugeBooks.value = buildQuotaGaugeBooks([]);
+                    renderQuotaGaugeChart(quotaGaugeBooks.value, 1);
+                    renderExpenseChart([]);
+                    monthlyBarError.value = '暂无月度开销数据';
+                    renderMonthlyExpenseBarChart([]);
+                    renderRecentMonthHeatmap([]);
+                    return;
+                }
+
+                heatmapError.value = '';
+                quotaGaugeError.value = '';
+                homeTableData.value = buildHomeTableRows(rows);
+                renderRecentMonthHeatmap(rows);
+
+                quotaGaugeBooks.value = buildQuotaGaugeBooks(rows);
+                renderQuotaGaugeChart(quotaGaugeBooks.value, 1);
+                const monthlySeries = cachedMonthlySeries.length ? cachedMonthlySeries : buildMonthlyExpenseSeries(rows);
+                cachedMonthlySeries = monthlySeries;
+                if (!monthlySeries.length) {
+                    monthlyBarError.value = '暂无月度开销数据';
+                    renderMonthlyExpenseBarChart([]);
+                } else {
+                    monthlyBarError.value = '';
+                    const totalAmt = (rows || []).reduce((s, item) => s + Math.abs(Number(item.amount) || 0), 0);
+                    const monthCount = getActiveMonthCountFromRows(rows);
+                    renderMonthlyExpenseBarChart(monthlySeries, totalAmt / monthCount);
+                }
+
+                const series = cachedSeries.length ? cachedSeries : buildRecentExpenseSeries(rows);
+                cachedSeries = series;
+                if (series.length === 0) {
+                    trendError.value = '暂无最近50笔开销数据';
+                    stopMovingDot();
+                    renderExpenseChart([]);
+                    return;
+                }
+
+                trendError.value = '';
+                renderExpenseChart(series);
+                startMovingDot(series);
+            };
+
+            const scheduleThemeRerender = () => {
+                const run = () => {
+                    if (themeRerenderTimer) {
+                        clearTimeout(themeRerenderTimer);
+                        themeRerenderTimer = null;
+                    }
+                    rerenderChartsFromCache();
+                };
+
+                const themeStyleLink = document.getElementById('app-theme-style');
+                if (themeStyleLink) {
+                    themeStyleLink.addEventListener('load', run, { once: true });
+                    // 兜底：同 href 或缓存命中时可能不触发 load
+                    themeRerenderTimer = window.setTimeout(run, 120);
+                    return;
+                }
+
+                run();
+            };
+
+            const loadTrendData = async () => {
+                homeTableLoading.value = true;
+                trendError.value = '';
+                monthlyBarError.value = '';
+                heatmapError.value = '';
+                quotaGaugeError.value = '';
+                try {
+                    const [response] = await Promise.all([
+                        fetch('/api/statistics'),
+                        loadCategoryMeta(),
+                        loadBookMeta()
+                    ]);
+                    const data = await response.json();
+                    if (!data || !data.success) {
+                        cachedRows = [];
+                        cachedSeries = [];
+                        cachedMonthlySeries = [];
+                        trendError.value = data?.error || '折线图数据加载失败';
+                        monthlyBarError.value = data?.error || '月度柱状图数据加载失败';
+                        heatmapError.value = data?.error || '热力图数据加载失败';
+                        quotaGaugeBooks.value = buildQuotaGaugeBooks([]);
+                        triggerQuotaGaugeAnimation(quotaGaugeBooks.value);
+                        stopMovingDot();
+                        renderExpenseChart([]);
+                        renderMonthlyExpenseBarChart([]);
+                        renderRecentMonthHeatmap([]);
+                        return;
+                    }
+
+                    const rows = data.all_items || data.items || [];
+                    cachedRows = Array.isArray(rows) ? rows : [];
+                    updateDurationTextByRows(rows);
+                    calculateMonthChange(rows);
+                    homeTableData.value = buildHomeTableRows(rows);
+                    renderRecentMonthHeatmap(rows);
+                    quotaGaugeBooks.value = buildQuotaGaugeBooks(rows);
+                    triggerQuotaGaugeAnimation(quotaGaugeBooks.value);
+                    const monthlySeries = buildMonthlyExpenseSeries(rows);
+                    cachedMonthlySeries = monthlySeries;
+                    if (!monthlySeries.length) {
+                        monthlyBarError.value = '暂无月度开销数据';
+                        renderMonthlyExpenseBarChart([]);
+                    } else {
+                        monthlyBarError.value = '';
+                        const totalAmt = (rows || []).reduce((s, item) => s + Math.abs(Number(item.amount) || 0), 0);
+                        const monthCount = getActiveMonthCountFromRows(rows);
+                        renderMonthlyExpenseBarChart(monthlySeries, totalAmt / monthCount);
+                    }
+
+                    const series = buildRecentExpenseSeries(rows);
+                    if (series.length === 0) {
+                        cachedSeries = [];
+                        trendError.value = '暂无最近50笔开销数据';
+                        stopMovingDot();
+                        renderExpenseChart([]);
+                        return;
+                    }
+
+                    cachedSeries = series;
+                    renderExpenseChart(series);
+                    startMovingDot(series);
+                } catch (error) {
+                    cachedRows = [];
+                    cachedSeries = [];
+                    cachedMonthlySeries = [];
+                    console.error('首页折线图加载失败:', error);
+                    trendError.value = '折线图数据加载失败';
+                    monthlyBarError.value = '月度柱状图数据加载失败';
+                    heatmapError.value = '热力图数据加载失败';
+                    quotaGaugeError.value = '仪表盘数据加载失败';
+                    homeTableData.value = [];
+                    renderRecentMonthHeatmap([]);
+                    quotaGaugeBooks.value = buildQuotaGaugeBooks([]);
+                    triggerQuotaGaugeAnimation(quotaGaugeBooks.value);
+                    stopMovingDot();
+                    renderExpenseChart([]);
+                    renderMonthlyExpenseBarChart([]);
+                } finally {
+                    homeTableLoading.value = false;
+                }
+            };
+
+            onMounted(async () => {
+                await nextTick();
+                await loadTrendData();
+                onResize = () => {
+                    if (trendChart) trendChart.resize();
+                    if (monthlyBarChart) monthlyBarChart.resize();
+                    if (heatmapChart) heatmapChart.resize();
+                    if (quotaGaugeChart) quotaGaugeChart.resize();
+                };
+                window.addEventListener('resize', onResize);
+
+                onThemeChange = () => {
+                    scheduleThemeRerender();
+                };
+                window.addEventListener('app:theme-change', onThemeChange);
+            });
+
+            onBeforeUnmount(() => {
+                stopMovingDot();
+                stopNumberAnimations();
+                stopQuotaGaugeAnimation();
+                stopHeatmapAnimation();
+                if (onResize) window.removeEventListener('resize', onResize);
+                if (onThemeChange) {
+                    window.removeEventListener('app:theme-change', onThemeChange);
+                    onThemeChange = null;
+                }
+                if (themeRerenderTimer) {
+                    clearTimeout(themeRerenderTimer);
+                    themeRerenderTimer = null;
+                }
+                if (trendChart) {
+                    trendChart.dispose();
+                    trendChart = null;
+                }
+                if (monthlyBarChart) {
+                    monthlyBarChart.dispose();
+                    monthlyBarChart = null;
+                }
+                if (heatmapChart) {
+                    heatmapChart.dispose();
+                    heatmapChart = null;
+                }
+                trendLineGlowApplyFn = null;
+                trendLineGlowHooked = false;
+                if (quotaGaugeChart) {
+                    quotaGaugeChart.dispose();
+                    quotaGaugeChart = null;
+                }
+            });
+
+            return {
+                TimerIcon: ElementPlusIconsVue.Timer,
+                NotebookIcon: ElementPlusIconsVue.Notebook,
+                TopIcon: ElementPlusIconsVue.Top,
+                BottomIcon: ElementPlusIconsVue.Bottom,
+                MinusIcon: ElementPlusIconsVue.Minus,
+                CoinIcon: ElementPlusIconsVue.Coin,
+                recordDurationValueText,
+                recordBillCountText,
+                monthChangeText,
+                monthChangeDirection,
+                monthTotalText,
+                homeTableData,
+                homeTableLoading,
+                trendError,
+                monthlyBarError,
+                heatmapError,
+                quotaGaugeError,
+                quotaGaugeBooks,
+                formatTableAmount,
+                getCategoryIconComponent,
+                getCategoryTagStyle,
+                getCategoryIconTagStyle,
+                getBookIconComponent,
+                getBookTagStyle
+            };
+        }
+    });
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+{% endblock %}

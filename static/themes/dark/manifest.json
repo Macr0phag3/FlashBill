@@ -1,0 +1,10 @@
+{
+  "id": "dark",
+  "name": "内置深色",
+  "description": "当前应用的深色主题",
+  "author": "flashbill",
+  "version": "1.0.0",
+  "mode": "dark",
+  "order": 20,
+  "stylesheet": "themes/dark/theme.css"
+}

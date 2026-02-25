@@ -13,16 +13,16 @@
         <!-- 卡片头部：账单类型选择 + 操作按钮 -->
         <template #header>
             <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center" style="gap: 20px;">
+                <div class="d-flex align-items-center tagging-header-meta">
                     <span>账单数据</span>
-                    <div class="stats-box text-muted" style="font-size: 13px;">
+                    <div class="stats-box text-muted tagging-stats-summary">
                         [[ billStats.total ]] / (tag, [[ billStats.tagTagged ]], [[ billStats.tagPercentage.toFixed(2)
                         ]]% ||
                         catg, [[ billStats.categoryTagged ]], [[ billStats.categoryPercentage.toFixed(2) ]]%)
                     </div>
                 </div>
                 <div class="d-flex header-btn-group">
-                    <el-select v-model="billType" placeholder="选择账单类型" style="width: 100px;">
+                    <el-select v-model="billType" placeholder="选择账单类型" class="tagging-select-100">
                         <el-option label="支付宝" value="alipay"></el-option>
                         <el-option label="微信" value="wechat"></el-option>
                     </el-select>
@@ -46,15 +46,15 @@
             <div class="d-flex align-items-center gap-4">
 
                 <el-input v-model="searchQuery" placeholder="搜索关键字(null 为空值)" clearable @input="handleFilterChange"
-                    style="width: 180px;"></el-input>
-                <el-select v-model="searchField" placeholder="指定搜索字段" @change="handleFilterChange" style="width: 130px;"
+                    class="tagging-input-180"></el-input>
+                <el-select v-model="searchField" placeholder="指定搜索字段" @change="handleFilterChange" class="tagging-select-130"
                     clearable>
                     <el-option label="交易对方" value="交易对方"></el-option>
                     <el-option label="商品说明" value="商品说明"></el-option>
                     <el-option label="类别" value="类别"></el-option>
                     <el-option label="标签" value="标签"></el-option>
                 </el-select>
-                <el-select v-model="mealType" placeholder="餐点类型" @change="handleFilterChange" style="width: 100px;"
+                <el-select v-model="mealType" placeholder="餐点类型" @change="handleFilterChange" class="tagging-select-100"
                     clearable>
                     <el-option label="早餐" value="早餐"></el-option>
                     <el-option label="午餐" value="午餐"></el-option>
@@ -62,7 +62,7 @@
                     <el-option label="夜宵" value="夜宵"></el-option>
                 </el-select>
                 <el-checkbox v-model="showUntaggedOnly" @change="handleFilterChange">只看未标记</el-checkbox>
-                <el-select v-model="frequencySortField" placeholder="按频率排序" style="width: 120px;"
+                <el-select v-model="frequencySortField" placeholder="按频率排序" class="tagging-select-120"
                     @change="handleFilterChange" clearable>
                     <el-option label="按交易对方" value="交易对方"></el-option>
                     <el-option label="按商品说明" value="商品说明"></el-option>
@@ -85,7 +85,7 @@
 
         <!-- 账单表格 -->
         <div class="table-container">
-            <el-table :data="paginatedBills" style="width: 100%" stripe :max-height="560"
+            <el-table :data="paginatedBills" class="tagging-table-full" stripe :max-height="560"
                 @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
                 v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">
@@ -103,10 +103,9 @@
                 <el-table-column prop="金额" label="金额" width="120" align="center" sortable="custom">
                     <template #default="scope">
                         <el-input-number v-if="isEditing" v-model="scope.row.金额" :precision="2" :step="0.01"
-                            size="small" @change="markModified(scope.row)" style="width: 90px"
+                            size="small" @change="markModified(scope.row)" class="tagging-input-number-90"
                             :controls="false"></el-input-number>
-                        <span v-else
-                            v-bind:style="{ color: scope.row.金额 < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
+                        <span v-else :class="scope.row.金额 < 0 ? 'stats-amount-negative' : 'stats-amount-positive'">
                             <span>[[ formatAmount(scope.row.金额) ]]</span>
                         </span>
                     </template>
@@ -115,18 +114,17 @@
                 <el-table-column prop="类别" label="类别" width="120" align="center" :filters="categoryFilterOptions"
                     :filter-method="filterCategory">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" style="width: 80px" clearable
+                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" class="tagging-select-80" clearable
                             @change="handleCategoryChange(scope.row)" filterable>
                             <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                         </el-select>
-                        <span v-else-if="scope.row.类别"
-                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <span v-else-if="scope.row.类别" class="tagging-inline-center">
                             <el-tag size="default" effect="plain" :style="getCategoryIconTagStyle(scope.row.类别)">
                                 <el-icon size="16">
                                     <component :is="getCategoryIconComponent(scope.row.类别)" />
                                 </el-icon>
                             </el-tag>
-                            <span style="color: var(--el-text-color-primary);">[[ scope.row.类别 ]]</span>
+                            <span class="tagging-text-primary">[[ scope.row.类别 ]]</span>
                         </span>
                         <span v-else></span>
                     </template>
@@ -135,7 +133,7 @@
                 <el-table-column prop="标签" label="标签" width="120" align="center" :filters="tagFilterOptions"
                     :filter-method="filterTag">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" style="width: 80px" clearable
+                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" class="tagging-select-80" clearable
                             @change="markModified(scope.row)" filterable>
                             <el-option v-for="tag in getTagsForCategory(scope.row.类别)" :key="tag" :label="tag"
                                 :value="tag"></el-option>
@@ -166,21 +164,21 @@
                 <el-table-column prop="备注" label="备注" width="100" header-align="center">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.备注" size="small" @change="markModified(scope.row)"
-                            style="width: 100%"></el-input>
+                            class="tagging-field-full"></el-input>
                         <span v-else>[[ scope.row.备注 ]]</span>
                     </template>
                 </el-table-column>
                 <el-table-column prop="命中规则" label="命中规则" min-width="150" header-align="center">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.命中规则" size="small"
-                            @change="markModified(scope.row)" style="width: 100%"></el-input>
+                            @change="markModified(scope.row)" class="tagging-field-full"></el-input>
                         <span v-else>[[ scope.row.命中规则 ]]</span>
                     </template>
                 </el-table-column>
             </el-table>
 
             <!-- 分页器 -->
-            <div class="pagination-container" style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <div class="pagination-container pagination-container-compact">
                 <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
                     :page-sizes="[100, 500, 1000, 5000, 10000]" layout="total, sizes, prev, pager, next, jumper"
                     :total="filteredBillsData.length" @size-change="val => { pageSize = val; currentPage = 1; }"
@@ -194,13 +192,13 @@
     <el-dialog v-model="batchTagDialogVisible" title="批量打标" width="500px" :close-on-click-modal="false">
         <el-form :model="batchTagForm" label-width="80px">
             <el-form-item label="类别">
-                <el-select v-model="batchTagForm.category" placeholder="选择或输入类别" style="width: 100%" filterable
+                <el-select v-model="batchTagForm.category" placeholder="选择或输入类别" class="tagging-select-full" filterable
                     allow-create default-first-option @change="batchTagForm.tag = ''">
                     <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="标签">
-                <el-select v-model="batchTagForm.tag" placeholder="选择或输入标签" style="width: 100%" filterable allow-create
+                <el-select v-model="batchTagForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable allow-create
                     default-first-option>
                     <el-option v-for="tag in categoryTags[batchTagForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
@@ -267,7 +265,8 @@
     </el-dialog>
 
     <!-- 快速创建规则弹框 -->
-    <el-dialog v-model="quickRuleDialogVisible" title="快速创建规则" width="500px" :close-on-click-modal="false">
+    <el-dialog v-model="quickRuleDialogVisible" title="快速创建规则" width="500px" :close-on-click-modal="false"
+        class="quick-rule-dialog">
         <el-form :model="quickRuleForm" label-width="80px">
             <el-form-item label="匹配字段">
                 <el-select v-model="quickRuleForm.key" placeholder="选择匹配字段">
@@ -287,42 +286,42 @@
             </el-form-item>
             <el-form-item>
                 <template #label>
-                    <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%;">
+                    <div class="tagging-form-label-wrap">
                         <el-tooltip v-if="isNewCategory" content="将创建新类别" placement="top">
-                            <el-icon color="#E6A23C" :size="16" style="margin-right: 4px;">
+                            <el-icon color="#E6A23C" :size="16" class="tagging-warning-icon">
                                 <component :is="WarningFilled" />
                             </el-icon>
                         </el-tooltip>
                         <span>类别</span>
                     </div>
                 </template>
-                <el-select v-model="quickRuleForm.category" placeholder="选择或输入类别" style="width: 100%" filterable
+                <el-select v-model="quickRuleForm.category" placeholder="选择或输入类别" class="tagging-select-full" filterable
                     allow-create default-first-option @change="quickRuleForm.tag = ''">
                     <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item>
                 <template #label>
-                    <div style="display: flex; align-items: center; justify-content: flex-end; width: 100%;">
+                    <div class="tagging-form-label-wrap">
                         <el-tooltip v-if="isNewTag" content="将创建新标签" placement="top">
-                            <el-icon color="#E6A23C" :size="16" style="margin-right: 4px;">
+                            <el-icon color="#E6A23C" :size="16" class="tagging-warning-icon">
                                 <component :is="WarningFilled" />
                             </el-icon>
                         </el-tooltip>
                         <span>标签</span>
                     </div>
                 </template>
-                <el-select v-model="quickRuleForm.tag" placeholder="选择或输入标签" style="width: 100%" filterable allow-create
+                <el-select v-model="quickRuleForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable allow-create
                     default-first-option>
                     <el-option v-for="tag in categoryTags[quickRuleForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>
-                <div style="font-size: 12px; color: #909399; margin-top: 4px; line-height: 1.4;">
+                <div class="tagging-help-text">
                     标签为 - 时，打标时将根据账单时间自动归类为 早/午/晚餐与夜宵
                 </div>
             </el-form-item>
             <el-form-item label="时间归类" v-if="quickRuleForm.tag && quickRuleForm.tag === '-'">
-                <el-select v-model="quickRuleForm.time_based" multiple placeholder="选择时段" style="width: 100%"
+                <el-select v-model="quickRuleForm.time_based" multiple placeholder="选择时段" class="tagging-select-full"
                     @change="handleQuickRuleTimeBasedChange">
                     <el-option v-for="t in TIME_OPTIONS" :key="t" :label="t" :value="t"></el-option>
                 </el-select>

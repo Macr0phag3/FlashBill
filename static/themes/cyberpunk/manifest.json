@@ -1,0 +1,10 @@
+{
+    "id": "cyberpunk",
+    "name": "赛博朋克",
+    "description": "霓虹灯光与暗色底色的赛博朋克风格",
+    "author": "flashbill",
+    "version": "1.0.0",
+    "mode": "dark",
+    "order": 30,
+    "stylesheet": "themes/cyberpunk/theme.css"
+}

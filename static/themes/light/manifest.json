@@ -1,0 +1,10 @@
+{
+  "id": "light",
+  "name": "内置浅色",
+  "description": "当前应用的浅色主题（默认）",
+  "author": "flashbill",
+  "version": "1.0.0",
+  "mode": "light",
+  "order": 10,
+  "stylesheet": "themes/light/theme.css"
+}

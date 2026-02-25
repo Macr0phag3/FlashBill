@@ -16,13 +16,13 @@
                 <el-form :inline="true" :model="filterForm">
                     <div class="filter-form-container">
                         <el-select v-model="filterForm.year" placeholder="年份" clearable multiple collapse-tags
-                            @change="handleFilter" style="width: 150px" popper-class="filter-dropdown">
+                            @change="handleFilter" class="stats-select-150" popper-class="filter-dropdown">
                             <el-option v-for="year in yearOptions" :key="year" :label="year" :value="year">
                             </el-option>
                         </el-select>
 
                         <el-select v-model="filterForm.month" placeholder="月份" clearable multiple collapse-tags
-                            @change="handleFilter" style="width: 150px" popper-class="filter-dropdown">
+                            @change="handleFilter" class="stats-select-150" popper-class="filter-dropdown">
                             <el-option v-for="month in monthOptions" :key="month.value" :label="month.label"
                                 :value="month.value">
                             </el-option>
@@ -31,21 +31,21 @@
                         <div class="divider-vertical"></div>
 
                         <el-select v-model="filterForm.book" placeholder="账本" clearable multiple collapse-tags
-                            @change="handleFilter" style="width: 150px" popper-class="filter-dropdown">
+                            @change="handleFilter" class="stats-select-150" popper-class="filter-dropdown">
                             <el-option v-for="book in bookOptions" :key="book.value" :label="book.label"
                                 :value="book.value">
                             </el-option>
                         </el-select>
 
                         <el-select v-model="filterForm.category" placeholder="类别" clearable multiple collapse-tags
-                            @change="handleCategoryChange" style="width: 150px" popper-class="filter-dropdown">
+                            @change="handleCategoryChange" class="stats-select-150" popper-class="filter-dropdown">
                             <el-option v-for="category in categoryOptions" :key="category" :label="category"
                                 :value="category">
                             </el-option>
                         </el-select>
 
                         <el-select v-model="filterForm.tag" placeholder="标签" clearable multiple collapse-tags
-                            @change="handleFilter" style="width: 150px" popper-class="filter-dropdown">
+                            @change="handleFilter" class="stats-select-150" popper-class="filter-dropdown">
                             <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag">
                             </el-option>
                         </el-select>
@@ -54,9 +54,9 @@
 
                         <!-- 组合式搜索框 -->
                         <el-input v-model="filterForm.searchQuery" placeholder="搜索关键词" class="search-input"
-                            style="width: 200px" clearable @input="handleFilter">
+                            clearable @input="handleFilter">
                             <template #prepend>
-                                <el-select v-model="filterForm.searchField" placeholder="全部字段" style="width: 100px"
+                                <el-select v-model="filterForm.searchField" placeholder="全部字段"
                                     @change="handleFilter">
                                     <el-option label="全部字段" value=""></el-option>
                                     <el-option label="交易对方" value="counter_party"></el-option>
@@ -71,10 +71,12 @@
                         <!-- 金额范围筛选 -->
                         <div class="amount-range-group">
                             <el-input-number v-model="filterForm.minAmount" :precision="2" :step="100" :controls="false"
-                                placeholder="最小金额" @change="handleFilter" style="width: 60px"></el-input-number>
+                                placeholder="最小金额" @change="handleFilter"
+                                class="stats-amount-input"></el-input-number>
                             <span class="range-separator">-</span>
                             <el-input-number v-model="filterForm.maxAmount" :precision="2" :step="100" :controls="false"
-                                placeholder="最大金额" @change="handleFilter" style="width: 60px"></el-input-number>
+                                placeholder="最大金额" @change="handleFilter"
+                                class="stats-amount-input"></el-input-number>
                         </div>
                         <el-button type="danger" @click="handleReset">重置</el-button>
                     </div>
@@ -83,19 +85,18 @@
                 <!-- 筛选标签展示区域 -->
                 <div class="filter-tags-container" v-if="filterTags.length > 0">
                     <el-tag v-for="(tag, index) in filterTags" :key="index" closable
-                        @close="removeFilterTag(tag.type, tag.value)" style="margin-right: 8px; margin-bottom: 8px;">
+                        @close="removeFilterTag(tag.type, tag.value)" class="stats-filter-tag">
                         {% raw %}{{ tag.label }}: {{ tag.value }}{% endraw %}
                     </el-tag>
                 </div>
             </div>
-            <div style="position: relative;">
+            <div class="stats-tabs-wrap">
                 <!-- 频率排序控件 (仅在表格 Tab 显示) -->
-                <div v-show="activeTab === 'table'"
-                    style="position: absolute; right: 0; top: 5px; z-index: 10; display: flex; align-items: center; gap: 10px;">
+                <div v-show="activeTab === 'table'" class="stats-freq-toolbar">
                     <el-checkbox v-model="tableFreqSortEmptyLast" label="空值置底" size="default"
                         @change="handleTableSearch" v-show="tableFreqSortField"></el-checkbox>
-                    <el-select v-model="tableFreqSortField" placeholder="频率排序：无" style="width: 150px" clearable
-                        @change="handleTableSearch" size="default" class="freq-sort-select">
+                    <el-select v-model="tableFreqSortField" placeholder="频率排序：无" class="stats-select-150 freq-sort-select" clearable
+                        @change="handleTableSearch" size="default">
                         <el-option label="频率排序：无" value=""></el-option>
                         <el-option label="按交易对方频率" value="counter_party"></el-option>
                         <el-option label="按商品说明频率" value="goods_desc"></el-option>
@@ -110,7 +111,7 @@
 
                 <el-tabs v-model="activeTab">
                     <el-tab-pane label="数据表格" name="table">
-                        <el-table :data="tableData" style="width: 100%" stripe v-loading="loading"
+                        <el-table :data="tableData" class="stats-table-full" stripe v-loading="loading"
                             height="calc(100vh - 340px)" @sort-change="handleSortChange"
                             :default-sort="{prop: 'date', order: 'descending'}">
                             <el-table-column type="index" label="序号" width="60" align="center"
@@ -123,25 +124,23 @@
                             </el-table-column>
                             <el-table-column prop="amount" label="金额" min-width="100" align="center" sortable="custom">
                                 <template #default="{ row }">
-                                    <span
-                                        v-bind:style="{ color: row.amount < 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)' }">
+                                    <span :class="row.amount < 0 ? 'stats-amount-negative' : 'stats-amount-positive'">
                                         <span v-text="formatAmount(row.amount)"></span>
                                     </span>
                                 </template>
                             </el-table-column>
                             <el-table-column prop="category" label="类别" min-width="60" align="left" sortable="custom">
                                 <template #default="{ row }">
-                                    <span v-if="row.category"
-                                        style="display: inline-flex; align-items: center; justify-content: flex-start; gap: 6px;">
+                                    <span v-if="row.category" class="stats-inline-start">
                                         <el-tag size="default" effect="plain"
                                             :style="getCategoryIconTagStyle(row.category)">
                                             <el-icon size="16">
                                                 <component :is="getCategoryIconComponent(row.category)" />
                                             </el-icon>
                                         </el-tag>
-                                        <span style="color: var(--el-text-color-primary);" v-text="row.category"></span>
+                                        <span class="stats-text-primary" v-text="row.category"></span>
                                     </span>
-                                    <span v-else style="color: var(--el-text-color-primary);">-</span>
+                                    <span v-else class="stats-text-primary">-</span>
                                 </template>
                             </el-table-column>
                             <el-table-column prop="tag" label="标签" min-width="80" align="center" sortable="custom">
@@ -164,8 +163,7 @@
                             <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
                                 <template #default="{ row }">
                                     <el-tag v-if="row.book" size="default" effect="plain" :style="getBookTagStyle(row.book)">
-                                        <span
-                                            style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <span class="stats-inline-center">
                                             <el-icon size="16">
                                                 <component :is="getBookIconComponent(row.book)" />
                                             </el-icon>
@@ -185,8 +183,7 @@
                     </el-tab-pane>
 
                     <el-tab-pane label="时间线" name="timeline">
-                        <div class="timeline-container" style="height: calc(100vh - 318px); overflow-y: auto;"
-                            @scroll="handleScroll">
+                        <div class="timeline-container" @scroll="handleScroll">
                             <div class="timeline-wrapper">
                                 <!-- 垂直中心线 -->
                                 <div class="timeline-center-line"></div>
@@ -215,8 +212,7 @@
                                                             <span class="timeline-time">{% raw %}{{
                                                                 formatTime(item.date)
                                                                 }}{% endraw %}</span>
-                                                            <span class="timeline-amount"
-                                                                style="color: var(--el-color-success)">
+                                                            <span class="timeline-amount stats-amount-positive">
                                                                 ¥{% raw %}{{ formatAmount(item.amount) }}{% endraw %}
                                                             </span>
                                                         </div>
@@ -235,8 +231,7 @@
                                                             <div class="timeline-item-detail">
                                                                 <el-tag v-if="item.category" size="small" effect="plain"
                                                                     :style="getCategoryTagStyle(item.category)">
-                                                                    <span
-                                                                        style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                                                    <span class="stats-inline-center-sm">
                                                                         <el-icon size="14">
                                                                             <component :is="getCategoryIconComponent(item.category)" />
                                                                         </el-icon>
@@ -250,8 +245,7 @@
                                                                     raw %}{{ tag }}{% endraw %}</el-tag>
                                                                 <el-tag v-if="item.book" size="small" effect="plain"
                                                                     :style="getBookTagStyle(item.book)">
-                                                                    <span
-                                                                        style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                                                                    <span class="stats-inline-center-sm">
                                                                         <el-icon size="14">
                                                                             <component :is="getBookIconComponent(item.book)" />
                                                                         </el-icon>
@@ -281,10 +275,9 @@
                     </el-tab-pane>
 
                     <el-tab-pane label="统计图" name="chart">
-                        <div class="chart-header"
-                            style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
-                            <div style="font-size: 16px; font-weight: bold; margin-right: 20px;">支出统计</div>
-                            <el-select v-model="timeUnit" style="width: 80px" @change="handleTimeUnitChange">
+                        <div class="chart-header stats-chart-header">
+                            <div class="stats-section-title">支出统计</div>
+                            <el-select v-model="timeUnit" class="stats-select-80" @change="handleTimeUnitChange">
                                 <el-option label="按天" value="day"></el-option>
                                 <el-option label="按周" value="week"></el-option>
                                 <el-option label="按月" value="month"></el-option>
@@ -292,13 +285,12 @@
                             </el-select>
                         </div>
                         <div class="chart-container">
-                            <div id="chartContainer" style="width: 100%; height: calc(100vh - 330px)"></div>
+                            <div id="chartContainer" class="stats-chart-canvas"></div>
                         </div>
                     </el-tab-pane>
 
                     <el-tab-pane label="日历视图" name="calendar">
-                        <div id="calendarScrollContainer"
-                            style="width: 100%; height: calc(100vh - 288px); overflow-y: auto;">
+                        <div id="calendarScrollContainer" class="stats-calendar-scroll">
                             <!-- 年份日历将动态插入到这里 -->
                         </div>
                     </el-tab-pane>
@@ -306,18 +298,17 @@
                     <el-tab-pane label="分类统计" name="pie">
                         <div class="pie-container">
                             <div class="pie-row">
-                                <div id="categoryPieContainer" style="width: 50%; height: calc(100vh - 288px)"></div>
-                                <div id="tagPieContainer" style="width: 50%; height: calc(100vh - 288px)"></div>
+                                <div id="categoryPieContainer" class="stats-pie-pane"></div>
+                                <div id="tagPieContainer" class="stats-pie-pane"></div>
                             </div>
                         </div>
                     </el-tab-pane>
 
                     <el-tab-pane label="数据透视" name="pivot">
                         <div class="pivot-container">
-                            <div class="pivot-header"
-                                style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
-                                <div style="font-size: 16px; font-weight: bold; margin-right: 20px;">数据透视分析</div>
-                                <el-select v-model="pivotTimeUnit" placeholder="选择时间维度" style="width: 140px"
+                            <div class="pivot-header stats-chart-header">
+                                <div class="stats-section-title">数据透视分析</div>
+                                <el-select v-model="pivotTimeUnit" placeholder="选择时间维度" class="stats-select-140"
                                     @change="handlePivotTimeUnitChange">
                                     <el-option label="按小时" value="hour"></el-option>
                                     <el-option label="按周内" value="weekday"></el-option>
@@ -326,18 +317,17 @@
                                 </el-select>
                             </div>
                             <div class="pivot-chart-container">
-                                <div id="pivotChartContainer" style="width: 100%; height: calc(100vh - 330px)"></div>
+                                <div id="pivotChartContainer" class="stats-chart-canvas"></div>
                             </div>
                         </div>
                     </el-tab-pane>
 
                     <el-tab-pane label="数据分析" name="analysis">
                         <div class="analysis-container">
-                            <div class="analysis-content" style="display: flex; gap: 20px;">
+                            <div class="analysis-content">
                                 <!-- 时间跨度统计 -->
-                                <div class="time-span-container"
-                                    style="flex: 1; min-width: 300px; height: calc(100vh - 293px); overflow: auto; margin: 0; padding: 0;">
-                                    <el-table :data="timeSpanData" style="width: 100%; margin: 0; padding: 0;" stripe
+                                <div class="time-span-container stats-time-span-container">
+                                    <el-table :data="timeSpanData" class="stats-table-reset" stripe
                                         height="100%">
                                         <el-table-column prop="label" label="统计项" min-width="150"
                                             align="center"></el-table-column>
@@ -349,9 +339,8 @@
                                     </el-table>
                                 </div>
                                 <!-- 结果显示 - 使用表格 -->
-                                <div class="average-table-container"
-                                    style="flex: 2; min-width: 500px; height: calc(100vh - 288px); overflow: auto; margin: 0; padding: 0;">
-                                    <el-table :data="averageResults" style="width: 100%; margin: 0; padding: 0;" stripe
+                                <div class="average-table-container stats-average-table-container">
+                                    <el-table :data="averageResults" class="stats-table-reset" stripe
                                         v-loading="loading" height="100%">
                                         <el-table-column prop="name"
                                             :label="averageResults.length > 0 ? averageResults[0].nameLabel : '名称'"
@@ -362,7 +351,7 @@
                                         </el-table-column>
                                         <el-table-column label="总金额" min-width="120" align="center">
                                             <template #default="{ row }">
-                                                <span style="color: var(--el-color-success)">
+                                                <span class="stats-amount-positive">
                                                     <span v-text="formatAmount(row.totalValue)"></span>
                                                 </span>
                                             </template>
@@ -378,28 +367,28 @@
                                         </template>
                                         <el-table-column label="日均开销" min-width="100" align="center">
                                             <template #default="{ row }">
-                                                <span style="color: var(--el-color-success)">
+                                                <span class="stats-amount-positive">
                                                     <span v-text="formatAmount(row.dayValue)"></span>
                                                 </span>
                                             </template>
                                         </el-table-column>
                                         <el-table-column label="周均开销" min-width="100" align="center">
                                             <template #default="{ row }">
-                                                <span style="color: var(--el-color-success)">
+                                                <span class="stats-amount-positive">
                                                     <span v-text="formatAmount(row.weekValue)"></span>
                                                 </span>
                                             </template>
                                         </el-table-column>
                                         <el-table-column label="月均开销" min-width="100" align="center">
                                             <template #default="{ row }">
-                                                <span style="color: var(--el-color-success)">
+                                                <span class="stats-amount-positive">
                                                     <span v-text="formatAmount(row.monthValue)"></span>
                                                 </span>
                                             </template>
                                         </el-table-column>
                                         <el-table-column label="年均开销" min-width="100" align="center">
                                             <template #default="{ row }">
-                                                <span style="color: var(--el-color-success)">
+                                                <span class="stats-amount-positive">
                                                     <span v-text="formatAmount(row.yearValue)"></span>
                                                 </span>
                                             </template>
