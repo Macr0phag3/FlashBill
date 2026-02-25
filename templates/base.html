@@ -17,9 +17,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/books.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/categories.css') }}">
-    <!-- 当前激活主题样式（由主题初始化脚本动态更新 href） -->
-    <link rel="stylesheet" id="app-theme-style" href="{{ url_for('static', filename='themes/light/theme.css') }}">
-
     <!-- ==================== 脚本库 ==================== -->
     <script src="{{ url_for('static', filename='vendor/vue/vue.global.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/element-plus/element-plus.js') }}"></script>
@@ -27,19 +24,33 @@
     <script src="{{ url_for('static', filename='vendor/axios/axios.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
-
     <!-- ==================== 主题初始化（防止闪烁，需在 body 渲染前执行） ==================== -->
     <script>
         window.__STATIC_BASE_URL__ = "{{ url_for('static', filename='') }}";
-        window.__THEME_REGISTRY__ = {{ theme_registry | tojson }};
-
+        window.__THEME_REGISTRY__ = JSON.parse('{{ theme_registry | tojson }}');
+        (function () {
+            var base = "{{ url_for('static', filename='') }}";
+            var sheet = 'themes/light/theme.css';
+            try {
+                var tid = localStorage.getItem('app-theme');
+                if (tid) {
+                    var reg = JSON.parse('{{ theme_registry | tojson }}');
+                    for (var i = 0; i < reg.length; i++) {
+                        if (reg[i].id === tid && reg[i].stylesheet) { sheet = reg[i].stylesheet; break; }
+                    }
+                }
+            } catch (e) { }
+            document.write('<link rel="stylesheet" id="app-theme-style" href="' + base + sheet + '">');
+        })();
         (function () {
             if (window.ThemeManager) {
                 window.ThemeManager.bootstrap();
             }
         })();
     </script>
-
+    <noscript>
+        <link rel="stylesheet" id="app-theme-style" href="{{ url_for('static', filename='themes/light/theme.css') }}">
+    </noscript>
     {% block head %}{% endblock %}
 </head>
 

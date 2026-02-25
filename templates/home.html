@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block page_loader %}
+{% include 'loader.html' %}
+{% endblock %}
+
 {% block content %}
 <div id="app" v-cloak>
     <el-card class="box-card">
@@ -1609,6 +1613,14 @@
             onMounted(async () => {
                 await nextTick();
                 await loadTrendData();
+
+                // 数据加载完毕，关闭加载遮罩
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 300);
+                }
+
                 onResize = () => {
                     if (trendChart) trendChart.resize();
                     if (monthlyBarChart) monthlyBarChart.resize();
