@@ -1,0 +1,10 @@
+{
+    "id": "cosmos",
+    "name": "深邃星空",
+    "description": "沉浸式宇宙深邃感，星云光效主题",
+    "author": "Gemini 3.1 Pro",
+    "version": "1.0.0",
+    "mode": "dark",
+    "order": 1,
+    "stylesheet": "themes/cosmos/theme.css"
+}

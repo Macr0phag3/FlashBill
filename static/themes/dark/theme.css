@@ -97,26 +97,14 @@ html[data-theme='dark'] {
     --home-summary-card-bg: transparent;
     --home-summary-card-border: none;
     --home-summary-card-shadow: none;
-    /* 右上角多层发光，颜色与各卡片 icon 颜色一致 */
-    --home-summary-card-first-bg:
-        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.5) 0%, transparent 15%),
-        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.25) 15%, transparent 35%),
-        radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.12) 35%, transparent 70%);
+    /* 倾斜渐变，颜色与各卡片 icon 颜色一致 */
+    --home-summary-card-first-bg: linear-gradient(135deg, rgba(167, 139, 250, 0.25) 0%, rgba(167, 139, 250, 0.05) 50%, transparent 100%);
     --home-summary-card-first-border: none;
-    --home-summary-card-second-bg:
-        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.5) 0%, transparent 15%),
-        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.25) 15%, transparent 35%),
-        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.12) 35%, transparent 70%);
+    --home-summary-card-second-bg: linear-gradient(135deg, rgba(103, 194, 58, 0.25) 0%, rgba(103, 194, 58, 0.05) 50%, transparent 100%);
     --home-summary-card-second-border: none;
-    --home-summary-card-third-bg:
-        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.5) 0%, transparent 15%),
-        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.25) 15%, transparent 35%),
-        radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.12) 35%, transparent 70%);
+    --home-summary-card-third-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.05) 50%, transparent 100%);
     --home-summary-card-third-border: none;
-    --home-summary-card-fourth-bg:
-        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.5) 0%, transparent 15%),
-        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.25) 15%, transparent 35%),
-        radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.12) 35%, transparent 70%);
+    --home-summary-card-fourth-bg: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.05) 50%, transparent 100%);
     --home-summary-card-fourth-border: none;
 
     --home-duration-purple: #a78bfa;
