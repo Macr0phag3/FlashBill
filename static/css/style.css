@@ -206,6 +206,33 @@ button,
 }
 
 
+/* ==================== 动画细粒度禁用控制 ==================== */
+
+/* 1. UI 过渡效果：弹窗展开、按鈕 Hover、导航导航过渢等 */
+html.disable-anim-transition *,
+html.disable-anim-transition *::before,
+html.disable-anim-transition *::after {
+    transition-duration: 0.001s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+}
+
+/* 2. Logo 特效：屏蔽 logo 的 shake/glitch 动画和 CSS keyframe */
+html.disable-anim-logo .island-logo.shake {
+    animation: none !important;
+}
+
+/* 3. Glitch 故障码：屏蔽主题按鈕的 SVG glitch 动画
+   （导航文字乱码由 JS 拦截， CSS 这里先封一下安全网） */
+html.disable-anim-glitch .theme-toggle-btn:hover svg {
+    animation: none !important;
+}
+
+html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
+    animation: none !important;
+}
+
+/* 4. 图表动画：由对应 JS 文件控制，这里不需要 CSS */
 /* ==================== 工具类 ==================== */
 .mb-3 {
     margin-bottom: 1rem;
@@ -758,6 +785,23 @@ button,
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+/* 界面动画细粒度控制：每行标签 + 开关 */
+.settings-anim-grid {
+    gap: 8px;
+}
+
+.settings-anim-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.settings-anim-label {
+    font-size: 13px;
+    color: var(--text-color);
 }
 
 /* 设置弹窗内的下拉框 */

@@ -69,6 +69,33 @@ const usePivotTab = () => {
         const colors = getChartColors();
         pivotChart = echarts.init(chartContainer, colors.isDark ? 'dark' : undefined);
 
+        window.addEventListener('app:anim-chart-change', (e) => {
+            if (pivotChart) pivotChart.setOption({ animation: e.detail.enabled });
+        });
+
+        const series = [{
+            name: '开销金额',
+            type: 'bar',
+            data: [],
+            realtimeSort: false, // We handle sort manually
+            itemStyle: {
+                borderRadius: [4, 4, 0, 0], // Rounded corners top
+                color: function (params) {
+                    const colorPalette = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+                    // Use a fixed mapping based on name if possible, or just cycle
+                    return colorPalette[params.dataIndex % colorPalette.length];
+                }
+            },
+            label: {
+                show: true,
+                position: 'top',
+                formatter: function (params) { return formatAmount(params.value); },
+                fontSize: 11,
+                color: colors.textColor
+            },
+            // Add a markPoint to show "Sorting..." maybe? No, let's keep it clean.
+        }];
+
         const option = {
             textStyle: { fontFamily: 'fusion-pixel' },
             backgroundColor: 'transparent',
@@ -114,29 +141,13 @@ const usePivotTab = () => {
                 axisLabel: { formatter: function (value) { return formatAmount(value); }, color: colors.textColor },
                 splitLine: { lineStyle: { color: colors.splitLineColor } }
             },
-            series: [{
-                name: '开销金额',
-                type: 'bar',
-                data: [],
-                realtimeSort: false, // We handle sort manually
-                itemStyle: {
-                    borderRadius: [4, 4, 0, 0], // Rounded corners top
-                    color: function (params) {
-                        const colorPalette = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
-                        // Use a fixed mapping based on name if possible, or just cycle
-                        return colorPalette[params.dataIndex % colorPalette.length];
-                    }
-                },
-                label: {
-                    show: true,
-                    position: 'top',
-                    formatter: function (params) { return formatAmount(params.value); },
-                    fontSize: 11,
-                    color: colors.textColor
-                },
-                // Add a markPoint to show "Sorting..." maybe? No, let's keep it clean.
-            }]
+            series: series
         };
+
+        if (localStorage.getItem('anim-chart') === 'false') {
+            option.animation = false;
+        }
+
         pivotChart.setOption(option);
     };
 
@@ -147,18 +158,25 @@ const usePivotTab = () => {
             if (!pivotChart) return;
         }
 
-        const initialData = processPivotData(data); // Sorted by key (Date)
+        const initialData = processPivotData(data); // 按时间维度自然顺序排列
 
-        // Stop any running sort
+        // 停止正在运行的排序动画
         if (sortInterval) {
             clearInterval(sortInterval);
             sortInterval = null;
         }
 
-        // Render initial state (Date Order)
+        // 渲染初始状态（时间顺序）
         updateChartWithData(initialData);
 
-        // Start Bubble Sort Animation after a short delay
+        // 图表动画关闭时，直接显示排序后的最终结果，不执行冒泡排序动画
+        if (localStorage.getItem('anim-chart') === 'false') {
+            const sortedData = [...initialData].sort((a, b) => b.amount - a.amount);
+            updateChartWithData(sortedData);
+            return;
+        }
+
+        // 开启状态：启动冒泡排序动画
         if (initialData.length > 1) {
             setTimeout(() => {
                 runBubbleSort(initialData);

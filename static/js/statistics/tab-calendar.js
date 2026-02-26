@@ -57,6 +57,10 @@ const useCalendarTab = () => {
 
         const colors = getChartColors();
         myChart = echarts.init(chartDiv, colors.isDark ? 'dark' : undefined);
+
+        window.addEventListener('app:anim-chart-change', (e) => {
+            if (myChart) myChart.setOption({ animation: e.detail.enabled });
+        });
     };
 
     /** 更新日历图表 */
@@ -102,87 +106,108 @@ const useCalendarTab = () => {
         const colors = getChartColors();
 
         // 基础配置
-        const getBaseOption = () => ({
-            textStyle: { fontFamily: 'fusion-pixel' },
-            backgroundColor: 'transparent',
-            tooltip: {
-                position: 'top',
-                backgroundColor: colors.tooltipBg,
-                borderColor: colors.tooltipBorder,
-                textStyle: { color: colors.tooltipText },
-                formatter: function (params) {
-                    if (params.value[1] === undefined || params.value[1] === null) return;
-                    return `${params.value[0]}<br/>支出: ${formatAmount(params.value[1])}`;
-                }
-            },
-            visualMap: {
-                type: 'piecewise',
-                orient: 'horizontal',
-                left: 'center',
-                top: 0,
-                textStyle: { color: colors.textColor },
-                pieces: [
-                    { min: 0.01, max: 10, label: '<10', color: '#89c0edff' },
-                    { min: 10, max: 100, label: '<100', color: '#64b5f6' },
-                    { min: 100, max: 200, label: '<200', color: '#1e88e5' },
-                    { min: 200, max: 300, label: '<300', color: '#0d47a1' },
-                    { min: 300, max: 500, label: '<500', color: '#e4bfa4ff' },
-                    { min: 500, max: 1000, label: '<1000', color: '#FAC858' },
-                    { min: 1000, max: 3000, label: '<3000', color: '#FC8452' },
-                    { min: 3000, max: 5000, label: '<5000', color: '#f43b09ff' },
-                    { min: 5000, max: 10000, label: '<10000', color: '#b67ef9ff' },
-                    { min: 10000, label: '爆表', color: '#c407f8ff' }
-                ]
-            },
-            calendar: availableYears.map((year, index) => ({
-                top: TOP_PADDING + index * yearBlockHeight,
-                left: 48,
-                right: 30,
-                orient: 'horizontal',
-                cellSize: [30, 20],
-                range: year,
-                itemStyle: { borderWidth: 1, borderColor: colors.borderColor, color: 'transparent' },
-                yearLabel: { show: true, margin: 30, color: colors.textColor, fontFamily: 'fusion-pixel' },
-                dayLabel: { firstDay: 1, nameMap: 'cn', color: colors.textColor, margin: 10 },
-                monthLabel: { show: index === 0, color: colors.textColor, nameMap: 'cn', position: 'start', margin: 10 },
-                splitLine: { show: false }
-            })),
-            graphic: [{
-                type: 'group',
-                right: 30,
-                top: 0,
-                children: [{
-                    type: 'rect',
-                    z: 100,
-                    left: 'center',
-                    top: 'middle',
-                    shape: { width: 70, height: 25, r: 5 },
-                    style: {
-                        fill: colors.isDark ? 'rgba(245, 108, 108, 0.15)' : '#f56c6c',
-                        stroke: colors.isDark ? 'rgba(245, 108, 108, 0.4)' : colors.borderColor,
-                        lineWidth: 1
+        const getBaseOption = () => {
+            const option = {
+                textStyle: { fontFamily: 'fusion-pixel' },
+                backgroundColor: 'transparent',
+                tooltip: {
+                    position: 'top',
+                    backgroundColor: colors.tooltipBg,
+                    borderColor: colors.tooltipBorder,
+                    textStyle: { color: colors.tooltipText },
+                    formatter: function (params) {
+                        if (params.value[1] === undefined || params.value[1] === null) return;
+                        return `${params.value[0]}<br/>支出: ${formatAmount(params.value[1])}`;
                     }
-                }, {
-                    type: 'text',
-                    z: 100,
+                },
+                visualMap: {
+                    type: 'piecewise',
+                    orient: 'horizontal',
                     left: 'center',
-                    top: 'middle',
-                    style: {
-                        fill: colors.isDark ? '#f56c6c' : '#fff',
-                        text: yearBlockHeight === 160 ? '恢复默认' : '年度拆分'
+                    top: 0,
+                    textStyle: { color: colors.textColor },
+                    pieces: [
+                        { min: 0.01, max: 10, label: '<10', color: '#89c0edff' },
+                        { min: 10, max: 100, label: '<100', color: '#64b5f6' },
+                        { min: 100, max: 200, label: '<200', color: '#1e88e5' },
+                        { min: 200, max: 300, label: '<300', color: '#0d47a1' },
+                        { min: 300, max: 500, label: '<500', color: '#e4bfa4ff' },
+                        { min: 500, max: 1000, label: '<1000', color: '#FAC858' },
+                        { min: 1000, max: 3000, label: '<3000', color: '#FC8452' },
+                        { min: 3000, max: 5000, label: '<5000', color: '#f43b09ff' },
+                        { min: 5000, max: 10000, label: '<10000', color: '#b67ef9ff' },
+                        { min: 10000, label: '爆表', color: '#c407f8ff' }
+                    ]
+                },
+                calendar: availableYears.map((year, index) => ({
+                    top: TOP_PADDING + index * yearBlockHeight,
+                    left: 48,
+                    right: 30,
+                    orient: 'horizontal',
+                    cellSize: [30, 20],
+                    range: year,
+                    itemStyle: { borderWidth: 1, borderColor: colors.borderColor, color: 'transparent' },
+                    yearLabel: { show: true, margin: 30, color: colors.textColor, fontFamily: 'fusion-pixel' },
+                    dayLabel: { firstDay: 1, nameMap: 'cn', color: colors.textColor, margin: 10 },
+                    monthLabel: { show: index === 0, color: colors.textColor, nameMap: 'cn', position: 'start', margin: 10 },
+                    splitLine: { show: false }
+                })),
+                graphic: [{
+                    type: 'group',
+                    right: 30,
+                    top: 0,
+                    children: [{
+                        type: 'rect',
+                        z: 100,
+                        left: 'center',
+                        top: 'middle',
+                        shape: { width: 70, height: 25, r: 5 },
+                        style: {
+                            fill: colors.isDark ? 'rgba(245, 108, 108, 0.15)' : '#f56c6c',
+                            stroke: colors.isDark ? 'rgba(245, 108, 108, 0.4)' : colors.borderColor,
+                            lineWidth: 1
+                        }
+                    }, {
+                        type: 'text',
+                        z: 100,
+                        left: 'center',
+                        top: 'middle',
+                        style: {
+                            fill: colors.isDark ? '#f56c6c' : '#fff',
+                            text: yearBlockHeight === 160 ? '恢复默认' : '年度拆分'
+                        }
+                    }],
+                    onclick: function () {
+                        yearBlockHeight = yearBlockHeight === 160 ? 140 : 160;
+                        updateCalendarChart(allCalendarData);
                     }
-                }],
-                onclick: function () {
-                    yearBlockHeight = yearBlockHeight === 160 ? 140 : 160;
-                    updateCalendarChart(allCalendarData);
-                }
-            }]
-        });
+                }]
+            };
+            if (localStorage.getItem('anim-chart') === 'false') {
+                option.animation = false;
+            }
+            return option;
+        };
 
         // 1. 设置基础 Option
         myChart.setOption(getBaseOption(), true);
 
         // --- 渐进式锁定动画逻辑 ---
+        const animationEnabled = localStorage.getItem('anim-chart') !== 'false';
+
+        if (!animationEnabled) {
+            // 如果动画禁用，直接显示最终数据
+            const finalSeries = availableYears.map((year, index) => ({
+                type: 'heatmap',
+                coordinateSystem: 'calendar',
+                calendarIndex: index,
+                data: yearlyData[year] || [],
+                itemStyle: { borderRadius: 1 }
+            }));
+            myChart.setOption({ series: finalSeries });
+            return;
+        }
+
         const DURATION = 2000; // 动画总时长
         const LOCK_TIMES = {}; // 存储每个日期的锁定时间
         const START_TIME = Date.now();

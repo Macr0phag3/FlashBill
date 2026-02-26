@@ -32,9 +32,17 @@ const usePieTab = () => {
 
         const colors = getChartColors();
         const theme = colors.isDark ? 'dark' : undefined;
+        const animationEnabled = localStorage.getItem('anim-chart') !== 'false';
 
         categoryPieChart = echarts.init(categoryContainer, theme);
         tagPieChart = echarts.init(tagContainer, theme);
+
+        const onAnimationChange = (e) => {
+            const enabled = e.detail.enabled;
+            if (categoryPieChart) categoryPieChart.setOption({ animation: enabled });
+            if (tagPieChart) tagPieChart.setOption({ animation: enabled });
+        };
+        window.addEventListener('app:anim-chart-change', onAnimationChange);
 
         const pieOption = {
             textStyle: { fontFamily: 'fusion-pixel' },
@@ -74,7 +82,8 @@ const usePieTab = () => {
                     }
                 },
                 label: { color: colors.textColor }
-            }]
+            }],
+            animation: animationEnabled
         };
 
         categoryPieChart.setOption({ ...pieOption, title: { ...pieOption.title, text: '类别统计' } });

@@ -459,8 +459,10 @@
                     }));
 
                     // 参考 rules 页面：分块渲染，避免一次性渲染导致主线程卡顿
-                    const CATEGORY_CHUNK_SIZE = 2;
-                    const TAG_CHUNK_SIZE = 2;
+                    // 字符雨关闭时 CPU 资源更充裕，可以加大每批渲染量
+                    const loaderAnimOff = localStorage.getItem('anim-loader') === 'false';
+                    const CATEGORY_CHUNK_SIZE = loaderAnimOff ? 1000 : 2;
+                    const TAG_CHUNK_SIZE = loaderAnimOff ? 1000 : 2;
                     let currentIndex = 0;
                     const renderCategoryChunk = () => {
                         if (currentIndex < staged.length) {

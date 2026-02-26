@@ -29,6 +29,23 @@
         window.__STATIC_BASE_URL__ = "{{ url_for('static', filename='') }}";
         window.__THEME_REGISTRY__ = JSON.parse('{{ theme_registry | tojson }}');
         (function () {
+            try {
+                var animKeys = ['anim-logo', 'anim-glitch', 'anim-transition', 'anim-chart', 'anim-loader'];
+                var classMap = {
+                    'anim-logo': 'disable-anim-logo',
+                    'anim-glitch': 'disable-anim-glitch',
+                    'anim-transition': 'disable-anim-transition',
+                    'anim-chart': 'disable-anim-chart',
+                    'anim-loader': 'disable-anim-loader'
+                };
+                animKeys.forEach(function (key) {
+                    if (localStorage.getItem(key) === 'false') {
+                        document.documentElement.classList.add(classMap[key]);
+                    }
+                });
+            } catch (e) { }
+        })();
+        (function () {
             var base = "{{ url_for('static', filename='') }}";
             var sheet = 'themes/light/theme.css';
             try {
@@ -136,6 +153,31 @@
                         <select v-if="false" class="settings-select" id="settingsThemeSelect"></select>
                     </div>
                 </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">界面动画</div>
+                    <div class="settings-section-content settings-anim-grid" id="settingsAnimationToggleContainer">
+                        <div class="settings-anim-row">
+                            <span class="settings-anim-label">Logo 动画</span>
+                            <el-switch v-model="animLogo" @change="onAnimLogoChange" v-cloak></el-switch>
+                        </div>
+                        <div class="settings-anim-row">
+                            <span class="settings-anim-label">文字故障动画</span>
+                            <el-switch v-model="animGlitch" @change="onAnimGlitchChange" v-cloak></el-switch>
+                        </div>
+                        <div class="settings-anim-row">
+                            <span class="settings-anim-label">UI 过渡动画</span>
+                            <el-switch v-model="animTransition" @change="onAnimTransitionChange" v-cloak></el-switch>
+                        </div>
+                        <div class="settings-anim-row">
+                            <span class="settings-anim-label">图表动画</span>
+                            <el-switch v-model="animChart" @change="onAnimChartChange" v-cloak></el-switch>
+                        </div>
+                        <div class="settings-anim-row">
+                            <span class="settings-anim-label">加载屏动画</span>
+                            <el-switch v-model="animLoader" @change="onAnimLoaderChange" v-cloak></el-switch>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -163,6 +205,8 @@
             document.body.addEventListener('mouseover', (e) => {
                 const target = e.target.closest(selector);
                 if (!target) return;
+                // 判断 glitch 分类开关
+                if (document.documentElement.classList.contains('disable-anim-glitch')) return;
 
                 // 防止重复触发
                 if (target.dataset.isGlitching) return;
@@ -252,6 +296,15 @@
             if (!logoIsland) return;
 
             const changeStyle = () => {
+                // 判断 logo 分类开关
+                if (document.documentElement.classList.contains('disable-anim-logo')) {
+                    logoIsland.classList.remove('shake');
+                    logoIsland.style.backgroundColor = '';
+                    logoIsland.style.color = '';
+                    logoIsland.style.boxShadow = '';
+                    return;
+                }
+
                 // 生成随机亮色作为背景 (避免太暗影响阅读)
                 const hue = Math.floor(Math.random() * 360);
                 const saturation = 70 + Math.random() * 30; // 70-100%
@@ -365,6 +418,12 @@
                     setup() {
                         const themes = Vue.ref([]);
                         const currentTheme = Vue.ref('');
+                        // 四个分类动画开关
+                        const animLogo = Vue.ref(true);
+                        const animGlitch = Vue.ref(true);
+                        const animTransition = Vue.ref(true);
+                        const animChart = Vue.ref(true);
+                        const animLoader = Vue.ref(true);
 
                         Vue.onMounted(() => {
                             const registry = window.ThemeManager.getThemes();
@@ -372,6 +431,13 @@
                                 { id: 'light', name: '默认主题' }
                             ];
                             currentTheme.value = window.ThemeManager.getCurrentThemeId();
+
+                            // 从 localStorage 加载四个开关状态
+                            animLogo.value = localStorage.getItem('anim-logo') !== 'false';
+                            animGlitch.value = localStorage.getItem('anim-glitch') !== 'false';
+                            animTransition.value = localStorage.getItem('anim-transition') !== 'false';
+                            animChart.value = localStorage.getItem('anim-chart') !== 'false';
+                            animLoader.value = localStorage.getItem('anim-loader') !== 'false';
 
                             // 监听其他页面可能触发的主题变化
                             window.addEventListener('app:theme-change', (e) => {
@@ -385,16 +451,49 @@
                             window.ThemeManager.applyTheme(val);
                         };
 
+                        /** 通用动画开关变更处理器 */
+                        const applyAnimChange = (key, cssClass, val, eventName) => {
+                            localStorage.setItem(key, val);
+                            const html = document.documentElement;
+                            if (val) {
+                                html.classList.remove(cssClass);
+                            } else {
+                                html.classList.add(cssClass);
+                            }
+                            window.dispatchEvent(new CustomEvent(eventName, { detail: { enabled: val } }));
+                        };
+
+                        const onAnimLogoChange = (val) =>
+                            applyAnimChange('anim-logo', 'disable-anim-logo', val, 'app:anim-logo-change');
+                        const onAnimGlitchChange = (val) =>
+                            applyAnimChange('anim-glitch', 'disable-anim-glitch', val, 'app:anim-glitch-change');
+                        const onAnimTransitionChange = (val) =>
+                            applyAnimChange('anim-transition', 'disable-anim-transition', val, 'app:anim-transition-change');
+                        const onAnimChartChange = (val) =>
+                            applyAnimChange('anim-chart', 'disable-anim-chart', val, 'app:anim-chart-change');
+                        const onAnimLoaderChange = (val) =>
+                            applyAnimChange('anim-loader', 'disable-anim-loader', val, 'app:anim-loader-change');
+
                         return {
                             themes,
                             currentTheme,
-                            onThemeChange
+                            animLogo,
+                            animGlitch,
+                            animTransition,
+                            animChart,
+                            animLoader,
+                            onThemeChange,
+                            onAnimLogoChange,
+                            onAnimGlitchChange,
+                            onAnimTransitionChange,
+                            onAnimChartChange,
+                            onAnimLoaderChange
                         };
                     }
                 });
 
                 settingsApp.use(window.ElementPlus);
-                settingsApp.mount('#settingsThemeSelectContainer');
+                settingsApp.mount('.settings-body');
             } else if (window.ThemeManager) {
                 // fall back 到原生初始化
                 window.ThemeManager.initThemeSelector('settingsThemeSelect');

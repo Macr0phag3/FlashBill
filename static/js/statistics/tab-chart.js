@@ -138,6 +138,16 @@ const useChartTab = () => {
 
         const colors = getChartColors();
         chartInstance = echarts.init(chartContainer, colors.isDark ? 'dark' : undefined);
+
+        // 监听动画分类开关变更
+        window.addEventListener('app:anim-chart-change', (e) => {
+            if (chartInstance) {
+                const currentOption = chartInstance.getOption();
+                if (currentOption) {
+                    chartInstance.setOption({ animation: e.detail.enabled });
+                }
+            }
+        });
     };
 
     /** 更新图表 */
@@ -177,6 +187,11 @@ const useChartTab = () => {
 
         const colors = getChartColors();
         const option = getOption(colors, chartData.months, chartData.amounts, movingAverage, fullAverage, fullAverageValue);
+
+        // 应用图表动画配置
+        const animationEnabled = localStorage.getItem('anim-chart') !== 'false';
+        option.animation = animationEnabled;
+
         chartInstance.setOption(option);
     };
 

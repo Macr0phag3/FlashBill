@@ -462,6 +462,13 @@
                 const billCount = Array.isArray(rows) ? rows.length : 0;
                 const durationDays = getDurationDaysFromRows(rows || []);
 
+                // 图表动画开关关闭时直接赋最终值，不走滚动过程
+                if (localStorage.getItem('anim-chart') === 'false') {
+                    recordDurationValueText.value = formatIntegerText(durationDays);
+                    recordBillCountText.value = formatIntegerText(billCount);
+                    return;
+                }
+
                 recordDurationValueText.value = '0';
                 recordBillCountText.value = '0';
 
@@ -524,11 +531,15 @@
                         monthChangeText.value = '新增';
                         monthChangeDirection.value = 'up';
                         // 本月总支出动画
-                        monthTotalText.value = '¥0';
-                        if (monthTotalAnimRaf) cancelAnimationFrame(monthTotalAnimRaf);
-                        monthTotalAnimRaf = animateNumberFromZero(curTotal, 1000, (val) => {
-                            monthTotalText.value = `¥${val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        });
+                        if (localStorage.getItem('anim-chart') === 'false') {
+                            monthTotalText.value = `¥${curTotal.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        } else {
+                            monthTotalText.value = '¥0';
+                            if (monthTotalAnimRaf) cancelAnimationFrame(monthTotalAnimRaf);
+                            monthTotalAnimRaf = animateNumberFromZero(curTotal, 1000, (val) => {
+                                monthTotalText.value = `¥${val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                            });
+                        }
                     }
                     return;
                 }
@@ -540,6 +551,13 @@
                 if (changePercent > 0.5) monthChangeDirection.value = 'up';
                 else if (changePercent < -0.5) monthChangeDirection.value = 'down';
                 else monthChangeDirection.value = 'flat';
+
+                // 图表动画关闭时直接赋最终值
+                if (localStorage.getItem('anim-chart') === 'false') {
+                    monthChangeText.value = `${sign}${absPercent.toFixed(1)}%`;
+                    monthTotalText.value = `¥${curTotal.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    return;
+                }
 
                 // 数字动画：从 0 跑到目标百分比
                 monthChangeText.value = `${sign}0.0%`;
@@ -996,7 +1014,25 @@
                 };
 
                 runProgressiveFrame();
-                heatmapGlitchInterval = setInterval(runProgressiveFrame, 60);
+                // 图表动画开关开启时才启动渐进式动画，否则直接显示最终状态
+                if (localStorage.getItem('anim-chart') === 'false') {
+                    stopHeatmapAnimation();
+                    const finalSeries = [
+                        ...buildBaseDotSeries(),
+                        ...availableYears.map((year, index) => ({
+                            name: '近2年开销',
+                            type: 'heatmap',
+                            coordinateSystem: 'calendar',
+                            calendarIndex: index,
+                            data: yearlyData[year] || [],
+                            itemStyle: { borderRadius: 999, borderWidth: 0, borderColor: 'transparent' },
+                            z: 2
+                        }))
+                    ];
+                    if (heatmapChart) heatmapChart.setOption({ series: finalSeries });
+                } else {
+                    heatmapGlitchInterval = setInterval(runProgressiveFrame, 60);
+                }
             };
 
             const renderExpenseChart = (series) => {
@@ -1014,7 +1050,7 @@
                 const xGridInterval = maxX >= 5 ? 5 : 1;
 
                 trendChart.setOption({
-                    animationDuration: 650,
+                    animationDuration: localStorage.getItem('anim-chart') === 'false' ? 0 : 650,
                     textStyle: { fontFamily: chartFontFamily },
                     grid: { top: 38, right: 18, bottom: 28, left: 16, containLabel: true },
                     legend: {
@@ -1104,7 +1140,7 @@
                         coordinateSystem: 'cartesian2d',
                         symbol: 'circle',
                         symbolSize: 10,
-                        data: series.length ? [[0, series[0].value]] : [],
+                        data: (series.length && localStorage.getItem('anim-chart') !== 'false') ? [[0, series[0].value]] : [],
                         itemStyle: {
                             color: colors.movingDot,
                             borderColor: colors.movingDotBorder,
@@ -1155,7 +1191,7 @@
                 });
 
                 monthlyBarChart.setOption({
-                    animationDuration: 500,
+                    animationDuration: localStorage.getItem('anim-chart') === 'false' ? 0 : 500,
                     textStyle: { fontFamily: chartFontFamily },
                     grid: { top: 8, right: 8, bottom: 60, left: 5 },
                     tooltip: {
@@ -1336,7 +1372,7 @@
                 stopQuotaGaugeAnimation();
 
                 const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-                if (prefersReducedMotion || !books?.length) {
+                if (prefersReducedMotion || !books?.length || localStorage.getItem('anim-chart') === 'false') {
                     renderQuotaGaugeChart(books || [], 1);
                     return;
                 }
@@ -1427,6 +1463,8 @@
             const startMovingDot = (series) => {
                 stopMovingDot();
                 if (!trendChart || !series || series.length === 0) return;
+                // 图表动画开关关闭时，小圆点不启动
+                if (localStorage.getItem('anim-chart') === 'false') return;
                 const metrics = buildPathMetrics(series);
                 const moveMs = Math.max(series.length * 110, 3600);
                 const pauseMs = 1000;
@@ -1630,6 +1668,19 @@
                     scheduleThemeRerender();
                 };
                 window.addEventListener('app:theme-change', onThemeChange);
+
+                // 监听图表动画开关变更，实时停止或启动首页热力图的渐进动画
+                const onAnimChartChange = (e) => {
+                    if (!e.detail.enabled) {
+                        stopHeatmapAnimation();
+                        stopMovingDot();
+                        // 将动点隐藏掉
+                        if (trendChart) {
+                            trendChart.setOption({ series: [{}, { data: [] }] });
+                        }
+                    }
+                };
+                window.addEventListener('app:anim-chart-change', onAnimChartChange);
             });
 
             onBeforeUnmount(() => {

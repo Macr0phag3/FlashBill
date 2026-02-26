@@ -16,6 +16,12 @@
         const ctx = canvas.getContext('2d');
         const loader = document.getElementById('page-loader');
 
+        // 检查字符雨开关，关闭时直接隐藏 canvas
+        if (localStorage.getItem('anim-loader') === 'false') {
+            canvas.style.display = 'none';
+            return;
+        }
+
         let width, height;
         let columns = [];
         const fontSize = 16;
@@ -36,10 +42,10 @@
         const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:・.=*+-<>";
 
         let lastDraw = 0;
-        const fps = 30; // Limit FPS for classic feel
+        const fps = 24; // Limit FPS for classic feel
 
         function draw(timestamp) {
-            if (loader.style.display === 'none') return; // Stop if hidden
+            if (loader.style.display === 'none') return; // 遥罩已隐藏时停止
 
             if (timestamp - lastDraw < 1000 / fps) {
                 requestAnimationFrame(draw);
@@ -66,15 +72,7 @@
                 const char = chars[Math.floor(Math.random() * chars.length)];
                 const x = i * fontSize;
                 const y = columns[i] * fontSize;
-
-                // Randomly draw a bright character (head of the stream)
-                // if (Math.random() > 0.98) {
-                //    ctx.fillStyle = '#FFF';
-                //    ctx.fillText(char, x, y);
-                //    ctx.fillStyle = isDark ? '#0F0' : '#004d00'; 
-                // } else {
                 ctx.fillText(char, x, y);
-                // }
 
                 if (y > height && Math.random() > 0.975) {
                     columns[i] = 0;

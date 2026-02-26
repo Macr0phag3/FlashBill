@@ -517,7 +517,9 @@
                     const [_, rulesData] = await Promise.all([fetchCategories(), fetchRules(false)]);
 
                     // 2. Chunked Rendering to prevent Main Thread blocking (Loader Stutter)
-                    const CHUNK_SIZE = 3; // Render 20 rows per frame
+                    // 字符雨关闭时 CPU 资源更充裕，可以加大每批渲染量
+                    const loaderAnimOff = localStorage.getItem('anim-loader') === 'false';
+                    const CHUNK_SIZE = loaderAnimOff ? 1000 : 3; // 关闭字符雨时一次性渲染
                     let currentIndex = 0;
 
                     const renderNextChunk = () => {
