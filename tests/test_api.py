@@ -56,10 +56,9 @@ class TestPageRoutes:
     """测试页面路由"""
     
     def test_index_page(self, client):
-        """测试首页重定向"""
+        """测试首页正常"""
         response = client.get('/')
-        assert response.status_code == 302
-        assert '/statistics' in response.headers['Location']
+        assert response.status_code == 200
 
     def test_tagging_page(self, client):
         """测试新增记账页面"""

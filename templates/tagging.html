@@ -47,8 +47,8 @@
 
                 <el-input v-model="searchQuery" placeholder="搜索关键字(null 为空值)" clearable @input="handleFilterChange"
                     class="tagging-input-180"></el-input>
-                <el-select v-model="searchField" placeholder="指定搜索字段" @change="handleFilterChange" class="tagging-select-130"
-                    clearable>
+                <el-select v-model="searchField" placeholder="指定搜索字段" @change="handleFilterChange"
+                    class="tagging-select-130" clearable>
                     <el-option label="交易对方" value="交易对方"></el-option>
                     <el-option label="商品说明" value="商品说明"></el-option>
                     <el-option label="类别" value="类别"></el-option>
@@ -90,15 +90,13 @@
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
                 v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">
                 <!-- 序号列（非编辑模式） -->
-                <el-table-column type="index" label="序号" width="60" align="center" fixed="left" v-if="!isEditing">
+                <el-table-column type="index" label="序号" width="60" align="center" v-if="!isEditing">
                     <template #default="scope">[[ (currentPage - 1) * pageSize + scope.$index + 1 ]]</template>
                 </el-table-column>
                 <!-- 选择列（编辑模式） -->
-                <el-table-column type="selection" width="60" align="center" fixed="left"
-                    v-if="isEditing"></el-table-column>
+                <el-table-column type="selection" width="60" align="center" v-if="isEditing"></el-table-column>
                 <!-- 日期列 -->
-                <el-table-column prop="交易时间" label="日期" width="180" align="center" sortable="custom"
-                    fixed="left"></el-table-column>
+                <el-table-column prop="交易时间" label="日期" width="180" align="center" sortable="custom"></el-table-column>
                 <!-- 金额列 -->
                 <el-table-column prop="金额" label="金额" width="120" align="center" sortable="custom">
                     <template #default="scope">
@@ -114,8 +112,8 @@
                 <el-table-column prop="类别" label="类别" width="120" align="center" :filters="categoryFilterOptions"
                     :filter-method="filterCategory">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" class="tagging-select-80" clearable
-                            @change="handleCategoryChange(scope.row)" filterable>
+                        <el-select v-if="isEditing" v-model="scope.row.类别" size="small" class="tagging-select-80"
+                            clearable @change="handleCategoryChange(scope.row)" filterable>
                             <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat"></el-option>
                         </el-select>
                         <span v-else-if="scope.row.类别" class="tagging-inline-center">
@@ -133,8 +131,8 @@
                 <el-table-column prop="标签" label="标签" width="120" align="center" :filters="tagFilterOptions"
                     :filter-method="filterTag">
                     <template #default="scope">
-                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" class="tagging-select-80" clearable
-                            @change="markModified(scope.row)" filterable>
+                        <el-select v-if="isEditing" v-model="scope.row.标签" size="small" class="tagging-select-80"
+                            clearable @change="markModified(scope.row)" filterable>
                             <el-option v-for="tag in getTagsForCategory(scope.row.类别)" :key="tag" :label="tag"
                                 :value="tag"></el-option>
                         </el-select>
@@ -198,8 +196,8 @@
                 </el-select>
             </el-form-item>
             <el-form-item label="标签">
-                <el-select v-model="batchTagForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable allow-create
-                    default-first-option>
+                <el-select v-model="batchTagForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable
+                    allow-create default-first-option>
                     <el-option v-for="tag in categoryTags[batchTagForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>
@@ -311,8 +309,8 @@
                         <span>标签</span>
                     </div>
                 </template>
-                <el-select v-model="quickRuleForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable allow-create
-                    default-first-option>
+                <el-select v-model="quickRuleForm.tag" placeholder="选择或输入标签" class="tagging-select-full" filterable
+                    allow-create default-first-option>
                     <el-option v-for="tag in categoryTags[quickRuleForm.category] || []" :key="tag" :label="tag"
                         :value="tag"></el-option>
                 </el-select>
@@ -901,7 +899,7 @@
                 const data = await apiCall('get', '/api/check_progress');
                 if (data?.has_progress) {
                     try {
-                        await ElMessageBox.confirm('检测到有保存的进度，上传新文件将覆盖当前进度，是否继续？', '警告', {
+                        await ElMessageBox.confirm('已有未完成的进度，再次上传将覆盖当前进度', '警告', {
                             confirmButtonText: '继续',
                             cancelButtonText: '取消',
                             type: 'warning'
