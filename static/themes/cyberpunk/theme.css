@@ -113,9 +113,14 @@ html[data-theme='cyberpunk'] {
     --home-summary-card-first-border: 2px solid rgba(255, 0, 128, 0.3);
     --home-summary-card-second-bg: linear-gradient(135deg, rgba(0, 255, 255, 0.12) 0%, rgba(0, 255, 171, 0.10) 100%);
     --home-summary-card-second-border: 2px solid rgba(0, 255, 255, 0.3);
+    --home-summary-card-third-bg: linear-gradient(135deg, rgba(255, 0, 128, 0.08) 0%, rgba(255, 200, 0, 0.06) 100%);
+    --home-summary-card-third-border: 2px solid rgba(255, 0, 128, 0.22);
+    --home-summary-card-fourth-bg: linear-gradient(135deg, rgba(255, 140, 0, 0.12) 0%, rgba(255, 80, 0, 0.08) 100%);
+    --home-summary-card-fourth-border: 2px solid rgba(255, 140, 0, 0.35);
 
-    --home-duration-purple: #c084fc;
-    --home-duration-green: #67c23a;
+    --home-duration-purple: #ff0080;
+    --home-duration-green: #00ffff;
+    --home-duration-orange: #ff8c00;
     --home-empty-text: #3a3a5a;
     --home-heatmap-empty-text: #3a3a5a;
     --home-tooltip-dot-color: #00ffff;
@@ -287,6 +292,15 @@ html[data-theme='cyberpunk'] .el-input__wrapper.is-focus {
     box-shadow: 0 0 0 1px #00ffff inset, 0 0 12px rgba(0, 255, 255, 0.2) !important;
 }
 
+/* Input/Select 内部文字降级字体，避免 Orbitron 过宽 */
+html[data-theme='cyberpunk'] .el-input__inner,
+html[data-theme='cyberpunk'] .el-select__placeholder,
+html[data-theme='cyberpunk'] .el-select__selected-item,
+html[data-theme='cyberpunk'] .el-textarea__inner {
+    font-family: 'Courier New', 'fusion-pixel', monospace !important;
+    letter-spacing: 0.5px;
+}
+
 html[data-theme='cyberpunk'] .el-select__wrapper {
     border-radius: 4px !important;
 }
@@ -343,6 +357,11 @@ html[data-theme='cyberpunk'] .el-pagination .el-pager li.is-active {
 }
 
 /* Tab 标签页 */
+html[data-theme='cyberpunk'] .el-tabs__item:hover {
+    color: #00ffff !important;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
 html[data-theme='cyberpunk'] .el-tabs__item.is-active {
     color: #00ffff !important;
     text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
@@ -360,8 +379,8 @@ html[data-theme='cyberpunk'] body {
         repeating-linear-gradient(0deg,
             transparent,
             transparent 3px,
-            rgba(0, 255, 255, 0.008) 3px,
-            rgba(0, 255, 255, 0.008) 6px);
+            rgba(0, 255, 255, 0.018) 3px,
+            rgba(0, 255, 255, 0.018) 4px);
 }
 
 /* 滚动条：赛博风 */
@@ -492,6 +511,28 @@ html[data-theme='cyberpunk'] .el-table {
     --el-table-row-hover-bg-color: var(--table-row-hover-bg-color);
     --el-text-color-regular: var(--table-text-color-regular);
     --el-text-color-primary: var(--table-text-color-primary);
+}
+
+/* ==================== el-switch 覆盖：改为赛博青色 ==================== */
+html[data-theme='cyberpunk'] .el-switch.is-checked .el-switch__core {
+    background-color: #00ffff !important;
+    border-color: #00ffff !important;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+html[data-theme='cyberpunk'] .el-switch__core {
+    border-color: rgba(0, 255, 255, 0.3) !important;
+}
+
+/* ==================== 表格固定列背景覆盖（防穿透） ==================== */
+html[data-theme='cyberpunk'] .el-table .el-table__cell.el-table-fixed-column--left,
+html[data-theme='cyberpunk'] .el-table .el-table__cell.el-table-fixed-column--right {
+    background-color: rgba(8, 8, 16, 0.88) !important;
+}
+
+html[data-theme='cyberpunk'] .el-table__body tr:hover>td.el-table-fixed-column--left,
+html[data-theme='cyberpunk'] .el-table__body tr:hover>td.el-table-fixed-column--right {
+    background-color: rgba(2, 69, 69, 0.8) !important;
 }
 
 /* ==================== 首页 box-card 覆盖 ==================== */

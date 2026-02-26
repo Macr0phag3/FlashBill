@@ -2043,8 +2043,8 @@ html:not(.dark) .el-table th.el-table__cell {
 .stealth-input .el-input__wrapper {
     box-shadow: none !important;
     background-color: transparent !important;
-    padding: 0 3px;
-    transition: all 0.2s ease;
+    padding: 0 3px !important;
+    transition: all 0.2s ease !important;
 }
 
 .stealth-input .el-input__inner {
