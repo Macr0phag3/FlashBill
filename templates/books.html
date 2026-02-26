@@ -25,9 +25,9 @@
             <div class="books-pane books-pane-left">
                 <div class="books-table-container" v-loading="loading">
                     <el-table :data="books" class="books-table-full" stripe height="100%" :fit="false">
-                        <el-table-column label="账本名称" width="190" align="center" header-align="center">
+                        <el-table-column label="账本名称" width="150" align="left" header-align="center">
                             <template #default="scope">
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center justify-content-start gap-1">
                                     <el-popover trigger="click" placement="bottom-start" :width="200"
                                         @show="handleIconPopoverShow(scope.$index)">
                                         <template #reference>
@@ -59,20 +59,20 @@
                                         </div>
                                     </el-popover>
                                     <el-input v-model="scope.row.name" size="small" placeholder="请输入账本名称"
-                                        class="books-name-input"></el-input>
+                                        class="books-name-input stealth-input"></el-input>
                                 </div>
                             </template>
                         </el-table-column>
 
-                        <el-table-column label="每月配额" width="150" align="left" header-align="center">
+                        <el-table-column label="每月配额" width="160" align="left" header-align="center">
                             <template #default="scope">
-                                <div class="d-flex align-items-center gap-2 books-quota-row">
+                                <div class="d-flex align-items-center justify-content-start gap-1 books-quota-row">
+                                    <span class="text-muted">￥</span>
                                     <el-input-number
                                         :model-value="scope.row.fixed_quota > 0 ? scope.row.fixed_quota : null"
                                         @update:model-value="val => handleQuotaChange(scope.row, val)" :precision="2"
                                         :step="100" :min="0" placeholder="无配额" size="small" :controls="false"
-                                        class="books-quota-input"></el-input-number>
-                                    <span class="text-muted">元</span>
+                                        class="books-quota-input stealth-input"></el-input-number>
                                 </div>
                             </template>
                         </el-table-column>

@@ -38,3 +38,7 @@
     border: none !important;
     box-shadow: none !important;
 }
+
+.categories-name-input {
+    width: 90px;
+}

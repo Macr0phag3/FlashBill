@@ -104,9 +104,9 @@ html[data-theme='dark'] {
         radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.12) 35%, transparent 70%);
     --home-summary-card-first-border: none;
     --home-summary-card-second-bg:
-        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.5) 0%, transparent 15%),
-        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.25) 15%, transparent 35%),
-        radial-gradient(circle at 100% 0%, rgba(74, 222, 128, 0.12) 35%, transparent 70%);
+        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.5) 0%, transparent 15%),
+        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.25) 15%, transparent 35%),
+        radial-gradient(circle at 100% 0%, rgba(103, 194, 58, 0.12) 35%, transparent 70%);
     --home-summary-card-second-border: none;
     --home-summary-card-third-bg:
         radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.5) 0%, transparent 15%),
@@ -120,7 +120,7 @@ html[data-theme='dark'] {
     --home-summary-card-fourth-border: none;
 
     --home-duration-purple: #a78bfa;
-    --home-duration-green: #4ade80;
+    --home-duration-green: #67c23a;
     --home-duration-orange: #fbbf24;
     --home-empty-text: #7c8aa3;
     --home-heatmap-empty-text: #8b949e;
@@ -136,7 +136,7 @@ html[data-theme='dark'] {
     --home-quota-card-border: none;
     --home-quota-card-shadow: none;
 
-    --home-table-card-bg: linear-gradient(to top right, rgba(74, 222, 128, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+    --home-table-card-bg: linear-gradient(to top right, rgba(103, 194, 58, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
     --home-table-card-border: none;
     --home-table-card-shadow: none;
 

@@ -53,11 +53,10 @@
                         <div class="divider-vertical"></div>
 
                         <!-- 组合式搜索框 -->
-                        <el-input v-model="filterForm.searchQuery" placeholder="搜索关键词" class="search-input"
-                            clearable @input="handleFilter">
+                        <el-input v-model="filterForm.searchQuery" placeholder="搜索关键词" class="search-input" clearable
+                            @input="handleFilter">
                             <template #prepend>
-                                <el-select v-model="filterForm.searchField" placeholder="全部字段"
-                                    @change="handleFilter">
+                                <el-select v-model="filterForm.searchField" placeholder="全部字段" @change="handleFilter">
                                     <el-option label="全部字段" value=""></el-option>
                                     <el-option label="交易对方" value="counter_party"></el-option>
                                     <el-option label="商品说明" value="goods_desc"></el-option>
@@ -71,12 +70,10 @@
                         <!-- 金额范围筛选 -->
                         <div class="amount-range-group">
                             <el-input-number v-model="filterForm.minAmount" :precision="2" :step="100" :controls="false"
-                                placeholder="最小金额" @change="handleFilter"
-                                class="stats-amount-input"></el-input-number>
+                                placeholder="最小金额" @change="handleFilter" class="stats-amount-input"></el-input-number>
                             <span class="range-separator">-</span>
                             <el-input-number v-model="filterForm.maxAmount" :precision="2" :step="100" :controls="false"
-                                placeholder="最大金额" @change="handleFilter"
-                                class="stats-amount-input"></el-input-number>
+                                placeholder="最大金额" @change="handleFilter" class="stats-amount-input"></el-input-number>
                         </div>
                         <el-button type="danger" @click="handleReset">重置</el-button>
                     </div>
@@ -95,8 +92,8 @@
                 <div v-show="activeTab === 'table'" class="stats-freq-toolbar">
                     <el-checkbox v-model="tableFreqSortEmptyLast" label="空值置底" size="default"
                         @change="handleTableSearch" v-show="tableFreqSortField"></el-checkbox>
-                    <el-select v-model="tableFreqSortField" placeholder="频率排序：无" class="stats-select-150 freq-sort-select" clearable
-                        @change="handleTableSearch" size="default">
+                    <el-select v-model="tableFreqSortField" placeholder="频率排序：无"
+                        class="stats-select-150 freq-sort-select" clearable @change="handleTableSearch" size="default">
                         <el-option label="频率排序：无" value=""></el-option>
                         <el-option label="按交易对方频率" value="counter_party"></el-option>
                         <el-option label="按商品说明频率" value="goods_desc"></el-option>
@@ -132,12 +129,11 @@
                             <el-table-column prop="category" label="类别" min-width="60" align="left" sortable="custom">
                                 <template #default="{ row }">
                                     <span v-if="row.category" class="stats-inline-start">
-                                        <el-tag size="default" effect="plain"
-                                            :style="getCategoryIconTagStyle(row.category)">
+                                        <span :style="getCategoryIconTagStyle(row.category)">
                                             <el-icon size="16">
                                                 <component :is="getCategoryIconComponent(row.category)" />
                                             </el-icon>
-                                        </el-tag>
+                                        </span>
                                         <span class="stats-text-primary" v-text="row.category"></span>
                                     </span>
                                     <span v-else class="stats-text-primary">-</span>
@@ -162,7 +158,8 @@
                             </el-table-column>
                             <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
                                 <template #default="{ row }">
-                                    <el-tag v-if="row.book" size="default" effect="plain" :style="getBookTagStyle(row.book)">
+                                    <el-tag v-if="row.book" size="default" effect="plain"
+                                        :style="getBookTagStyle(row.book)">
                                         <span class="stats-inline-center">
                                             <el-icon size="16">
                                                 <component :is="getBookIconComponent(row.book)" />
@@ -233,7 +230,8 @@
                                                                     :style="getCategoryTagStyle(item.category)">
                                                                     <span class="stats-inline-center-sm">
                                                                         <el-icon size="14">
-                                                                            <component :is="getCategoryIconComponent(item.category)" />
+                                                                            <component
+                                                                                :is="getCategoryIconComponent(item.category)" />
                                                                         </el-icon>
                                                                         {% raw %}{{ item.category }}{% endraw %}
                                                                     </span>
@@ -247,7 +245,8 @@
                                                                     :style="getBookTagStyle(item.book)">
                                                                     <span class="stats-inline-center-sm">
                                                                         <el-icon size="14">
-                                                                            <component :is="getBookIconComponent(item.book)" />
+                                                                            <component
+                                                                                :is="getBookIconComponent(item.book)" />
                                                                         </el-icon>
                                                                         {% raw %}{{ item.book }}{% endraw %}
                                                                     </span>
@@ -327,8 +326,7 @@
                             <div class="analysis-content">
                                 <!-- 时间跨度统计 -->
                                 <div class="time-span-container stats-time-span-container">
-                                    <el-table :data="timeSpanData" class="stats-table-reset" stripe
-                                        height="100%">
+                                    <el-table :data="timeSpanData" class="stats-table-reset" stripe height="100%">
                                         <el-table-column prop="label" label="统计项" min-width="150"
                                             align="center"></el-table-column>
                                         <el-table-column prop="value" label="数值" min-width="120" align="center">
@@ -493,12 +491,10 @@
                 const color = getCategoryColor(category);
                 return {
                     color: '#FFFFFF',
-                    borderColor: color,
                     backgroundColor: color,
                     width: '24px',
                     height: '24px',
-                    padding: '0',
-                    borderRadius: '2px',
+                    borderRadius: '30%',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center'

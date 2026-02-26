@@ -1496,6 +1496,15 @@ body>.container.mt-4 {
     padding: 0;
 }
 
+.stats-table-reset th .cell {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.stats-table-reset td .cell {
+    font-size: 16px;
+}
+
 /* Remove borders from input-numbers inside the group to make it look seamless */
 .amount-range-group .el-input-number .el-input__wrapper {
     box-shadow: none !important;
@@ -1959,4 +1968,29 @@ body>.container.mt-4 {
 html:not(.dark) .el-table th.el-table__cell {
     color: var(--el-text-color-primary) !important;
     font-weight: 600;
+}
+
+
+/* 输入框沉浸式隐形样式（默认像普通文本，hover/focus 时显示框） */
+.stealth-input .el-input__wrapper {
+    box-shadow: none !important;
+    background-color: transparent !important;
+    padding: 0 3px;
+    transition: all 0.2s ease;
+}
+
+.stealth-input .el-input__inner {
+    text-align: left !important;
+    font-weight: 500;
+    color: var(--el-text-color-primary) !important;
+}
+
+.stealth-input:hover .el-input__wrapper,
+.stealth-input.is-focus .el-input__wrapper {
+    box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+    background-color: var(--el-fill-color-blank) !important;
+}
+
+.stealth-input.is-focus .el-input__wrapper {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
 }

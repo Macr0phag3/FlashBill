@@ -27,9 +27,9 @@
         <div class="categories-table-container" v-loading="loading">
             <el-table :data="categories" class="categories-table-full" stripe height="100%">
                 <!-- 分类名称列 -->
-                <el-table-column label="分类名称" width="180" align="center" header-align="center">
+                <el-table-column label="分类名称" width="100" align="left" header-align="left">
                     <template #default="scope">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center justify-content-start gap-1">
                             <el-popover trigger="click" placement="bottom-start" :width="260"
                                 @show="handleIconPopoverShow(scope.$index)">
                                 <template #reference>
@@ -60,7 +60,7 @@
                                 </div>
                             </el-popover>
                             <el-input v-model="scope.row.name" size="small" placeholder="请输入分类名称"
-                                class="categories-name-input"></el-input>
+                                class="categories-name-input stealth-input"></el-input>
                         </div>
                     </template>
                 </el-table-column>
