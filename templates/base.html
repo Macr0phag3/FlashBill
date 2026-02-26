@@ -168,6 +168,15 @@
                 if (target.dataset.isGlitching) return;
                 target.dataset.isGlitching = 'true';
 
+                // 锁定真实宽度，避免由于全角/半角字符宽度差异导致按钮抖动撑开
+                const rect = target.getBoundingClientRect();
+                target.style.boxSizing = 'border-box';
+                target.style.width = rect.width + 'px';
+                target.style.textAlign = 'left';
+                // 隐藏因字符过长而产生的换行/溢出问题，彻底控制高度
+                target.style.overflow = 'hidden';
+                target.style.whiteSpace = 'nowrap';
+
                 const originalText = target.textContent.trim();
                 // 备份原始文本
                 target.dataset.originalText = originalText;

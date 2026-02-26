@@ -1944,6 +1944,7 @@ body>.container.mt-4 {
 .el-tabs__item {
     font-size: 16px !important;
     font-weight: 500;
+    justify-content: left !important;
 }
 
 /* 去除频率排序下拉框的边框 */
