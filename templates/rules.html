@@ -34,28 +34,6 @@
                 <el-table-column label="优先级" width="95" align="center" fixed="left" sortable="custom" prop="priority">
                     <template #default="scope">[[ scope.row.priority ]]</template>
                 </el-table-column>
-                <!-- 操作列 -->
-                <el-table-column label="操作" width="160" align="center" fixed="left">
-                    <template #default="scope">
-                        <el-button size="small" type="primary" @click="moveRule(scope.$index, -1)"
-                            :disabled="scope.$index === 0">
-                            <el-icon>
-                                <component :is="ArrowUp" />
-                            </el-icon>
-                        </el-button>
-                        <el-button size="small" type="warning" @click="moveRule(scope.$index, 1)"
-                            :disabled="scope.$index === rules.length - 1">
-                            <el-icon>
-                                <component :is="ArrowDown" />
-                            </el-icon>
-                        </el-button>
-                        <el-button type="danger" size="small" @click="deleteRule(scope.$index)">
-                            <el-icon>
-                                <component :is="Delete" />
-                            </el-icon>
-                        </el-button>
-                    </template>
-                </el-table-column>
                 <!-- 类别列 -->
                 <el-table-column prop="category" label="类别" width="120" align="center" sortable="custom" fixed="left">
                     <template #default="scope">
@@ -113,9 +91,31 @@
                     </template>
                 </el-table-column>
                 <!-- 备注列 -->
-                <el-table-column label="备注" width="120" align="center" fixed="left">
+                <el-table-column label="备注" width="120" align="center">
                     <template #default="scope">
                         <el-input v-model="scope.row.comment" size="small" placeholder="请输入备注"></el-input>
+                    </template>
+                </el-table-column>
+                <!-- 操作列 -->
+                <el-table-column label="操作" width="160" align="center">
+                    <template #default="scope">
+                        <el-button size="small" type="primary" @click="moveRule(scope.$index, -1)"
+                            :disabled="scope.$index === 0">
+                            <el-icon>
+                                <component :is="ArrowUp" />
+                            </el-icon>
+                        </el-button>
+                        <el-button size="small" type="warning" @click="moveRule(scope.$index, 1)"
+                            :disabled="scope.$index === rules.length - 1">
+                            <el-icon>
+                                <component :is="ArrowDown" />
+                            </el-icon>
+                        </el-button>
+                        <el-button type="danger" size="small" @click="deleteRule(scope.$index)">
+                            <el-icon>
+                                <component :is="Delete" />
+                            </el-icon>
+                        </el-button>
                     </template>
                 </el-table-column>
                 <!-- 规则列 -->

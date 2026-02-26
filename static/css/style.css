@@ -1146,6 +1146,29 @@ html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
     z-index: 2;
 }
 
+/* 修复：固定列半透明背景 —— 遮挡后面内容防止叠字，保留轻微透明感 */
+/* 注意：不用 backdrop-filter blur，会破坏表头滚动同步且导致卡顿 */
+.el-table .el-table__cell.el-table-fixed-column--left,
+.el-table .el-table__cell.el-table-fixed-column--right {
+    background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.dark .el-table .el-table__cell.el-table-fixed-column--left,
+.dark .el-table .el-table__cell.el-table-fixed-column--right {
+    background-color: rgba(22, 22, 30, 0.88) !important;
+}
+
+.el-table__body tr:hover>td.el-table-fixed-column--left,
+.el-table__body tr:hover>td.el-table-fixed-column--right {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.dark .el-table__body tr:hover>td.el-table-fixed-column--left,
+.dark .el-table__body tr:hover>td.el-table-fixed-column--right {
+    background-color: rgba(53, 53, 54, 0.9) !important;
+}
+
+
 
 /* Rules 页面特定样式 */
 .rules-table-container {
