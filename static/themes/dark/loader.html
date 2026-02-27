@@ -1,0 +1,163 @@
+<!-- 深色主题专属加载遮罩 -->
+<div id="page-loader" class="page-loader page-loader-dark">
+    <div class="loader-content loader-dark-content">
+        <div class="loader-dark-box">
+            <div class="loader-dark-ai-core">
+                <div class="ai-ring ring-1"></div>
+                <div class="ai-ring ring-2"></div>
+                <div class="ai-ring ring-3"></div>
+                <div class="ai-nucleus"></div>
+            </div>
+            <div class="loader-dark-text">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 深色 loader 流动渐变背景 */
+    .page-loader-dark {
+        background-color: #0a101b;
+        background-image:
+            radial-gradient(at 90% 5%, rgba(156, 39, 176, 0.18) 0px, transparent 50%),
+            radial-gradient(at 75% 20%, rgba(84, 160, 255, 0.18) 0px, transparent 50%),
+            radial-gradient(at 10% 90%, rgba(29, 209, 161, 0.18) 0px, transparent 50%),
+            radial-gradient(at 30% 75%, rgba(68, 206, 246, 0.15) 0px, transparent 50%),
+            radial-gradient(at 50% 50%, rgba(84, 160, 255, 0.12) 0px, transparent 50%);
+        background-size: 250% 250%;
+        animation: darkGradientBG 15s ease infinite;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 禁用动画时停止背景流动 */
+    .disable-anim-loader .page-loader-dark {
+        animation: none;
+        background-position: 0% 50%;
+    }
+
+    /* 主背景背景流动动画 */
+    @keyframes darkGradientBG {
+        0% {
+            transform: scale(1);
+            background-position: 0% 50%;
+        }
+
+        50% {
+            transform: scale(1);
+            background-position: 100% 50%;
+        }
+
+        100% {
+            transform: scale(1);
+            background-position: 0% 50%;
+        }
+    }
+
+    /* 透明容器面板 */
+    .loader-dark-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px 40px;
+        background: transparent;
+    }
+
+    /* 文字样式 */
+    .loader-dark-text {
+        padding-top: 30px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        letter-spacing: 0.25em;
+        color: rgb(255, 183, 0);
+        margin-top: 30px;
+        text-shadow: 0 0 10px rgba(139, 148, 158, 0.5);
+    }
+
+    /* AI 核心总容器 */
+    .loader-dark-ai-core {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 中心的液态能量核 */
+    .ai-nucleus {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: radial-gradient(circle at 30% 30%, #ff2a85, #8a2be2);
+        box-shadow:
+            0 0 10px #992cff,
+            0 0 20px rgba(255, 42, 170, 0.8),
+            0 0 40px rgba(138, 43, 226, 0.6);
+        /* 不规则八点边框，形成有机形态 */
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        animation: fluidRotate 4s linear infinite;
+        z-index: 10;
+    }
+
+    /* 外围扭曲旋转流动的液态环 */
+    .ai-ring {
+        position: absolute;
+        width: 110%;
+        height: 110%;
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+        animation: fluidRotate 8s linear infinite reverse;
+    }
+
+    /* 错开几个液态环的大小、扭曲形态与自转速度和方向 */
+    .ai-ring.ring-1 {
+        width: 120%;
+        height: 120%;
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        animation-duration: 6s;
+        border-color: rgb(255, 60, 100);
+        /* 亮红粉色 */
+        box-shadow: 0 0 12px rgba(255, 60, 100, 0.6), inset 0 0 12px rgba(255, 60, 100, 0.2);
+    }
+
+    .ai-ring.ring-2 {
+        width: 130%;
+        height: 140%;
+        border-radius: 50% 50% 30% 70% / 40% 60% 40% 60%;
+        animation-duration: 9s;
+        animation-direction: normal;
+        border-color: rgb(136, 0, 255);
+        /* 中间的亮红粉色 */
+        box-shadow: 0 0 12px rgba(136, 0, 255, 0.6), inset 0 0 12px rgba(136, 0, 255, 0.2);
+    }
+
+    .ai-ring.ring-3 {
+        width: 170%;
+        height: 160%;
+        border-radius: 60% 40% 50% 50% / 50% 50% 50% 50%;
+        animation-duration: 12s;
+        border-color: rgb(0, 153, 255);
+        /* 维持外圈明亮的的赛博亮黄 */
+        box-shadow: 0 0 20px rgba(0, 153, 255, 0.6), inset 0 0 15px rgba(0, 153, 255, 0.2);
+    }
+
+    @keyframes fluidRotate {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* 动画开关控制 */
+    .disable-anim-loader .ai-nucleus,
+    .disable-anim-loader .ai-ring {
+        animation: none;
+        border-radius: 50%;
+        /* 关闭动画时变回静态圆球 */
+    }
+</style>
