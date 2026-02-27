@@ -1,0 +1,158 @@
+<!-- 赛博朋克主题专属加载遮罩 -->
+<div id="page-loader" class="page-loader page-loader-cyberpunk">
+    <canvas id="matrix-canvas" class="loader-matrix-canvas"></canvas>
+
+    <div class="loader-content">
+        <div class="loader-cyberpunk-text">
+            <span class="loader-cyberpunk-prompt">&gt;&gt;</span>
+            <span class="loader-cyberpunk-msg" id="cyberLoaderMsg">INITIATING SYSTEM</span>
+            <span class="loader-cyberpunk-cursor">_</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 赛博朋克 loader 专属样式 */
+    .page-loader-cyberpunk {
+        background: #000;
+    }
+
+    .loader-cyberpunk-text {
+        font-family: 'Orbitron', 'Courier New', monospace;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #0ff;
+        text-shadow:
+            0 0 8px #0ff,
+            0 0 20px #0ff,
+            0 0 40px rgba(0, 255, 255, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.6em 1.4em;
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        background: rgba(0, 255, 255, 0.05);
+        backdrop-filter: blur(4px);
+    }
+
+    .loader-cyberpunk-prompt {
+        color: #f0f;
+        text-shadow:
+            0 0 8px #f0f,
+            0 0 20px #f0f;
+    }
+
+    /* 光标闪烁 */
+    .loader-cyberpunk-cursor {
+        animation: cyberBlink 0.7s step-end infinite;
+        color: #0ff;
+    }
+
+    @keyframes cyberBlink {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0;
+        }
+    }
+</style>
+
+<script>
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const loader = document.getElementById('page-loader');
+
+        // 检查加载屏动画开关
+        if (localStorage.getItem('anim-loader') === 'false') {
+            canvas.style.display = 'none';
+            return;
+        }
+
+        let width, height;
+        let columns = [];
+        const fontSize = 14;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            const cols = Math.floor(width / fontSize);
+            const rows = Math.floor(height / fontSize);
+            columns = Array(cols).fill(0).map(() => Math.floor(Math.random() * rows));
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 赛博朋克字符集：片假名 + ASCII 符号
+        const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ01ABCDEF<>[]{}|/\\:;";
+
+        // 双色调：主色青色 + 偶尔紫色高光
+        const colors = ['#0ff', '#0ff', '#0ff', '#f0f', '#0ff', '#0cf'];
+
+        let lastDraw = 0;
+        const fps = 20;
+
+        function draw(timestamp) {
+            if (loader.style.display === 'none') return;
+            if (timestamp - lastDraw < 1000 / fps) {
+                requestAnimationFrame(draw);
+                return;
+            }
+            lastDraw = timestamp;
+
+            // 深色拖尾
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.font = fontSize + 'px "Courier New", monospace';
+
+            for (let i = 0; i < columns.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                const x = i * fontSize;
+                const y = columns[i] * fontSize;
+
+                // 头部字符更亮，赋予更高亮度
+                const isHead = Math.random() > 0.9;
+                ctx.fillStyle = isHead ? '#fff' : colors[Math.floor(Math.random() * colors.length)];
+                ctx.fillText(char, x, y);
+
+                if (y > height && Math.random() > 0.975) {
+                    columns[i] = 0;
+                }
+                columns[i]++;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        requestAnimationFrame(draw);
+
+        // 动态打字机效果：轮播加载提示词
+        const messages = [
+            'INITIATING SYSTEM',
+            'LOADING NEON GRID',
+            'BYPASSING FIREWALL',
+            'DECRYPTING DATA',
+            'CONNECTING TO NET',
+            '正在骇入主机',
+        ];
+        let msgIdx = 0;
+        const msgEl = document.getElementById('cyberLoaderMsg');
+
+        function rotateMessage() {
+            if (!msgEl || loader.style.display === 'none') return;
+            msgIdx = (msgIdx + 1) % messages.length;
+            msgEl.textContent = messages[msgIdx];
+        }
+
+        setInterval(rotateMessage, 1200);
+    })();
+</script>

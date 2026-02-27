@@ -170,4 +170,28 @@ html[data-theme='light'] {
     --home-bar-below-color: #16a34a;
     --home-bar-glow-blur: 8;
     --home-bar-glow-alpha: 0.35;
+
+    /* --------------------------------------------------------- */
+    /* 修复主题切换残留：重置表格斑马纹和 hover 状态             */
+    /* --------------------------------------------------------- */
+    html[data-theme='light'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+        background-color: #fafafa !important;
+    }
+
+    html[data-theme='light'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--left,
+    html[data-theme='light'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--right {
+        background-color: #fafafa !important;
+    }
+
+    /* 覆盖可能被其他主题污染的纯白和 hover */
+    html[data-theme='light'] .el-table .el-table__cell.el-table-fixed-column--left,
+    html[data-theme='light'] .el-table .el-table__cell.el-table-fixed-column--right {
+        background-color: #ffffff !important;
+    }
+
+    html[data-theme='light'] .el-table__body tr:hover>td.el-table-fixed-column--left,
+    html[data-theme='light'] .el-table__body tr:hover>td.el-table-fixed-column--right {
+        background-color: #f5f7fa !important;
+    }
+
 }

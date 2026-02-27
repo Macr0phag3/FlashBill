@@ -25,17 +25,26 @@ def _safe_mode(value: Any) -> str:
     return mode
 
 
-def load_theme_registry(static_folder: str) -> list[dict[str, Any]]:
+def load_theme_registry(static_folder: str, templates_folder: str | None = None) -> list[dict[str, Any]]:
     """
     从 static/themes 目录加载主题注册表。
 
     约定:
     1. 每个主题目录包含 manifest.json 和 theme.css
     2. manifest 至少包含 name 字段，id 默认使用目录名
+    3. 若 templates/themes/<id>/loader.html 存在，则注入 loader_template 字段（相对 templates 目录的路径）
     """
     themes_root = Path(static_folder) / "themes"
     if not themes_root.exists() or not themes_root.is_dir():
         return []
+
+    # 计算 templates 目录，用于检测专属 loader 模板
+    templates_root: Path | None = None
+    if templates_folder:
+        templates_root = Path(templates_folder)
+    else:
+        # 约定：templates 与 static 同级
+        templates_root = Path(static_folder).parent / "templates"
 
     registry: list[dict[str, Any]] = []
     for theme_dir in themes_root.iterdir():
@@ -56,6 +65,15 @@ def load_theme_registry(static_folder: str) -> list[dict[str, Any]]:
         if not theme_id:
             continue
 
+        # 从 static 目录下读取专属 loader 的 HTML 片段源码
+        loader_html: str | None = None
+        candidate = theme_dir / "loader.html"
+        if candidate.exists():
+            try:
+                loader_html = candidate.read_text(encoding="utf-8")
+            except OSError:
+                pass
+
         registry.append(
             {
                 "id": theme_id,
@@ -66,6 +84,7 @@ def load_theme_registry(static_folder: str) -> list[dict[str, Any]]:
                 "mode": _safe_mode(manifest.get("mode")),
                 "order": _safe_int(manifest.get("order"), 1000),
                 "stylesheet": str(manifest.get("stylesheet") or f"themes/{theme_dir.name}/theme.css"),
+                "loader_html": loader_html,
             }
         )
 

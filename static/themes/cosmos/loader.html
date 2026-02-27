@@ -1,0 +1,230 @@
+<!-- 深邃星空主题专属加载遮罩 -->
+<div id="page-loader" class="page-loader page-loader-cosmos">
+    <canvas id="matrix-canvas" class="loader-matrix-canvas"></canvas>
+
+    <div class="loader-content">
+        <div class="loader-cosmos-text">
+            <span class="loader-cosmos-icon">✦</span>
+            <span id="cosmosLoaderMsg">正在穿越星云</span>
+            <span class="loader-cosmos-dots"><span>.</span><span>.</span><span>.</span></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 星空 loader 专属样式 */
+    .page-loader-cosmos {
+        background: radial-gradient(ellipse at center, #0d0221 0%, #000005 100%);
+    }
+
+    .loader-cosmos-text {
+        font-family: 'Inter', 'PingFang SC', sans-serif;
+        font-size: 1rem;
+        letter-spacing: 0.15em;
+        color: #c8aaff;
+        text-shadow:
+            0 0 12px rgba(160, 100, 255, 0.8),
+            0 0 30px rgba(100, 60, 200, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        padding: 0.6em 1.6em;
+        border: 1px solid rgba(160, 100, 255, 0.25);
+        background: rgba(80, 30, 160, 0.1);
+        backdrop-filter: blur(8px);
+        border-radius: 4px;
+    }
+
+    .loader-cosmos-icon {
+        color: #a78fff;
+        font-size: 1.1em;
+        animation: cosmosPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes cosmosPulse {
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(0.85);
+        }
+    }
+
+    /* 省略号流动动画 */
+    .loader-cosmos-dots span {
+        animation: cosmosDot 1.4s ease-in-out infinite;
+        color: #a78fff;
+    }
+
+    .loader-cosmos-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .loader-cosmos-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes cosmosDot {
+
+        0%,
+        80%,
+        100% {
+            opacity: 0.2;
+        }
+
+        40% {
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const loader = document.getElementById('page-loader');
+
+        // 检查加载屏动画开关
+        if (localStorage.getItem('anim-loader') === 'false') {
+            canvas.style.display = 'none';
+            return;
+        }
+
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            // 重新初始化星场
+            initStars();
+        }
+
+        window.addEventListener('resize', resize);
+
+        // 星场粒子
+        const STAR_COUNT = 280;
+        let stars = [];
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push(createStar(true));
+            }
+        }
+
+        function createStar(randomPos) {
+            return {
+                x: randomPos ? Math.random() * width : width / 2,
+                y: randomPos ? Math.random() * height : height / 2,
+                // 初始速度：从中心向外辐射
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                radius: Math.random() * 1.6 + 0.3,
+                // 颜色：白/蓝/紫
+                color: ['#ffffff', '#c8aaff', '#aac8ff', '#e8e0ff', '#b8b0ff'][Math.floor(Math.random() * 5)],
+                alpha: Math.random() * 0.6 + 0.3,
+                twinkleSpeed: 0.01 + Math.random() * 0.02,
+                twinklePhase: Math.random() * Math.PI * 2,
+            };
+        }
+
+        resize();
+
+        let lastDraw = 0;
+        const fps = 30;
+
+        function draw(timestamp) {
+            if (loader.style.display === 'none') return;
+            if (timestamp - lastDraw < 1000 / fps) {
+                requestAnimationFrame(draw);
+                return;
+            }
+            lastDraw = timestamp;
+
+            // 清空（透明背景，由 CSS 负责底色）
+            ctx.clearRect(0, 0, width, height);
+
+            // 绘制星点 + 星尘轨迹
+            for (let s of stars) {
+                s.x += s.vx;
+                s.y += s.vy;
+                // 边界重置
+                if (s.x < 0 || s.x > width || s.y < 0 || s.y > height) {
+                    Object.assign(s, createStar(true));
+                }
+
+                // 闪烁效果
+                s.twinklePhase += s.twinkleSpeed;
+                const alpha = s.alpha * (0.6 + 0.4 * Math.sin(s.twinklePhase));
+
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = s.color;
+                ctx.shadowColor = s.color;
+                ctx.shadowBlur = s.radius * 3;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 偶尔绘制流星
+            if (Math.random() < 0.018) {
+                drawShootingStar();
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawShootingStar() {
+            const x0 = Math.random() * width;
+            const y0 = Math.random() * (height * 0.4);
+            const len = 80 + Math.random() * 120;
+            const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+            const x1 = x0 + Math.cos(angle) * len;
+            const y1 = y0 + Math.sin(angle) * len;
+
+            const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+            grad.addColorStop(0, 'rgba(255,255,255,0)');
+            grad.addColorStop(0.4, 'rgba(200,170,255,0.6)');
+            grad.addColorStop(1, 'rgba(255,255,255,0.9)');
+
+            ctx.save();
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 1.5;
+            ctx.globalAlpha = 0.9;
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        requestAnimationFrame(draw);
+
+        // 轮播加载提示词
+        const messages = [
+            '正在穿越星云',
+            '校准星图坐标',
+            '扫描暗物质频谱',
+            '展开引力透镜',
+            '连接星际网络',
+        ];
+        let msgIdx = 0;
+        const msgEl = document.getElementById('cosmosLoaderMsg');
+
+        function rotateMessage() {
+            if (!msgEl || loader.style.display === 'none') return;
+            msgIdx = (msgIdx + 1) % messages.length;
+            msgEl.textContent = messages[msgIdx];
+        }
+
+        setInterval(rotateMessage, 1500);
+    })();
+</script>

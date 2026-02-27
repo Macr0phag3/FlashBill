@@ -5,6 +5,6 @@
     "author": "Gemini 3.1 Pro",
     "version": "1.0.0",
     "mode": "dark",
-    "order": 1,
+    "order": 40,
     "stylesheet": "themes/cosmos/theme.css"
 }

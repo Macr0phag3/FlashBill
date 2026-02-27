@@ -25,9 +25,12 @@
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
     <!-- ==================== 主题初始化（防止闪烁，需在 body 渲染前执行） ==================== -->
+    <script id="theme-data" type="application/json">
+        {{ theme_registry | tojson | safe }}
+    </script>
     <script>
         window.__STATIC_BASE_URL__ = "{{ url_for('static', filename='') }}";
-        window.__THEME_REGISTRY__ = JSON.parse('{{ theme_registry | tojson }}');
+        window.__THEME_REGISTRY__ = JSON.parse(document.getElementById('theme-data').textContent);
         (function () {
             try {
                 var animKeys = ['anim-logo', 'anim-glitch', 'anim-transition', 'anim-chart', 'anim-loader'];
@@ -51,7 +54,7 @@
             try {
                 var tid = localStorage.getItem('app-theme');
                 if (tid) {
-                    var reg = JSON.parse('{{ theme_registry | tojson }}');
+                    var reg = window.__THEME_REGISTRY__;
                     for (var i = 0; i < reg.length; i++) {
                         if (reg[i].id === tid && reg[i].stylesheet) { sheet = reg[i].stylesheet; break; }
                     }
@@ -72,8 +75,9 @@
 </head>
 
 <body>
-    <!-- 页面特定加载遮罩 (由子模板按需实现) -->
-    {% block page_loader %}{% endblock %}
+    <!-- 全局加载遮罩：由 loader.html 即前端动态分发 -->
+    {% include 'loader.html' %}
+
 
     <!-- ==================== 导航栏 ==================== -->
     <header class="app-header-wrapper">

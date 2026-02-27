@@ -5,6 +5,6 @@
     "author": "Antigravity",
     "version": "1.0.0",
     "mode": "light",
-    "order": 15,
+    "order": 50,
     "stylesheet": "themes/sakura/theme.css"
 }

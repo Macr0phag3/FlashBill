@@ -1,88 +1,40 @@
-<!-- 全局加载遮罩 (Component) -->
-<div id="page-loader" class="page-loader page-loader-matrix">
-    <canvas id="matrix-canvas" class="loader-matrix-canvas"></canvas>
+<!-- 主题加载器分发中心（纯前端实现） -->
+<div id="theme-loader-dispatcher"></div>
 
-    <div class="loader-content">
-        <div class="matrix-text loader-matrix-text">
-            $ ... 正在骇入
-        </div>
-    </div>
-</div>
+<!-- 将后端注入的各个主题专属 loader 隐藏包裹在 <template> 内，待 JS 分发 -->
+{% for theme in theme_registry %}
+{% if theme.loader_html %}
+<template id="tpl-loader-{{ theme.id }}">
+    {{ theme.loader_html | safe }}
+</template>
+{% endif %}
+{% endfor %}
 
 <script>
     (function () {
-        const canvas = document.getElementById('matrix-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const loader = document.getElementById('page-loader');
+        // 1. 获取当前保存在前端的主题
+        const themeId = localStorage.getItem('app-theme') || 'light';
+        let tpl = document.getElementById('tpl-loader-' + themeId);
 
-        // 检查字符雨开关，关闭时直接隐藏 canvas
-        if (localStorage.getItem('anim-loader') === 'false') {
-            canvas.style.display = 'none';
-            return;
+        // 2. Fallback: 如果主题没有专属加载页，降级尝试 light、dark
+        if (!tpl) tpl = document.getElementById('tpl-loader-light');
+        if (!tpl) tpl = document.getElementById('tpl-loader-dark');
+
+        const container = document.getElementById('theme-loader-dispatcher');
+        if (tpl && container) {
+            // 3. 提取模板并插入 DOM
+            const clone = tpl.content.cloneNode(true);
+
+            // 4. Hack: <template> 里的 <script> 插入 DOM 不会自动执行，需要手动重建并替换
+            const scripts = clone.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+
+            container.appendChild(clone);
         }
-
-        let width, height;
-        let columns = [];
-        const fontSize = 16;
-
-        // Initialize & Resize
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            const cols = Math.floor(width / fontSize);
-            const rows = Math.floor(height / fontSize);
-            columns = Array(cols).fill(0).map(() => Math.floor(Math.random() * rows)); // Randomize Y across full screen
-        }
-
-        window.addEventListener('resize', resize);
-        resize();
-
-        // Matrix Characters (Katakana + Latin + Numbers)
-        const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789:・.=*+-<>";
-
-        let lastDraw = 0;
-        const fps = 24; // Limit FPS for classic feel
-
-        function draw(timestamp) {
-            if (loader.style.display === 'none') return; // 遥罩已隐藏时停止
-
-            if (timestamp - lastDraw < 1000 / fps) {
-                requestAnimationFrame(draw);
-                return;
-            }
-            lastDraw = timestamp;
-
-            // Theme Detection
-            const isDark = document.documentElement.classList.contains('dark');
-
-            // Trail effect
-            // Dark: Black fade with minimal opacity for long trails
-            // Light: White fade
-            ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)';
-            ctx.fillRect(0, 0, width, height);
-
-            // Text Color
-            // Dark: Neon Green (#0F0)
-            // Light: Dark Green (#006400) or Deep Matrix Cyan? Let's go with Dark Matrix Green.
-            ctx.fillStyle = isDark ? '#0F0' : '#004d00';
-            ctx.font = fontSize + 'px monospace';
-
-            for (let i = 0; i < columns.length; i++) {
-                const char = chars[Math.floor(Math.random() * chars.length)];
-                const x = i * fontSize;
-                const y = columns[i] * fontSize;
-                ctx.fillText(char, x, y);
-
-                if (y > height && Math.random() > 0.975) {
-                    columns[i] = 0;
-                }
-                columns[i]++;
-            }
-
-            requestAnimationFrame(draw);
-        }
-
-        requestAnimationFrame(draw);
     })();
 </script>

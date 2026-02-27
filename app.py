@@ -36,8 +36,12 @@ app.register_blueprint(statistics_bp)
 
 @app.context_processor
 def inject_theme_registry():
-    """注入前端主题注册表，供模板和主题切换器使用"""
-    return {"theme_registry": load_theme_registry(app.static_folder)}
+    """注入前端主题注册表，供 templates 使用"""
+    registry = load_theme_registry(app.static_folder)
+    return {
+        "theme_registry": registry,
+    }
+
 
 
 # ==================== 首页路由 ====================

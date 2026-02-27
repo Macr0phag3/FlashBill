@@ -964,7 +964,15 @@
 
             onMounted(async () => {
                 await Promise.all([checkProgress(), fetchCategories()]);
+
+                // 数据加载完毕，关闭加载遮罩
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 300);
+                }
             });
+
 
             // ==================== 返回模板绑定 ====================
 
