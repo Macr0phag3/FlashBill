@@ -1841,9 +1841,7 @@ body>.container.mt-4 {
 
 /* 卡片悬停效果 */
 .timeline-item-card:hover {
-    box-shadow: var(--timeline-item-hover-shadow);
-    transform: translateY(-1px);
-    border: 1px solid var(--border-color) !important;
+    transform: translateY(-2px);
 }
 
 /* 卡片内容 */

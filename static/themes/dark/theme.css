@@ -60,7 +60,7 @@ html[data-theme='dark'] {
     --island-theme-border: 1px solid rgb(255, 196, 2);
     --island-theme-hover-shadow: 0 0 10px rgb(255, 196, 2);
     --theme-toggle-btn-color: #ffd700;
-    --nav-link-active-bg: rgba(64, 158, 255, 0.2);
+    --nav-link-active-bg: transparent;
 
     --app-card-shadow:
         -5px -5px 5px rgba(255, 255, 255, 0.169),
@@ -197,7 +197,7 @@ html[data-theme='dark'] {
     --settings-select-border: 1px solid rgba(255, 255, 255, 0.12);
     --settings-select-color: #e5eaf3;
     --settings-select-hover-border: 1px solid #409eff;
-    --settings-btn-color: #e5eaf3;
+    --settings-btn-color: #fbbf24;
     --settings-btn-hover-color: #fbbf24;
 
     /* 柱状图偏差条 */
@@ -333,10 +333,11 @@ html[data-theme='dark'] .el-card.mb-3 {
     border: var(--home-box-card-border) !important;
 }
 
-/* 首页4个小卡片毛玻璃效果 */
+/* 首页小卡片及统计时间线卡片毛玻璃效果 */
 html[data-theme='dark'] .home-grid-2x2 .home-card,
 html[data-theme='dark'] .home-trend-card,
-html[data-theme='dark'] .home-table-card {
+html[data-theme='dark'] .home-table-card,
+html[data-theme='dark'] .timeline-item-card {
     -webkit-backdrop-filter: blur(18px) saturate(1.4);
     backdrop-filter: blur(18px) saturate(1.4);
     background-color: rgba(255, 255, 255, 0.015) !important;
@@ -394,4 +395,13 @@ html[data-theme='dark'] .el-input-group__append .el-select .el-input__wrapper {
 html[data-theme='dark'] .quota-card,
 html[data-theme='dark'] .score-panel {
     background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ==================== 导航栏覆盖 ==================== */
+html[data-theme='dark'] .nav-link.active {
+    color: rgb(255, 183, 0) !important;
+}
+
+html[data-theme='dark'] .nav-link:hover {
+    color: rgb(255, 183, 0) !important;
 }
