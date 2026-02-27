@@ -1,0 +1,10 @@
+{
+    "id": "sakura",
+    "name": "春日樱花",
+    "description": "以樱花美学为灵感的浅色主题，温暖米白底色，樱花粉主色，充满春日生机。",
+    "author": "Antigravity",
+    "version": "1.0.0",
+    "mode": "light",
+    "order": 15,
+    "stylesheet": "themes/sakura/theme.css"
+}

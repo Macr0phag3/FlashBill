@@ -1,0 +1,579 @@
+/* ==========================================================================
+   🌸 Sakura 主题 — 日式樱花浅色风格
+   主色：深樱花粉 #d64f6e | 辅助色：墨绿茶 #5a8a6e + 暖橙金 #e07b39
+   底色：温暖米白 #fdf6f0
+   ========================================================================== */
+
+html[data-theme='sakura'] {
+    color-scheme: light;
+
+    /* --------------------------------------------------------- */
+    /* 字体                                                        */
+    /* --------------------------------------------------------- */
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    --el-font-family: var(--font-primary);
+
+    /* --------------------------------------------------------- */
+    /* 全局基础                                                    */
+    /* --------------------------------------------------------- */
+    --bg-color: #fdf6f0;
+    --bg-color-secondary: #fef0f3;
+    --el-bg-color: #fef0f3;
+    --el-bg-color-page: #fdf6f0;
+
+    /* 弹窗背景 —— 半透明磨砂感 */
+    --el-dialog-bg-color: rgba(253, 246, 240, 0.82);
+    --el-messagebox-bg-color: rgba(253, 246, 240, 0.82);
+
+    --text-color: #3a2a30;
+    --text-color-secondary: #5c444e;
+    --text-muted-color: #9a7f88;
+    --border-color: rgba(214, 79, 110, 0.18);
+    --shadow-color: rgba(180, 80, 100, 0.1);
+
+    /* --------------------------------------------------------- */
+    /* 主题选择器                                                  */
+    /* --------------------------------------------------------- */
+    --theme-picker-border: rgba(214, 79, 110, 0.5);
+    --theme-picker-shadow: rgba(214, 79, 110, 0.25);
+    --theme-picker-text: #d64f6e;
+    --theme-picker-bg: rgba(253, 246, 240, 0.85);
+
+    /* --------------------------------------------------------- */
+    /* 导航岛屿                                                   */
+    /* --------------------------------------------------------- */
+    --nav-island-bg: rgba(253, 246, 240, 0.88);
+    --nav-island-border: 1px solid rgba(214, 79, 110, 0.15);
+    --nav-island-shadow: 0 4px 20px rgba(180, 80, 100, 0.12);
+
+    /* Logo：深樱粉背景，米白字，粉色晕光 */
+    --island-logo-text: #fdf6f0;
+    --island-logo-bg: #d64f6e;
+    --island-logo-shadow: 0 0 18px rgba(214, 79, 110, 0.55);
+
+    --island-menu-bg: var(--nav-island-bg);
+    --island-menu-shadow: 0 4px 18px rgba(180, 80, 100, 0.14);
+    --island-menu-border-top: 1px solid rgba(214, 79, 110, 0.1);
+
+    --island-info-bg: var(--nav-island-bg);
+    --island-info-shadow: 0 4px 18px rgba(180, 80, 100, 0.14);
+    --island-info-border-top: 1px solid rgba(214, 79, 110, 0.1);
+
+    --island-theme-bg: transparent;
+    --island-theme-color: #d64f6e;
+    --island-theme-shadow: 0 0 16px rgba(214, 79, 110, 0.4);
+    --island-theme-border: 1px solid rgba(214, 79, 110, 0.55);
+    --island-theme-hover-shadow: 0 0 20px rgba(214, 79, 110, 0.65);
+    --theme-toggle-btn-color: #d64f6e;
+    --nav-link-active-bg: rgba(214, 79, 110, 0.1);
+
+    /* --------------------------------------------------------- */
+    /* 卡片 / 表格 / 时间线                                        */
+    /* --------------------------------------------------------- */
+    /* 通用卡片：粉白底 + 顶部樱粉细线 + 柔和阴影 */
+    --app-card-shadow: 0 4px 20px rgba(180, 80, 100, 0.1),
+        0 1px 4px rgba(180, 80, 100, 0.08);
+    --app-card-border-top: 2px solid rgba(214, 79, 110, 0.3);
+
+    --timeline-dot-shadow: 0 0 10px rgba(214, 79, 110, 0.4);
+    --timeline-item-bg: rgba(254, 240, 243, 0.6);
+    --timeline-item-hover-shadow: 0 3px 12px rgba(180, 80, 100, 0.2);
+    --text-selection-popup-shadow: 0 4px 16px rgba(180, 80, 100, 0.15);
+
+    --table-header-text-color: #3a2a30;
+    --table-row-hover-bg-color: rgba(214, 79, 110, 0.07);
+    --table-text-color-regular: #5c444e;
+    --table-text-color-primary: #3a2a30;
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 主卡片                                              */
+    /* --------------------------------------------------------- */
+    --home-box-card-bg-color: #fef6f8;
+    --home-box-card-bg-image: linear-gradient(145deg,
+            rgba(253, 246, 240, 1) 0%,
+            rgba(254, 240, 243, 0.8) 100%);
+    --home-box-card-border: 1px solid rgba(214, 79, 110, 0.15);
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 摘要卡（4 张）                                      */
+    /* --------------------------------------------------------- */
+    /* 通用摘要卡：极浅粉白底 */
+    --home-summary-card-bg: rgba(254, 246, 248, 0.9);
+    --home-summary-card-border: 1px solid rgba(214, 79, 110, 0.15);
+    --home-summary-card-shadow: 0 4px 16px rgba(180, 80, 100, 0.1);
+
+    /* 第一张：樱花粉渐变（最突出，"支出" / 主要指标） */
+    --home-summary-card-first-bg: linear-gradient(135deg,
+            rgba(214, 79, 110, 0.12) 0%,
+            rgba(245, 184, 200, 0.18) 100%);
+    --home-summary-card-first-border: 1px solid rgba(214, 79, 110, 0.35);
+
+    /* 第二张：茶绿渐变（收入 / 正向指标） */
+    --home-summary-card-second-bg: linear-gradient(135deg,
+            rgba(90, 138, 110, 0.1) 0%,
+            rgba(168, 218, 181, 0.18) 100%);
+    --home-summary-card-second-border: 1px solid rgba(90, 138, 110, 0.3);
+
+    /* 第三张：暖橙金渐变 */
+    --home-summary-card-third-bg: linear-gradient(135deg,
+            rgba(224, 123, 57, 0.1) 0%,
+            rgba(244, 197, 147, 0.18) 100%);
+    --home-summary-card-third-border: 1px solid rgba(224, 123, 57, 0.28);
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 色彩语义                                            */
+    /* --------------------------------------------------------- */
+    --home-default-category-color: #d64f6e;
+    --home-default-book-color: #d64f6e;
+    --home-quota-fallback-1: #5a8a6e;
+    --home-quota-fallback-2: #d64f6e;
+    --home-quota-fallback-3: #e07b39;
+    --home-icon-tag-text: #ffffff;
+
+    /* 数字彩色：天数=深樱粉，笔数=茶绿 */
+    --home-duration-purple: #d64f6e;
+    --home-duration-green: #5a8a6e;
+    --home-empty-text: #b8909a;
+    --home-heatmap-empty-text: #c4a8b0;
+    --home-tooltip-dot-color: #d64f6e;
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 趋势卡                                              */
+    /* --------------------------------------------------------- */
+    --home-trend-card-bg: rgba(254, 246, 248, 0.95);
+    --home-trend-card-border: 1px solid rgba(214, 79, 110, 0.15);
+    --home-trend-card-shadow: var(--app-card-shadow);
+    /* 趋势折线用茶绿，细腻光晕 */
+    --home-trend-line-glow-strong: rgba(90, 138, 110, 0.22);
+    --home-trend-line-glow-soft: rgba(90, 138, 110, 0.1);
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 配额卡                                              */
+    /* --------------------------------------------------------- */
+    --home-quota-card-bg: transparent;
+    --home-quota-card-border: none;
+    --home-quota-card-shadow: none;
+
+    /* --------------------------------------------------------- */
+    /* 首页 — 表格卡                                              */
+    /* --------------------------------------------------------- */
+    --home-table-card-bg: rgba(254, 246, 248, 0.95);
+    --home-table-card-border: 1px solid rgba(214, 79, 110, 0.12);
+    --home-table-card-shadow: var(--app-card-shadow);
+
+    /* --------------------------------------------------------- */
+    /* 首页日历图                                                  */
+    /* --------------------------------------------------------- */
+    --home-calendar-text: #3a2a30;
+    --home-calendar-tooltip-bg: rgba(253, 246, 240, 0.96);
+    --home-calendar-tooltip-border: rgba(214, 79, 110, 0.2);
+    --home-calendar-tooltip-text: #3a2a30;
+    --home-calendar-border: rgba(214, 79, 110, 0.15);
+    --home-calendar-dot-border: rgba(58, 42, 48, 0.22);
+
+    /* --------------------------------------------------------- */
+    /* 首页 ECharts 图表                                           */
+    /* --------------------------------------------------------- */
+    --home-chart-text: #3a2a30;
+    --home-chart-axis-label: #7a6068;
+    --home-chart-split-line: rgba(180, 80, 100, 0.12);
+    --home-chart-tooltip-bg: rgba(253, 246, 240, 0.96);
+    --home-chart-tooltip-border: rgba(214, 79, 110, 0.25);
+    --home-chart-tooltip-text: #3a2a30;
+    --home-chart-tooltip-shadow: 0 4px 20px rgba(180, 80, 100, 0.12);
+    --home-chart-axis-line-color: rgba(58, 42, 48, 0.3);
+
+    /* 折线：茶绿色调 */
+    --home-chart-line-gradient-start: rgba(90, 138, 110, 0.06);
+    --home-chart-line-gradient-end: #5a8a6e;
+    --home-chart-bar-gradient-top: #d64f6e;
+    --home-chart-bar-gradient-bottom: rgba(214, 79, 110, 0.15);
+    --home-chart-bar-border: rgba(214, 79, 110, 0.4);
+    --home-chart-line-point: #5a8a6e;
+    --home-chart-moving-dot: #d64f6e;
+    --home-chart-moving-dot-border: #d64f6e;
+    --home-chart-line-shadow-color: rgba(90, 138, 110, 0.25);
+    --home-chart-line-shadow-blur: 8;
+    --home-chart-line-shadow-offset-y: 3;
+
+    /* --------------------------------------------------------- */
+    /* 首页仪表盘                                                  */
+    /* --------------------------------------------------------- */
+    --home-chart-gauge-axis-line: rgba(180, 80, 100, 0.18);
+    --home-chart-gauge-empty: rgba(180, 80, 100, 0.25);
+    --home-chart-gauge-over-limit: #e07b39;
+    --home-chart-gauge-normal: #5a8a6e;
+    --home-chart-gauge-title: #3a2a30;
+    --home-chart-gauge-detail: #3a2a30;
+    --home-chart-gauge-detail-amount: #d64f6e;
+    --home-chart-gauge-empty-title: #b8909a;
+    --home-chart-gauge-empty-detail: #c4a8b0;
+
+    /* --------------------------------------------------------- */
+    /* 首页热力图 — 粉红 → 深玫红 色阶                            */
+    /* --------------------------------------------------------- */
+    --home-heatmap-level-1: #fbd0da;
+    --home-heatmap-level-2: #f5a8bb;
+    --home-heatmap-level-3: #ef7fa0;
+    --home-heatmap-level-4: #e85685;
+    --home-heatmap-level-5: #d64f6e;
+    --home-heatmap-level-6: #be3f5d;
+    --home-heatmap-level-7: #a6304d;
+    --home-heatmap-level-8: #8e213e;
+    --home-heatmap-level-9: #761330;
+    --home-heatmap-level-10: #5e0622;
+
+    /* --------------------------------------------------------- */
+    /* 账本页                                                      */
+    /* --------------------------------------------------------- */
+    --books-default-color: #d64f6e;
+    --books-score-palette: #d64f6e, #5a8a6e, #e07b39;
+    --books-ring-shadow-fallback: #d64f6e;
+
+    /* --------------------------------------------------------- */
+    /* 设置弹窗                                                    */
+    /* --------------------------------------------------------- */
+    --settings-overlay-bg: rgba(58, 42, 48, 0.28);
+    --settings-modal-bg: rgba(253, 246, 240, 0.94);
+    --settings-modal-border: 1px solid rgba(214, 79, 110, 0.12);
+    --settings-modal-shadow: 0 16px 48px rgba(180, 80, 100, 0.15);
+    --settings-header-border: 1px solid rgba(214, 79, 110, 0.1);
+    --settings-title-color: #3a2a30;
+    --settings-close-color: #9a7f88;
+    --settings-close-hover-color: #d64f6e;
+    --settings-section-title-color: #5c444e;
+    --settings-select-bg: #fef0f3;
+    --settings-select-border: 1px solid rgba(214, 79, 110, 0.2);
+    --settings-select-color: #3a2a30;
+    --settings-select-hover-border: 1px solid #d64f6e;
+    --settings-btn-color: #3a2a30;
+    --settings-btn-hover-color: #d64f6e;
+
+    /* --------------------------------------------------------- */
+    /* 柱状图偏差条                                                */
+    /* --------------------------------------------------------- */
+    /* 高于均值=暖橙，低于均值=茶绿 */
+    --home-bar-above-color: #e07b39;
+    --home-bar-below-color: #5a8a6e;
+    --home-bar-glow-blur: 8;
+    --home-bar-glow-alpha: 0.3;
+}
+
+/* --------------------------------------------------------- */
+/* Element Plus — 表格统一底色适配                           */
+/* 三个页面（首页/统计/记账）均使用同一底色，确保视觉一致    */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-table {
+    /* 统一米粉底色，不透明，不受各卡片容器颜色影响 */
+    --el-table-bg-color: #fef4f6;
+    --el-table-tr-bg-color: #fef4f6;
+    --el-table-header-bg-color: #fef0f3;
+    --el-table-header-text-color: var(--table-header-text-color);
+    --el-table-row-hover-bg-color: var(--table-row-hover-bg-color);
+    --el-text-color-regular: var(--table-text-color-regular);
+    --el-text-color-primary: var(--table-text-color-primary);
+    /* 表格边框线用极淡樱粉 */
+    --el-table-border-color: rgba(214, 79, 110, 0.12);
+    --el-table-border: 1px solid rgba(214, 79, 110, 0.12);
+}
+
+/* --------------------------------------------------------- */
+/* Element Plus — 按钮：主色 primary（樱花粉）               */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-button--primary {
+    --el-button-bg-color: #d64f6e;
+    --el-button-border-color: #d64f6e;
+    --el-button-text-color: #ffffff;
+    --el-button-hover-bg-color: #e0728a;
+    --el-button-hover-border-color: #e0728a;
+    --el-button-hover-text-color: #ffffff;
+    --el-button-active-bg-color: #c2405f;
+    --el-button-active-border-color: #c2405f;
+    --el-button-active-text-color: #ffffff;
+}
+
+html[data-theme='sakura'] .el-button--primary.is-disabled,
+html[data-theme='sakura'] .el-button--primary.is-disabled:hover {
+    --el-button-disabled-bg-color: rgba(214, 79, 110, 0.4);
+    --el-button-disabled-border-color: rgba(214, 79, 110, 0.3);
+    --el-button-disabled-text-color: rgba(255, 255, 255, 0.65);
+}
+
+/* success 按钮（茶绿） */
+html[data-theme='sakura'] .el-button--success {
+    --el-button-bg-color: #5a8a6e;
+    --el-button-border-color: #5a8a6e;
+    --el-button-text-color: #ffffff;
+    --el-button-hover-bg-color: #76a086;
+    --el-button-hover-border-color: #76a086;
+    --el-button-hover-text-color: #ffffff;
+    --el-button-active-bg-color: #4a7a5e;
+    --el-button-active-border-color: #4a7a5e;
+    --el-button-active-text-color: #ffffff;
+}
+
+/* warning 按钮（暖橙金） */
+html[data-theme='sakura'] .el-button--warning {
+    --el-button-bg-color: #e07b39;
+    --el-button-border-color: #e07b39;
+    --el-button-text-color: #ffffff;
+    --el-button-hover-bg-color: #e8945a;
+    --el-button-hover-border-color: #e8945a;
+    --el-button-hover-text-color: #ffffff;
+    --el-button-active-bg-color: #c96b2c;
+    --el-button-active-border-color: #c96b2c;
+    --el-button-active-text-color: #ffffff;
+}
+
+/* --------------------------------------------------------- */
+/* 首页主卡片覆盖                                            */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .box-card {
+    background-color: var(--home-box-card-bg-color) !important;
+    background-image: var(--home-box-card-bg-image) !important;
+    border: var(--home-box-card-border) !important;
+}
+
+/* --------------------------------------------------------- */
+/* 导航激活态：细樱粉底色                                    */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .nav-link.active,
+html[data-theme='sakura'] .nav-link:hover {
+    background-color: rgba(214, 79, 110, 0.1);
+    color: #d64f6e;
+}
+
+/* --------------------------------------------------------- */
+/* Dropdown / Popover 背景适配                               */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-dropdown-menu,
+html[data-theme='sakura'] .el-select-dropdown,
+html[data-theme='sakura'] .el-popper {
+    background-color: rgba(253, 246, 240, 0.97) !important;
+    border-color: rgba(214, 79, 110, 0.2) !important;
+}
+
+html[data-theme='sakura'] .el-dropdown-menu__item:hover,
+html[data-theme='sakura'] .el-select-dropdown__item.hover,
+html[data-theme='sakura'] .el-select-dropdown__item:hover {
+    background-color: rgba(214, 79, 110, 0.08) !important;
+    color: #d64f6e !important;
+}
+
+/* --------------------------------------------------------- */
+/* Tag 默认配色                                              */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-tag {
+    --el-tag-bg-color: rgba(214, 79, 110, 0.1);
+    --el-tag-border-color: rgba(214, 79, 110, 0.3);
+    --el-tag-text-color: #d64f6e;
+}
+
+/* --------------------------------------------------------- */
+/* 表格固定列背景 — 覆盖 style.css 中的硬编码白色              */
+/* 使用不透明色，不依赖容器背景，三页面视觉完全统一            */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-table .el-table__cell.el-table-fixed-column--left,
+html[data-theme='sakura'] .el-table .el-table__cell.el-table-fixed-column--right {
+    /* 与表格底色一致，不透明，消除容器色差异 */
+    background-color: #fef4f6 !important;
+}
+
+/* 固定列 hover 态 */
+html[data-theme='sakura'] .el-table__body tr:hover>td.el-table-fixed-column--left,
+html[data-theme='sakura'] .el-table__body tr:hover>td.el-table-fixed-column--right {
+    /* hover 时微粉，与行 hover 背景协调 */
+    background-color: rgba(214, 79, 110, 0.09) !important;
+}
+
+/* --------------------------------------------------------- */
+/* 条纹行（stripe）— 偶数行极淡粉白，三页面统一               */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background-color: #fbeef1 !important;
+}
+
+/* 条纹行 + 固定列：与条纹行背景完全一致，消除透明叠加问题 */
+html[data-theme='sakura'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--left,
+html[data-theme='sakura'] .el-table--striped .el-table__body tr.el-table__row--striped td.el-table-fixed-column--right {
+    background-color: #fbeef1 !important;
+}
+
+/* --------------------------------------------------------- */
+/* el-card 整体背景 — 使页面所有卡片统一为米粉色底             */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-card {
+    background-color: #fef8f9 !important;
+    border-color: rgba(214, 79, 110, 0.14) !important;
+}
+
+/* 卡片头部（顶部标题栏）背景 */
+html[data-theme='sakura'] .el-card__header {
+    background-color: rgba(253, 246, 240, 0.7) !important;
+    border-bottom-color: rgba(214, 79, 110, 0.12) !important;
+}
+
+/* --------------------------------------------------------- */
+/* 输入框 & Select — 与主题底色融合                           */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-input__wrapper {
+    background-color: rgba(253, 246, 240, 0.8) !important;
+    box-shadow: 0 0 0 1px rgba(214, 79, 110, 0.2) inset !important;
+}
+
+html[data-theme='sakura'] .el-input__wrapper:hover {
+    box-shadow: 0 0 0 1px rgba(214, 79, 110, 0.45) inset !important;
+}
+
+html[data-theme='sakura'] .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px #d64f6e inset !important;
+}
+
+/* stealth-input 在樱花主题下保持透明，不受上面规则干扰 */
+html[data-theme='sakura'] .stealth-input .el-input__wrapper,
+html[data-theme='sakura'] .stealth-input .el-input__wrapper:hover,
+html[data-theme='sakura'] .stealth-input.is-focus .el-input__wrapper {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme='sakura'] .stealth-input:hover .el-input__wrapper {
+    box-shadow: 0 0 0 1px rgba(214, 79, 110, 0.3) inset !important;
+    background-color: rgba(253, 246, 240, 0.6) !important;
+}
+
+html[data-theme='sakura'] .stealth-input.is-focus .el-input__wrapper {
+    box-shadow: 0 0 0 1px #d64f6e inset !important;
+    background-color: rgba(253, 246, 240, 0.6) !important;
+}
+
+/* --------------------------------------------------------- */
+/* 表格列筛选弹出层（filter-panel）背景                       */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-table-filter {
+    background-color: rgba(253, 246, 240, 0.97) !important;
+    border-color: rgba(214, 79, 110, 0.2) !important;
+}
+
+html[data-theme='sakura'] .el-table-filter__list-item:hover {
+    background-color: rgba(214, 79, 110, 0.08) !important;
+    color: #d64f6e !important;
+}
+
+html[data-theme='sakura'] .el-table-filter__list-item.is-active {
+    color: #d64f6e !important;
+}
+
+/* --------------------------------------------------------- */
+/* 分页器配色适配                                             */
+/* --------------------------------------------------------- */
+html[data-theme='sakura'] .el-pagination.is-background .el-pager li:not(.is-disabled).is-active {
+    background-color: #d64f6e !important;
+    border-color: #d64f6e !important;
+}
+
+html[data-theme='sakura'] .el-pagination.is-background .el-pager li:not(.is-disabled):hover {
+    color: #d64f6e !important;
+}
+
+/* ========================================================== */
+/* 🌸 Sakura 动态背景 — 参考 cosmos 双层伪元素架构            */
+/* ========================================================== */
+
+/* 动画一：粉色光晕在画面角落轻柔游走（呼吸感）              */
+@keyframes sakuraPulse {
+    0% {
+        background-position: 0% 0%;
+        opacity: 0.55;
+    }
+
+    33% {
+        background-position: 100% 30%;
+        opacity: 0.75;
+    }
+
+    66% {
+        background-position: 50% 100%;
+        opacity: 0.6;
+    }
+
+    100% {
+        background-position: 0% 0%;
+        opacity: 0.55;
+    }
+}
+
+/* 动画二：花瓣点阵沿斜向缓慢漂移（模拟花瓣随风飘落）        */
+@keyframes sakuraDrift {
+    0% {
+        background-position: 0 0;
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 0.75;
+    }
+
+    100% {
+        /* 向右下轻移一个 tile，形成无缝循环 */
+        background-position: 320px 320px;
+        opacity: 0.5;
+    }
+}
+
+/* 第一层：温暖米白底 + 四角粉色/茶绿光晕，慢速呼吸         */
+html[data-theme='sakura'] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image:
+        /* 右上：樱花粉光晕 */
+        radial-gradient(ellipse at 85% 8%, rgba(214, 79, 110, 0.18) 0%, transparent 45%),
+        /* 左下：茶绿光晕 */
+        radial-gradient(ellipse at 12% 88%, rgba(90, 138, 110, 0.12) 0%, transparent 40%),
+        /* 左上：暖橙金微晕 */
+        radial-gradient(ellipse at 5% 5%, rgba(224, 123, 57, 0.08) 0%, transparent 35%),
+        /* 右下：粉白基底渐变 */
+        radial-gradient(ellipse at 92% 92%, rgba(245, 184, 200, 0.1) 0%, transparent 40%),
+        /* 整体底色保底 */
+        linear-gradient(160deg, #fdf6f0 0%, #fef0f3 50%, #fdf8f5 100%);
+    background-size: 200% 200%;
+    animation: sakuraPulse 18s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* 第二层：散落樱花花瓣点阵，斜向漂移*/
+html[data-theme='sakura'] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        /* 大花瓣：深樱粉椭圆 */
+        radial-gradient(5px 3.5px at 8% 15%, rgba(214, 79, 110, 0.28) 100%, transparent),
+        /* 中花瓣：浅粉 */
+        radial-gradient(4px 2.5px at 22% 72%, rgba(245, 184, 200, 0.45) 100%, transparent),
+        /* 花瓣：暖橙金 */
+        radial-gradient(4px 3px at 38% 38%, rgba(224, 123, 57, 0.22) 100%, transparent),
+        /* 花瓣：茶绿小点 */
+        radial-gradient(3px 2.5px at 55% 88%, rgba(90, 138, 110, 0.25) 100%, transparent),
+        /* 花瓣：玫粉 */
+        radial-gradient(4.5px 3px at 68% 25%, rgba(232, 114, 138, 0.32) 100%, transparent),
+        /* 大花瓣：极淡粉 */
+        radial-gradient(6px 4px at 82% 60%, rgba(245, 184, 200, 0.38) 100%, transparent),
+        /* 花瓣：深粉 */
+        radial-gradient(3.5px 2.5px at 92% 10%, rgba(214, 79, 110, 0.25) 100%, transparent),
+        /* 花瓣：白粉 */
+        radial-gradient(4px 3px at 15% 48%, rgba(255, 220, 230, 0.5) 100%, transparent),
+        /* 花瓣：淡樱 */
+        radial-gradient(4px 2.5px at 48% 55%, rgba(245, 184, 200, 0.32) 100%, transparent),
+        /* 花瓣：微茶绿 */
+        radial-gradient(3px 2.5px at 75% 78%, rgba(90, 138, 110, 0.2) 100%, transparent);
+    /* tile 尺寸要与 drift 动画的位移匹配，实现无缝循环 */
+    background-size: 320px 320px;
+    animation: sakuraDrift 20s linear infinite;
+    pointer-events: none;
+}

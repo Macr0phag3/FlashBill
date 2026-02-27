@@ -374,7 +374,8 @@ html[data-theme='cyberpunk'] .el-tabs__active-bar {
 
 /* 扫描线背景效果（应用到 body） */
 html[data-theme='cyberpunk'] body {
-    background-color: #080810;
+    /* 底色设为 transparent，让 ::before 的底色可以透出来 */
+    background-color: transparent;
     background-image:
         repeating-linear-gradient(0deg,
             transparent,
@@ -513,6 +514,34 @@ html[data-theme='cyberpunk'] .el-table {
     --el-text-color-primary: var(--table-text-color-primary);
 }
 
+/* ==================== 账本管理页面卡片与配额 ==================== */
+/* quota-card / score-panel 复用首页 home-trend-card 的背景样式 */
+
+html[data-theme='cyberpunk'] .quota-card,
+html[data-theme='cyberpunk'] .score-panel {
+    border-radius: 4px !important;
+    background-color: var(--home-trend-card-bg) !important;
+    border: var(--home-trend-card-border) !important;
+    box-shadow: var(--home-trend-card-shadow) !important;
+    background-image:
+        radial-gradient(ellipse at 80% 0%, rgba(255, 0, 128, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 100%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0, 255, 255, 0.012) 2px, rgba(0, 255, 255, 0.012) 4px) !important;
+}
+
+/* ==================== 首页折线图卡片样式复用 ==================== */
+/* home-trend-card 复用首页 box-card 的背景样式 */
+html[data-theme='cyberpunk'] .home-trend-card {
+    background-color: var(--home-box-card-bg-color) !important;
+    background-image: var(--home-box-card-bg-image) !important;
+    border: var(--home-box-card-border) !important;
+    box-shadow:
+        0 0 15px rgba(0, 255, 255, 0.08),
+        0 0 40px rgba(255, 0, 128, 0.04),
+        inset 0 1px 0 rgba(0, 255, 255, 0.08) !important;
+}
+
 /* ==================== el-switch 覆盖：改为赛博青色 ==================== */
 html[data-theme='cyberpunk'] .el-switch.is-checked .el-switch__core {
     background-color: #00ffff !important;
@@ -535,10 +564,121 @@ html[data-theme='cyberpunk'] .el-table__body tr:hover>td.el-table-fixed-column--
     background-color: rgba(2, 69, 69, 0.8) !important;
 }
 
-/* ==================== 首页 box-card 覆盖 ==================== */
+/* ==================== 首页/各业务页面 box-card 覆盖 ==================== */
+/* 统一覆盖：首页主卡片 + 其余各页面（记账/规则/分类/账本）的主卡片 */
 
-html[data-theme='cyberpunk'] .box-card {
+html[data-theme='cyberpunk'] .box-card,
+html[data-theme='cyberpunk'] .el-card.mb-3 {
     background-color: var(--home-box-card-bg-color) !important;
     background-image: var(--home-box-card-bg-image) !important;
     border: var(--home-box-card-border) !important;
+    box-shadow:
+        0 0 15px rgba(0, 255, 255, 0.08),
+        0 0 40px rgba(255, 0, 128, 0.04),
+        inset 0 1px 0 rgba(0, 255, 255, 0.08) !important;
+}
+
+/* ========================================================== */
+/* ⚡ 赛博朋克动态背景                                         */
+/* ========================================================== */
+
+/* 动画一：霓虹光晕在对角线之间缓慢搏动（洋红 ↔ 青色）       */
+@keyframes cyberPulse {
+    0% {
+        background-position: 0% 0%;
+        opacity: 0.7;
+    }
+
+    33% {
+        background-position: 100% 50%;
+        opacity: 1;
+    }
+
+    66% {
+        background-position: 50% 100%;
+        opacity: 0.8;
+    }
+
+    100% {
+        background-position: 0% 0%;
+        opacity: 0.7;
+    }
+}
+
+/* 动画二：数据流光点从上往下匀速滚动（模拟竖向数字雨）       */
+@keyframes cyberDataFlow {
+    0% {
+        background-position:
+            8% 0px, 22% -60px, 38% 0px,
+            55% -40px, 68% 0px, 82% -80px,
+            92% 0px, 15% -20px, 48% 0px,
+            75% -50px;
+    }
+
+    100% {
+        background-position:
+            8% 400px, 22% 340px, 38% 400px,
+            55% 360px, 68% 400px, 82% 320px,
+            92% 400px, 15% 380px, 48% 400px,
+            75% 350px;
+    }
+}
+
+/* 第一层：霓虹光晕底色脉冲（深蓝黑打底 + 角落洋红/青色晕光） */
+html[data-theme='cyberpunk'] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background-image:
+        /* 右上角：洋红霓虹晕（降低，不要过亮） */
+        radial-gradient(ellipse at 90% 5%, rgba(255, 0, 128, 0.28) 0%, transparent 45%),
+        /* 左下角：青色霓虹晕（主导色） */
+        radial-gradient(ellipse at 8% 92%, rgba(0, 255, 255, 0.45) 0%, transparent 40%),
+        /* 中心：紫色幽灵晕 */
+        radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.2) 0%, transparent 55%),
+        /* 左上角：青色冷光 */
+        radial-gradient(ellipse at 5% 10%, rgba(0, 255, 255, 0.35) 0%, transparent 30%),
+        /* 底色（原来在 body 上，现在移入这里） */
+        linear-gradient(160deg, #080810 0%, #0a0818 50%, #060610 100%);
+    background-size: 200% 200%;
+    animation: cyberPulse 12s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* 第二层：竖向数据流光点阵（10 列光点，各自速度不同）        */
+html[data-theme='cyberpunk'] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+        /* 青色数据柱：主色，实心亮柱 */
+        radial-gradient(3px 40px at 8% 0, rgba(0, 255, 255, 0.9) 20%, rgba(0, 255, 255, 0.1) 80%, transparent 100%),
+        /* 洋红数据柱 */
+        radial-gradient(3px 32px at 22% 0, rgba(255, 0, 128, 0.85) 20%, rgba(255, 0, 128, 0.1) 80%, transparent 100%),
+        /* 青色中柱 */
+        radial-gradient(2px 24px at 38% 0, rgba(0, 255, 255, 0.7) 20%, rgba(0, 255, 255, 0.1) 80%, transparent 100%),
+        /* 紫色光柱 */
+        radial-gradient(3px 36px at 55% 0, rgba(168, 85, 247, 0.8) 20%, rgba(168, 85, 247, 0.1) 80%, transparent 100%),
+        /* 青色细柱 */
+        radial-gradient(2px 28px at 68% 0, rgba(0, 255, 255, 0.75) 20%, rgba(0, 255, 255, 0.1) 80%, transparent 100%),
+        /* 洋红大柱 */
+        radial-gradient(4px 44px at 82% 0, rgba(255, 0, 128, 0.8) 20%, rgba(255, 0, 128, 0.1) 80%, transparent 100%),
+        /* 青色细点 */
+        radial-gradient(2px 20px at 92% 0, rgba(0, 255, 255, 0.7) 20%, rgba(0, 255, 255, 0.1) 80%, transparent 100%),
+        /* 金色警示柱 */
+        radial-gradient(2px 26px at 15% 0, rgba(255, 200, 0, 0.7) 20%, rgba(255, 200, 0, 0.1) 80%, transparent 100%),
+        /* 青色中柱 */
+        radial-gradient(3px 30px at 48% 0, rgba(0, 255, 255, 0.65) 20%, rgba(0, 255, 255, 0.1) 80%, transparent 100%),
+        /* 洋红细柱 */
+        radial-gradient(2px 28px at 75% 0, rgba(255, 0, 128, 0.7) 20%, rgba(255, 0, 128, 0.1) 80%, transparent 100%);
+    background-size:
+        6px 120px, 6px 100px, 5px 80px,
+        6px 110px, 5px 90px, 7px 130px,
+        5px 70px, 5px 85px, 6px 105px,
+        5px 95px;
+    background-repeat: no-repeat;
+    animation: cyberDataFlow 8s linear infinite;
+    pointer-events: none;
 }
