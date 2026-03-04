@@ -7,3 +7,4 @@ gunicorn
 pandas
 httpx
 python-dotenv
+XlsxWriter

@@ -88,7 +88,8 @@
             <el-table :data="paginatedBills" class="tagging-table-full" stripe :max-height="560"
                 @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
-                v-loading="loading" :virtual-scrolling="true" :scrollbar-always-on="true">
+                @filter-change="handleColumnFilterChange" ref="billTableRef" v-loading="loading"
+                :virtual-scrolling="true" :scrollbar-always-on="true">
                 <!-- 序号列（非编辑模式） -->
                 <el-table-column type="index" label="序号" width="60" align="center" v-if="!isEditing">
                     <template #default="scope">[[ (currentPage - 1) * pageSize + scope.$index + 1 ]]</template>
@@ -110,7 +111,7 @@
                 </el-table-column>
                 <!-- 类别列 -->
                 <el-table-column prop="类别" label="类别" width="120" align="center" :filters="categoryFilterOptions"
-                    :filter-method="filterCategory">
+                    column-key="类别">
                     <template #default="scope">
                         <el-select v-if="isEditing" v-model="scope.row.类别" size="small" class="tagging-select-80"
                             clearable @change="handleCategoryChange(scope.row)" filterable>
@@ -129,7 +130,7 @@
                 </el-table-column>
                 <!-- 标签列 -->
                 <el-table-column prop="标签" label="标签" width="120" align="center" :filters="tagFilterOptions"
-                    :filter-method="filterTag">
+                    column-key="标签">
                     <template #default="scope">
                         <el-select v-if="isEditing" v-model="scope.row.标签" size="small" class="tagging-select-80"
                             clearable @change="markModified(scope.row)" filterable>
@@ -376,6 +377,7 @@
             const searchField = ref('');
             const mealType = ref('');
             const showUntaggedOnly = ref(false);
+            const untaggedSnapshot = ref(null);  // 快照：编辑模式下记录未标记数据的订单号
             const sortField = ref('交易时间');
             const sortOrder = ref('ascending');
             const frequencySortField = ref(''); // 频率排序字段
@@ -391,6 +393,8 @@
 
             // 批量打标
             const selectedBills = ref([]);
+            const columnFilters = ref({});  // 表格列筛选状态（类别、标签）
+            const billTableRef = ref(null);
             const batchTagDialogVisible = ref(false);
             const batchTagForm = ref({ category: '', tag: '', comment: '' });
 
@@ -539,7 +543,22 @@
                 // 搜索筛选
                 if (searchQuery.value) result = result.filter(b => matchSearch(b, searchQuery.value, searchField.value));
                 // 未标记筛选
-                if (showUntaggedOnly.value) result = result.filter(b => !b.类别?.trim());
+                if (showUntaggedOnly.value) {
+                    if (isEditing.value && untaggedSnapshot.value) {
+                        result = result.filter(b => untaggedSnapshot.value.has(b.交易订单号));
+                    } else {
+                        result = result.filter(b => !b.类别?.trim());
+                    }
+                }
+                // 列筛选（类别、标签）
+                if (columnFilters.value['类别']?.length) {
+                    const vals = columnFilters.value['类别'];
+                    result = result.filter(b => vals.includes('') ? !b.类别?.trim() : vals.includes(b.类别));
+                }
+                if (columnFilters.value['标签']?.length) {
+                    const vals = columnFilters.value['标签'];
+                    result = result.filter(b => vals.includes('') ? !b.标签?.trim() : vals.includes(b.标签));
+                }
                 // 排序
                 if (frequencySortField.value) {
                     const field = frequencySortField.value;
@@ -578,8 +597,11 @@
                 mealType.value = '';
                 showUntaggedOnly.value = false;
                 frequencySortField.value = '';
+                columnFilters.value = {};
                 sortField.value = '交易时间';
                 sortOrder.value = 'ascending';
+                // 清除表格列筛选 UI 状态
+                if (billTableRef.value) billTableRef.value.clearFilter();
                 // handleFilterChange 只是重置页码，applyFilters 是 computed 自动触发
                 currentPage.value = 1;
             };
@@ -603,8 +625,11 @@
             };
             const categoryFilterOptions = computed(() => generateFilters('类别'));
             const tagFilterOptions = computed(() => generateFilters('标签'));
-            const filterCategory = (value, row) => value === '' ? !row.类别?.trim() : row.类别 === value;
-            const filterTag = (value, row) => value === '' ? !row.标签?.trim() : row.标签 === value;
+            /** 表格列筛选变化（全量筛选） */
+            const handleColumnFilterChange = (filters) => {
+                Object.assign(columnFilters.value, filters);
+                currentPage.value = 1;
+            };
 
             // ==================== 数据加载 ====================
 
@@ -687,6 +712,7 @@
                         isEditing.value = false;
                         hasCache.value = true;
                         showUntaggedOnly.value = false;
+                        untaggedSnapshot.value = null;
                         ElMessage.success('保存进度成功');
                         await checkProgress(true);
                     } else {
@@ -697,6 +723,9 @@
                     await fetchCategories();
                     isEditing.value = true;
                     showUntaggedOnly.value = true;
+                    untaggedSnapshot.value = new Set(
+                        bills.value.filter(b => !b.类别?.trim()).map(b => b.交易订单号)
+                    );
                     ElMessage.warning('对 “交易对方” 和“商品说明” 划词可以快速新增打标规则');
                 }
             };
@@ -1002,7 +1031,7 @@
                 beforeUpload, handleUploadSuccess, handleUploadError,
                 handleExport, handleClearCache,
                 resetFilters, frequencySortField, // 导出
-                filterCategory, filterTag, formatAmount,
+                handleColumnFilterChange, billTableRef, formatAmount,
                 getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle,
                 UploadFilled, Plus, WarningFilled
             };

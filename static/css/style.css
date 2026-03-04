@@ -174,6 +174,7 @@
     border-radius: 1.5rem !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
+    background: var(--settings-modal-bg) !important;
 }
 
 .el-popper {
@@ -895,12 +896,6 @@ html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
     color: var(--text-muted-color);
     margin-top: 4px;
     line-height: 1.4;
-}
-
-/* 快速创建规则弹框背景与设置弹框一致 */
-.quick-rule-dialog.el-dialog,
-.quick-rule-dialog .el-dialog {
-    background: var(--settings-modal-bg) !important;
 }
 
 .rule-form {
