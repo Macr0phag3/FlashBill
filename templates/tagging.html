@@ -545,7 +545,11 @@
                 // 未标记筛选
                 if (showUntaggedOnly.value) {
                     if (isEditing.value && untaggedSnapshot.value) {
-                        result = result.filter(b => untaggedSnapshot.value.has(b.交易订单号));
+                        result = result.filter(b => {
+                            const orderId = b.交易订单号;
+                            if (orderId) return untaggedSnapshot.value.has(orderId);
+                            return !b.类别?.trim();
+                        });
                     } else {
                         result = result.filter(b => !b.类别?.trim());
                     }
@@ -658,6 +662,54 @@
                 }
             };
 
+            const normalizeCategoryTag = (value) => String(value || '').trim();
+
+            const mergeCategoryTag = (category, tag = '') => {
+                const normalizedCategory = normalizeCategoryTag(category);
+                const normalizedTag = normalizeCategoryTag(tag);
+                if (!normalizedCategory) return false;
+
+                let changed = false;
+                const tagsMap = { ...categoryTags.value };
+
+                if (!Array.isArray(tagsMap[normalizedCategory])) {
+                    tagsMap[normalizedCategory] = [];
+                    changed = true;
+                }
+
+                if (!categories.value.includes(normalizedCategory)) {
+                    categories.value = [...categories.value, normalizedCategory];
+                    changed = true;
+                }
+
+                if (normalizedTag && normalizedTag !== '-' && !tagsMap[normalizedCategory].includes(normalizedTag)) {
+                    tagsMap[normalizedCategory] = [...tagsMap[normalizedCategory], normalizedTag];
+                    changed = true;
+                }
+
+                if (changed) {
+                    categoryTags.value = tagsMap;
+                }
+                return changed;
+            };
+
+            const persistCategories = async () => {
+                const resp = await apiCall('post', '/api/categories', { categories: categoryTags.value });
+                return !!resp;
+            };
+
+            const syncCategoriesFromBills = async () => {
+                let changed = false;
+                bills.value.forEach((bill) => {
+                    const category = normalizeCategoryTag(bill.类别);
+                    const tag = normalizeCategoryTag(bill.标签);
+                    if (mergeCategoryTag(category, tag)) changed = true;
+                });
+
+                if (!changed) return true;
+                return persistCategories();
+            };
+
             /** 检查并加载缓存 */
             const checkProgress = async (silent = false) => {
                 const data = await apiCall('get', '/api/check_progress');
@@ -709,6 +761,10 @@
                     const billsToSave = bills.value.map(b => b.交易订单号 ? b : { ...b, 交易订单号: generateOrderId() });
                     const resp = await apiCall('post', '/api/save_progress', { bills: billsToSave });
                     if (resp) {
+                        const categorySyncOk = await syncCategoriesFromBills();
+                        if (!categorySyncOk) {
+                            ElMessage.warning('进度已保存，但分类标签同步失败，请稍后重试');
+                        }
                         isEditing.value = false;
                         hasCache.value = true;
                         showUntaggedOnly.value = false;
@@ -721,10 +777,16 @@
                 } else {
                     // 进入打标模式
                     await fetchCategories();
+                    bills.value = bills.value.map(b => (
+                        b.交易订单号 ? b : { ...b, 交易订单号: generateOrderId() }
+                    ));
                     isEditing.value = true;
                     showUntaggedOnly.value = true;
                     untaggedSnapshot.value = new Set(
-                        bills.value.filter(b => !b.类别?.trim()).map(b => b.交易订单号)
+                        bills.value
+                            .filter(b => !b.类别?.trim())
+                            .map(b => b.交易订单号)
+                            .filter(Boolean)
                     );
                     ElMessage.warning('对 “交易对方” 和“商品说明” 划词可以快速新增打标规则');
                 }
@@ -863,6 +925,13 @@
                     });
 
                     if (resp.data.success) {
+                        const changed = mergeCategoryTag(quickRuleForm.value.category, quickRuleForm.value.tag || '');
+                        if (changed) {
+                            const categorySyncOk = await persistCategories();
+                            if (!categorySyncOk) {
+                                ElMessage.warning('规则保存成功，但分类标签同步失败');
+                            }
+                        }
                         ElMessage.success('规则保存成功，已触发自动打标');
                         quickRuleDialogVisible.value = false;
                         // 调用后端重新应用打标规则
@@ -904,14 +973,24 @@
                 batchTagDialogVisible.value = true;
             };
 
-            const applyBatchTag = () => {
-                const { category, tag, comment } = batchTagForm.value;
+            const applyBatchTag = async () => {
+                const category = normalizeCategoryTag(batchTagForm.value.category);
+                const tag = normalizeCategoryTag(batchTagForm.value.tag);
+                const comment = normalizeCategoryTag(batchTagForm.value.comment);
                 if (!category && !tag && !comment) return ElMessage.warning('请至少填写一个打标项');
                 selectedBills.value.forEach(b => {
                     if (category) b.类别 = category;
                     if (tag) b.标签 = tag;
                     if (comment) b.备注 = comment;
+                    markModified(b);
                 });
+                const changed = mergeCategoryTag(category, tag);
+                if (changed) {
+                    const categorySyncOk = await persistCategories();
+                    if (!categorySyncOk) {
+                        ElMessage.warning('批量打标成功，但分类标签同步失败');
+                    }
+                }
                 batchTagDialogVisible.value = false;
                 batchTagForm.value = { category: '', tag: '', comment: '' };
                 ElMessage.success('批量打标成功');
