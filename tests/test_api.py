@@ -302,8 +302,8 @@ class TestBooksAPI:
     def test_update_books(self, client):
         """测试更新账本"""
         new_books = {
-            "日常开销": {"fixed_quota": 2000},
-            "旅游基金": {"fixed_quota": 5000},
+            "日常开销": {"fixed_quota": 2000, "quota_start_month": "2023-06"},
+            "旅游基金": {"fixed_quota": 5000, "quota_start_month": None},
         }
         new_meta = {
             "日常开销": {"icon": "Wallet", "color": "#409EFF"},
@@ -325,6 +325,32 @@ class TestBooksAPI:
         data = response.get_json()
         assert response.status_code == 400
         assert data['success'] == False
+
+    def test_update_books_invalid_quota_start_month(self, client):
+        """测试更新账本时起始月份格式无效"""
+        response = client.post('/api/books',
+                              data=json.dumps({
+                                  'books': {
+                                      '日常开销': {'fixed_quota': 2000, 'quota_start_month': '2023-13'}
+                                  }
+                              }),
+                              content_type='application/json')
+        data = response.get_json()
+        assert response.status_code == 400
+        assert data['success'] == False
+
+    def test_update_books_legacy_numeric_format(self, client):
+        """测试更新账本时兼容旧版数字格式"""
+        response = client.post('/api/books',
+                              data=json.dumps({
+                                  'books': {
+                                      '日常开销': 2000
+                                  }
+                              }),
+                              content_type='application/json')
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data['success'] == True
 
 
 # ==================== 进度管理 API 测试 ====================

@@ -3,11 +3,13 @@
 
 处理账本页面展示和 API 操作。
 """
+import re
 from flask import Blueprint, render_template, request, jsonify
 from core.utils import load_books, save_books, load_book_meta, save_book_meta
 
 # ==================== Blueprint 配置 ====================
 books_bp = Blueprint("books", __name__)
+MONTH_KEY_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 
 
 def _normalize_fixed_quota(value):
@@ -22,6 +24,19 @@ def _normalize_fixed_quota(value):
             return 0.0
         return float(stripped)
     raise ValueError("fixed_quota 类型无效")
+
+
+def _normalize_quota_start_month(value):
+    """将配额起始月标准化为 YYYY-MM 或 None"""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if MONTH_KEY_RE.fullmatch(stripped):
+            return stripped
+    raise ValueError("quota_start_month 格式无效")
 
 
 # ==================== 路由：账本页面 ====================
@@ -64,14 +79,22 @@ def update_books():
                 continue
 
             fixed_quota_raw = config.get("fixed_quota") if isinstance(config, dict) else config
+            quota_start_month_raw = config.get("quota_start_month") if isinstance(config, dict) else None
             try:
                 fixed_quota = _normalize_fixed_quota(fixed_quota_raw)
             except ValueError:
                 return jsonify({"success": False, "message": f"账本 {name} 的固定配额格式无效"}), 400
+            try:
+                quota_start_month = _normalize_quota_start_month(quota_start_month_raw)
+            except ValueError:
+                return jsonify({"success": False, "message": f"账本 {name} 的起始月份格式无效，应为 YYYY-MM"}), 400
             if fixed_quota < 0:
                 return jsonify({"success": False, "message": f"账本 {name} 的固定配额不能小于 0"}), 400
 
-            normalized_books[name] = {"fixed_quota": fixed_quota}
+            normalized_books[name] = {
+                "fixed_quota": fixed_quota,
+                "quota_start_month": quota_start_month,
+            }
 
         normalized_meta = {}
         for raw_name, config in meta.items():

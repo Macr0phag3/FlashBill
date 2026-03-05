@@ -2,6 +2,7 @@
 
 {% block head %}
 {{ super() }}
+<script src="{{ url_for('static', filename='vendor/vue/zh-cn.min.js') }}"></script>
 {% endblock %}
 
 {% block page_loader %}
@@ -64,7 +65,7 @@
                             </template>
                         </el-table-column>
 
-                        <el-table-column label="每月配额" width="160" align="left" header-align="center">
+                        <el-table-column label="每月配额" width="120" align="left" header-align="center">
                             <template #default="scope">
                                 <div class="d-flex align-items-center justify-content-start gap-1 books-quota-row">
                                     <span class="text-muted">￥</span>
@@ -74,6 +75,19 @@
                                         :step="100" :min="0" placeholder="无配额" size="small" :controls="false"
                                         class="books-quota-input stealth-input"></el-input-number>
                                 </div>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="起算月份" width="100" align="center" header-align="center"
+                            class-name="books-start-month-cell">
+                            <template #default="scope">
+                                <span v-if="Number(scope.row.fixed_quota || 0) <= 0"
+                                    class="books-start-month-disabled">无需配置</span>
+                                <el-date-picker v-else :model-value="getQuotaStartMonthDisplay(scope.row)"
+                                    @update:model-value="val => handleQuotaStartMonthChange(scope.row, val)"
+                                    type="month" format="YYYY-MM" value-format="YYYY-MM" clearable size="small"
+                                    placeholder="YYYY-MM"
+                                    class="books-start-month-picker stealth-input"></el-date-picker>
                             </template>
                         </el-table-column>
 
@@ -99,12 +113,13 @@
                     </div>
                 </div>
                 <div class="quota-metrics">
-                    <span>* 累计月数：[[ activeMonthCount ]]</span>
+                    <span>* 全局首笔月：[[ globalFirstMonthLabel ]]</span>
+                    <span>统计截止月：[[ quotaEndMonthLabel ]]</span>
                     <span>累计注入：[[ formatAmount(totalInflow) ]]</span>
                     <span>累计流出：[[ formatAmount(totalSpent) ]]</span>
                 </div>
                 <div v-if="displayStats.length" class="score-panel">
-                    <div class="score-visual">
+                    <div class="score-visual score-panel-block">
                         <div class="rings-stack">
                             <svg class="rings-svg" viewBox="-12 -12 124 124" preserveAspectRatio="xMidYMid meet">
                                 <circle v-for="(item, index) in displayStats" :key="`ring-${item.name}-${index}`"
@@ -119,7 +134,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="score-legend">
+                    <div class="score-legend score-panel-block">
                         <div class="score-item" v-for="(item, index) in displayStats" :key="`${item.name}-${index}`"
                             :style="{ '--score-color': getScoreColor(item, index), '--score-pct': getScorePercent(item) }">
                             <div class="score-icon">
@@ -131,11 +146,14 @@
                                 <div class="score-head">
                                     <span class="score-name">[[ item.name ]]</span>
                                     <span class="score-val" :style="{ color: getScoreTextColor(item) }">[[
-                                        getScoreText(item) ]]</span>
+                                        getScorePercentLabel(item) ]]</span>
+                                    <span class="score-val-note" :style="{ color: getScoreTextColor(item) }">[[
+                                        getScoreMonthHint(item) ]]</span>
                                 </div>
                                 <div class="score-stats">
                                     <div class="score-stat-line">
-                                        <span>累计月数: </span><b>[[ activeMonthCount ]]</b>
+                                        <span>始于: </span><b>[[ item.startMonthLabel ]]</b>
+                                        <span>累计月数: </span><b>[[ item.activeMonthCount ]]</b>
                                         <span>累计流出: </span><b>[[ formatAmount(item.outflow) ]]</b>
                                         <span>剩余额度: </span>
                                         <b
@@ -157,6 +175,7 @@
     const { createApp, ref, computed, onMounted, onBeforeUnmount, nextTick, watch } = Vue;
     const { ElMessage } = ElementPlus;
     const ElementPlusIcons = ElementPlusIconsVue;
+    const zhCn = window.ElementPlusLocaleZhCn || { name: 'zh-cn', el: {} };
 
     const app = createApp({
         delimiters: ['[[', ']]'],
@@ -164,9 +183,10 @@
             const books = ref([]);
             const loading = ref(false);
             const iconSelectRefs = ref({});
-            const bookSpending = ref({});
+            const bookSpendingRows = ref([]);
             const statsLoading = ref(false);
-            const activeMonthCount = ref(1);
+            const dataStartMonthKey = ref('');
+            const dataEndMonthKey = ref('');
             const ringAnimProgress = ref(1);
             let ringAnimationFrameId = null;
 
@@ -213,13 +233,52 @@
             };
 
             const formatAmount = (value) => Number(value || 0).toFixed(2);
-            const calculateMonthDivisor = (start, end) => {
-                if (!start || !end) return 1;
-
-                let months = (end.getFullYear() - start.getFullYear()) * 12;
-                months += (end.getMonth() - start.getMonth());
-                return Math.max(1, months + 1);
+            const monthKeyPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
+            const normalizeMonthKey = (value) => {
+                if (value === null || value === undefined || value === '') return '';
+                const key = String(value).trim();
+                return monthKeyPattern.test(key) ? key : '';
             };
+            const toMonthKey = (date) => {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}`;
+            };
+            const compareMonthKey = (a, b) => {
+                if (!a && !b) return 0;
+                if (!a) return -1;
+                if (!b) return 1;
+                return a.localeCompare(b);
+            };
+            const calculateMonthCountByKey = (startMonthKey, endMonthKey) => {
+                if (!startMonthKey || !endMonthKey) return 0;
+                const startYear = Number(startMonthKey.slice(0, 4));
+                const startMonth = Number(startMonthKey.slice(5, 7));
+                const endYear = Number(endMonthKey.slice(0, 4));
+                const endMonth = Number(endMonthKey.slice(5, 7));
+                if (!Number.isFinite(startYear) || !Number.isFinite(startMonth) ||
+                    !Number.isFinite(endYear) || !Number.isFinite(endMonth)) {
+                    return 0;
+                }
+                const months = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+                return Math.max(0, months);
+            };
+            const formatMonthLabel = (monthKey, fallback = '--') => normalizeMonthKey(monthKey) || fallback;
+            const currentMonthKey = computed(() => toMonthKey(new Date()));
+            const quotaEndMonthKey = computed(() => {
+                const fromData = normalizeMonthKey(dataEndMonthKey.value);
+                if (!fromData) return currentMonthKey.value;
+                return compareMonthKey(fromData, currentMonthKey.value) >= 0 ? fromData : currentMonthKey.value;
+            });
+            const globalFirstMonthKey = computed(() =>
+                normalizeMonthKey(dataStartMonthKey.value) || quotaEndMonthKey.value
+            );
+            const globalFirstMonthLabel = computed(() =>
+                formatMonthLabel(globalFirstMonthKey.value)
+            );
+            const quotaEndMonthLabel = computed(() =>
+                formatMonthLabel(quotaEndMonthKey.value)
+            );
 
             const quotaBooks = computed(() => books.value.filter((item) => {
                 const name = (item.name || '').trim();
@@ -227,11 +286,62 @@
                 return name && fixedQuota > 0;
             }));
 
+            const bookSpendingByMonth = computed(() => {
+                const map = {};
+                for (const row of bookSpendingRows.value) {
+                    const name = String(row.book || '').trim();
+                    if (!name) continue;
+                    if (!map[name]) map[name] = [];
+                    map[name].push(row);
+                }
+                return map;
+            });
+            const bookFirstMonthKeyMap = computed(() => {
+                const map = {};
+                for (const [name, rows] of Object.entries(bookSpendingByMonth.value)) {
+                    let firstMonthKey = '';
+                    for (const row of rows || []) {
+                        const monthKey = normalizeMonthKey(row.monthKey);
+                        if (!monthKey) continue;
+                        if (!firstMonthKey || compareMonthKey(monthKey, firstMonthKey) < 0) {
+                            firstMonthKey = monthKey;
+                        }
+                    }
+                    if (firstMonthKey) map[name] = firstMonthKey;
+                }
+                return map;
+            });
+            const resolveBookStartMonthKey = (name, configuredStart) => {
+                const normalizedConfigured = normalizeMonthKey(configuredStart);
+                if (normalizedConfigured) return normalizedConfigured;
+                const normalizedName = String(name || '').trim();
+                if (normalizedName && bookFirstMonthKeyMap.value[normalizedName]) {
+                    return bookFirstMonthKeyMap.value[normalizedName];
+                }
+                return globalFirstMonthKey.value;
+            };
+            const getQuotaStartMonthDisplay = (row) => {
+                if (Number(row?.fixed_quota || 0) <= 0) return '';
+                const name = String(row?.name || '').trim();
+                return resolveBookStartMonthKey(name, row?.quota_start_month);
+            };
+            const handleQuotaStartMonthChange = (row, value) => {
+                row.quota_start_month = normalizeMonthKey(value);
+            };
+
             const bookStats = computed(() => quotaBooks.value.map((item) => {
                 const name = (item.name || '').trim();
                 const monthlyQuota = Number(item.fixed_quota || 0);
-                const inflow = monthlyQuota * activeMonthCount.value;
-                const outflow = Number(bookSpending.value[name] || 0);
+                const startMonthKey = resolveBookStartMonthKey(name, item.quota_start_month);
+                const activeMonthCount = calculateMonthCountByKey(startMonthKey, quotaEndMonthKey.value);
+                const inflow = monthlyQuota * activeMonthCount;
+                const outflow = (bookSpendingByMonth.value[name] || []).reduce((sum, row) => {
+                    const monthKey = normalizeMonthKey(row.monthKey);
+                    if (!monthKey) return sum;
+                    if (compareMonthKey(monthKey, startMonthKey) < 0) return sum;
+                    if (compareMonthKey(monthKey, quotaEndMonthKey.value) > 0) return sum;
+                    return sum + Number(row.amount || 0);
+                }, 0);
                 const remaining = inflow - outflow;
                 return {
                     name,
@@ -239,6 +349,9 @@
                     inflow,
                     outflow,
                     remaining,
+                    activeMonthCount,
+                    startMonth: startMonthKey,
+                    startMonthLabel: formatMonthLabel(startMonthKey),
                     color: item.color || '',
                     icon: item.icon || defaultBookIcon,
                 };
@@ -283,7 +396,9 @@
                 bookStats.value.reduce((sum, item) => sum + item.outflow, 0)
             );
 
-            const totalInflow = computed(() => totalFixedQuota.value * activeMonthCount.value);
+            const totalInflow = computed(() =>
+                bookStats.value.reduce((sum, item) => sum + item.inflow, 0)
+            );
 
             const remainingQuota = computed(() => totalInflow.value - totalSpent.value);
             const remainingClass = computed(() =>
@@ -310,7 +425,26 @@
             const getScoreColor = (item, index) =>
                 item.color || cyberPalette[index % cyberPalette.length];
 
-            const getScoreText = (item) => `${Math.round(getScorePercent(item))}%`;
+            const formatHintMonthValue = (monthCount) => {
+                if (!Number.isFinite(monthCount) || monthCount <= 0) return '0';
+                const rounded = Math.round(monthCount * 10) / 10;
+                return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+            };
+
+            const getScoreHintMonths = (item) => {
+                const monthlyQuota = Number(item?.monthlyQuota || 0);
+                if (!monthlyQuota) return 0;
+                return Math.abs(Number(item?.remaining || 0)) / monthlyQuota;
+            };
+
+            const getScorePercentLabel = (item) => `${Math.round(getScorePercent(item))}%`;
+
+            const getScoreMonthHint = (item) => {
+                const months = formatHintMonthValue(getScoreHintMonths(item));
+                return Number(item?.remaining || 0) >= 0
+                    ? `（可月光 ${months} 月）`
+                    : `（需还债 ${months} 月）`;
+            };
 
             const getScoreTextColor = (item) => {
                 const percent = getScorePercent(item);
@@ -374,29 +508,34 @@
                 try {
                     const data = await apiCall('get', '/api/statistics?page=1&page_size=1');
                     if (!data?.all_items) {
-                        bookSpending.value = {};
-                        activeMonthCount.value = 1;
+                        bookSpendingRows.value = [];
+                        dataStartMonthKey.value = '';
+                        dataEndMonthKey.value = '';
                         return;
                     }
 
-                    const map = {};
-                    let startDate = null;
-                    let endDate = null;
+                    const rows = [];
+                    let startMonthKey = '';
+                    let endMonthKey = '';
+                    const fallbackMonthKey = currentMonthKey.value;
 
                     for (const item of data.all_items) {
                         const parsedDate = new Date(item.date);
-                        if (!Number.isNaN(parsedDate.getTime())) {
-                            if (!startDate || parsedDate < startDate) startDate = parsedDate;
-                            if (!endDate || parsedDate > endDate) endDate = parsedDate;
+                        const parsedValid = !Number.isNaN(parsedDate.getTime());
+                        const monthKey = parsedValid ? toMonthKey(parsedDate) : fallbackMonthKey;
+                        if (parsedValid) {
+                            if (!startMonthKey || compareMonthKey(monthKey, startMonthKey) < 0) startMonthKey = monthKey;
+                            if (!endMonthKey || compareMonthKey(monthKey, endMonthKey) > 0) endMonthKey = monthKey;
                         }
 
                         const bookName = String(item.book || '').trim();
                         if (!bookName) continue;
                         const amount = Math.abs(Number(item.amount) || 0);
-                        map[bookName] = (map[bookName] || 0) + amount;
+                        rows.push({ book: bookName, amount, monthKey });
                     }
-                    bookSpending.value = map;
-                    activeMonthCount.value = calculateMonthDivisor(startDate, endDate);
+                    bookSpendingRows.value = rows;
+                    dataStartMonthKey.value = startMonthKey || fallbackMonthKey;
+                    dataEndMonthKey.value = endMonthKey || fallbackMonthKey;
                 } finally {
                     statsLoading.value = false;
                 }
@@ -415,6 +554,7 @@
                     books.value = Array.from(names).map((name) => ({
                         name,
                         fixed_quota: Number(booksData[name]?.fixed_quota ?? 0) || 0,
+                        quota_start_month: normalizeMonthKey(booksData[name]?.quota_start_month),
                         icon: meta[name]?.icon || defaultBookIcon,
                         color: meta[name]?.color || defaultBookColor,
                     }));
@@ -427,6 +567,7 @@
                 books.value.unshift({
                     name: '',
                     fixed_quota: 0,
+                    quota_start_month: '',
                     icon: defaultBookIcon,
                     color: defaultBookColor,
                 });
@@ -451,8 +592,16 @@
                     }
                     seen.add(name);
 
+                    const fixedQuota = Number(item.fixed_quota ?? 0);
+                    const normalizedStartMonth = fixedQuota > 0 ? normalizeMonthKey(item.quota_start_month) : '';
+                    if (fixedQuota > 0 && item.quota_start_month && !normalizedStartMonth) {
+                        ElMessage.error(`账本 ${name} 的起算月份格式无效，应为 YYYY-MM`);
+                        return;
+                    }
+
                     booksData[name] = {
-                        fixed_quota: Number(item.fixed_quota ?? 0),
+                        fixed_quota: fixedQuota,
+                        quota_start_month: normalizedStartMonth || null,
                     };
                     metaData[name] = {
                         icon: item.icon || defaultBookIcon,
@@ -509,9 +658,13 @@
                 overallScore,
                 overallScoreText,
                 statsLoading,
-                activeMonthCount,
+                globalFirstMonthLabel,
+                quotaEndMonthLabel,
                 handleQuotaChange,
-                getScoreText,
+                getQuotaStartMonthDisplay,
+                handleQuotaStartMonthChange,
+                getScorePercentLabel,
+                getScoreMonthHint,
                 getScoreTextColor,
                 getScoreColor,
                 getScorePercent,
@@ -524,7 +677,7 @@
         }
     });
 
-    app.use(ElementPlus);
+    app.use(ElementPlus, { locale: zhCn });
     for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
         app.component(key, component);
     }

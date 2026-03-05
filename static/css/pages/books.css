@@ -65,11 +65,26 @@
 }
 
 .books-quota-row {
-    padding-left: 6px;
+    padding-left: 0;
 }
 
 .books-quota-input {
-    width: 80px;
+    width: 70px;
+}
+
+.books-start-month-picker {
+    width: 100px !important;
+}
+
+.books-start-month-disabled {
+    display: inline-block;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    padding-left: 0;
+}
+
+.books-table-full .books-start-month-cell .cell {
+    padding-left: 0 !important;
 }
 
 .books-pane-right {
@@ -146,22 +161,29 @@
     border-radius: 1.5rem;
     padding: 14px 12px;
     display: grid;
-    grid-template-columns: auto auto;
-    gap: 20px;
+    grid-template-columns: minmax(206px, 1fr) minmax(0, 2fr);
+    gap: 14px;
     min-height: 240px;
     max-height: clamp(260px, calc(100vh - 460px), 620px);
     overflow-y: auto;
     overflow-x: hidden;
     align-items: center;
-    justify-content: center;
+    justify-content: stretch;
+}
+
+.score-panel-block {
+    min-width: 0;
+    background: transparent;
+    border: none;
 }
 
 .score-visual {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 0;
-    transform: translateX(-60px);
+    min-width: 206px;
+    justify-self: center;
+    transform: none;
 }
 
 .rings-stack {
@@ -227,6 +249,7 @@
     overflow: visible;
     padding-right: 0;
     width: 100%;
+    min-width: 0;
     justify-self: start;
     align-self: center;
     margin: 0;
@@ -302,6 +325,12 @@
     margin-left: 2px;
 }
 
+.score-val-note {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
 .score-stats {
     display: grid;
     gap: 2px;
@@ -350,6 +379,7 @@
     }
 
     .score-visual {
+        min-width: 0;
         transform: translateX(0);
     }
 

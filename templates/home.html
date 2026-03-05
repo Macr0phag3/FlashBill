@@ -630,6 +630,31 @@
                 const mm = String(date.getMonth() + 1).padStart(2, '0');
                 return `${yyyy}-${mm}`;
             };
+            const monthKeyPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
+            const normalizeMonthKey = (value) => {
+                if (value === null || value === undefined || value === '') return '';
+                const key = String(value).trim();
+                return monthKeyPattern.test(key) ? key : '';
+            };
+            const compareMonthKey = (a, b) => {
+                if (!a && !b) return 0;
+                if (!a) return -1;
+                if (!b) return 1;
+                return a.localeCompare(b);
+            };
+            const calculateMonthCountByMonthKeys = (startMonthKey, endMonthKey) => {
+                if (!startMonthKey || !endMonthKey) return 0;
+                const startYear = Number(startMonthKey.slice(0, 4));
+                const startMonth = Number(startMonthKey.slice(5, 7));
+                const endYear = Number(endMonthKey.slice(0, 4));
+                const endMonth = Number(endMonthKey.slice(5, 7));
+                if (!Number.isFinite(startYear) || !Number.isFinite(startMonth) ||
+                    !Number.isFinite(endYear) || !Number.isFinite(endMonth)) {
+                    return 0;
+                }
+                const months = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+                return Math.max(0, months);
+            };
 
             const buildMonthlyExpenseSeries = (rows) => {
                 const monthMap = new Map();
@@ -670,20 +695,66 @@
                 return calculateMonthDivisor(startDate, endDate);
             };
 
-            const buildBookSpendingMap = (rows) => {
+            const buildBookSpendingRowsByMonth = (rows) => {
+                const map = {};
+                const fallbackMonthKey = toMonthKey(new Date());
+                for (const item of rows || []) {
+                    const name = String(item.book || '').trim();
+                    if (!name) continue;
+                    const parsedDate = parseDate(item.date);
+                    const monthKey = parsedDate ? toMonthKey(parsedDate) : fallbackMonthKey;
+                    const amount = Math.abs(Number(item.amount) || 0);
+                    if (!map[name]) map[name] = [];
+                    map[name].push({ monthKey, amount });
+                }
+                return map;
+            };
+            const buildBookFirstMonthMap = (rows) => {
                 const map = {};
                 for (const item of rows || []) {
                     const name = String(item.book || '').trim();
                     if (!name) continue;
-                    const amount = Math.abs(Number(item.amount) || 0);
-                    map[name] = (map[name] || 0) + amount;
+                    const date = parseDate(item.date);
+                    if (!date) continue;
+                    const monthKey = toMonthKey(date);
+                    if (!map[name] || compareMonthKey(monthKey, map[name]) < 0) {
+                        map[name] = monthKey;
+                    }
                 }
                 return map;
             };
+            const getQuotaStartMonthFromRows = (rows) => {
+                let startMonthKey = '';
+                for (const item of rows || []) {
+                    const date = parseDate(item.date);
+                    if (!date) continue;
+                    const monthKey = toMonthKey(date);
+                    if (!startMonthKey || compareMonthKey(monthKey, startMonthKey) < 0) {
+                        startMonthKey = monthKey;
+                    }
+                }
+                return startMonthKey || toMonthKey(new Date());
+            };
+            const getQuotaEndMonthFromRows = (rows) => {
+                let endMonthKey = '';
+                for (const item of rows || []) {
+                    const date = parseDate(item.date);
+                    if (!date) continue;
+                    const monthKey = toMonthKey(date);
+                    if (!endMonthKey || compareMonthKey(monthKey, endMonthKey) > 0) {
+                        endMonthKey = monthKey;
+                    }
+                }
+                const currentMonthKey = toMonthKey(new Date());
+                if (!endMonthKey) return currentMonthKey;
+                return compareMonthKey(endMonthKey, currentMonthKey) >= 0 ? endMonthKey : currentMonthKey;
+            };
 
             const buildQuotaGaugeBooks = (rows) => {
-                const activeMonthCount = getActiveMonthCountFromRows(rows);
-                const spendingMap = buildBookSpendingMap(rows);
+                const globalStartMonthKey = getQuotaStartMonthFromRows(rows);
+                const endMonthKey = getQuotaEndMonthFromRows(rows);
+                const spendingRowsByMonth = buildBookSpendingRowsByMonth(rows);
+                const bookFirstMonthMap = buildBookFirstMonthMap(rows);
                 const fallbackColors = getQuotaGaugeFallbackColors();
                 const fixedQuotaBooks = Object.entries(quotaBookConfig.value || {})
                     .map(([rawName, config]) => {
@@ -691,18 +762,34 @@
                         const monthlyQuotaRaw = config && typeof config === 'object'
                             ? config.fixed_quota
                             : config;
+                        const quotaStartMonthRaw = config && typeof config === 'object'
+                            ? config.quota_start_month
+                            : '';
                         const monthlyQuota = Number(monthlyQuotaRaw || 0);
-                        return { name, monthlyQuota };
+                        return {
+                            name,
+                            monthlyQuota,
+                            quotaStartMonth: normalizeMonthKey(quotaStartMonthRaw)
+                        };
                     })
                     .filter(item => item.name && item.monthlyQuota > 0)
                     .slice(0, 3);
 
                 return fixedQuotaBooks.map((item, index) => {
+                    const startMonthKey = item.quotaStartMonth || bookFirstMonthMap[item.name] || globalStartMonthKey;
+                    const activeMonthCount = calculateMonthCountByMonthKeys(startMonthKey, endMonthKey);
                     const totalQuota = item.monthlyQuota * activeMonthCount;
-                    const spent = Number(spendingMap[item.name] || 0);
+                    const spent = (spendingRowsByMonth[item.name] || []).reduce((sum, row) => {
+                        if (compareMonthKey(row.monthKey, startMonthKey) < 0) return sum;
+                        if (compareMonthKey(row.monthKey, endMonthKey) > 0) return sum;
+                        return sum + Number(row.amount || 0);
+                    }, 0);
                     const rawPercent = totalQuota > 0 ? (spent / totalQuota) * 100 : 0;
                     return {
                         ...item,
+                        startMonthKey,
+                        endMonthKey,
+                        activeMonthCount,
                         totalQuota,
                         spent,
                         rawPercent: Math.max(0, rawPercent),
@@ -1345,6 +1432,8 @@
                             formatter: () => (
                                 `${item.name}<br/>` +
                                 `每月配额 ${formatTrendAmount(item.monthlyQuota)}<br/>` +
+                                `起算月份 ${item.startMonthKey}<br/>` +
+                                `累计月数 ${item.activeMonthCount}<br/>` +
                                 `累计配额 ${formatTrendAmount(item.totalQuota)}<br/>` +
                                 `累计开销 ${formatTrendAmount(item.spent)}`
                             )
