@@ -1468,8 +1468,44 @@ body>.container.mt-4 {
     gap: 10px;
 }
 
+.stats-lock-icon-btn {
+    --el-button-bg-color: transparent;
+    --el-button-hover-bg-color: transparent;
+    --el-button-active-bg-color: transparent;
+    --el-button-border-color: transparent;
+    --el-button-hover-border-color: transparent;
+    --el-button-active-border-color: transparent;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 6px;
+    min-height: auto;
+}
+
+.stats-lock-icon-btn:hover,
+.stats-lock-icon-btn:focus,
+.stats-lock-icon-btn:active {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.stats-lock-icon-unlocked {
+    color: #f59e0b;
+}
+
+.stats-lock-icon-locked {
+    color: #22c55e;
+}
+
 .stats-table-full {
     width: 100%;
+}
+
+.stats-encrypted-placeholder {
+    height: calc(100vh - 340px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stats-inline-start {

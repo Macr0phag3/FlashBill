@@ -193,6 +193,7 @@
             initLogoAnimation();
             initNavTextGlitch();
             initSettingsPanel();
+            initGlobalDbDecryptGate();
         });
 
         /**
@@ -501,6 +502,81 @@
                 // fall back 到原生初始化
                 window.ThemeManager.initThemeSelector('settingsThemeSelect');
             }
+        }
+
+        /**
+         * 全局数据库解密拦截：
+         * 若 DB.xlsx 已加密，进入任意页面时先弹窗要求解密。
+         */
+        function initGlobalDbDecryptGate() {
+            if (!window.fetch || !window.ElementPlus || !window.ElementPlus.ElMessageBox) return;
+            const guardedPaths = new Set(['/', '/books', '/categories']);
+            if (!guardedPaths.has(window.location.pathname)) return;
+
+            const statusApi = '/api/statistics/db-encryption-status';
+            const decryptApi = '/api/statistics/db-decrypt';
+
+            const checkEncrypted = async () => {
+                const response = await fetch(statusApi, { method: 'GET' });
+                const data = await response.json();
+                return !!(data && data.success && data.encrypted);
+            };
+
+            const decryptWithPassword = async (password) => {
+                const response = await fetch(decryptApi, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json().catch(() => ({}));
+                return { ok: response.ok, data };
+            };
+
+            const promptDecryptLoop = async () => {
+                while (true) {
+                    let value = '';
+                    try {
+                        const result = await window.ElementPlus.ElMessageBox.prompt(
+                            '数据库已加密，请先输入密码解密后再继续使用页面。',
+                            '需要先解密数据库',
+                            {
+                                inputType: 'password',
+                                inputPlaceholder: '请输入解密密码',
+                                inputValidator: (v) => {
+                                    if (!v || !v.trim()) return '密码不能为空';
+                                    return true;
+                                },
+                                closeOnClickModal: false,
+                                closeOnPressEscape: false,
+                                showClose: false,
+                                showCancelButton: true,
+                                confirmButtonText: '解密',
+                                cancelButtonText: '取消',
+                            }
+                        );
+                        value = result.value || '';
+                    } catch (e) {
+                        return;
+                    }
+
+                    const result = await decryptWithPassword((value || '').trim());
+                    if (result.ok && result.data && result.data.success) {
+                        window.ElementPlus.ElMessage.success('数据解密成功');
+                        window.setTimeout(() => window.location.reload(), 1000);
+                        return;
+                    }
+
+                    const msg = (result.data && (result.data.message || result.data.error)) || '解密失败，请重试';
+                    window.ElementPlus.ElMessage.error(msg);
+                }
+            };
+
+            checkEncrypted()
+                .then((encrypted) => {
+                    if (encrypted) return promptDecryptLoop();
+                    return null;
+                })
+                .catch(() => null);
         }
     </script>
 

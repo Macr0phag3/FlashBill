@@ -8,3 +8,4 @@ pandas
 httpx
 python-dotenv
 XlsxWriter
+pycryptodome

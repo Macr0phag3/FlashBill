@@ -91,9 +91,10 @@
                 <!-- 频率排序控件 (仅在表格 Tab 显示) -->
                 <div v-show="activeTab === 'table'" class="stats-freq-toolbar">
                     <el-checkbox v-model="tableFreqSortEmptyLast" label="空值置底" size="default"
-                        @change="handleTableSearch" v-show="tableFreqSortField"></el-checkbox>
+                        @change="handleTableSearch" v-show="tableFreqSortField" :disabled="dbEncrypted"></el-checkbox>
                     <el-select v-model="tableFreqSortField" placeholder="频率排序：无"
-                        class="stats-select-150 freq-sort-select" clearable @change="handleTableSearch" size="default">
+                        class="stats-select-150 freq-sort-select" clearable @change="handleTableSearch" size="default"
+                        :disabled="dbEncrypted">
                         <el-option label="频率排序：无" value=""></el-option>
                         <el-option label="按交易对方频率" value="counter_party"></el-option>
                         <el-option label="按商品说明频率" value="goods_desc"></el-option>
@@ -104,78 +105,96 @@
                         <el-option label="按账本频率" value="book"></el-option>
                         <el-option label="按备注频率" value="remark"></el-option>
                     </el-select>
+                    <el-button class="stats-lock-icon-btn" @mouseenter="dbLockHovered = true"
+                        @mouseleave="dbLockHovered = false" :loading="dbEncryptionLoading"
+                        @click="handleDbEncryptionAction">
+                        <el-icon size="18" :class="getDbLockIconClass()">
+                            <component :is="getDbLockIconComponent()" />
+                        </el-icon>
+                    </el-button>
                 </div>
 
                 <el-tabs v-model="activeTab">
                     <el-tab-pane label="数据表格" name="table">
-                        <el-table :data="tableData" class="stats-table-full" stripe v-loading="loading"
-                            height="calc(100vh - 340px)" @sort-change="handleSortChange"
-                            :default-sort="{prop: 'date', order: 'descending'}">
-                            <el-table-column type="index" label="序号" width="60" align="center"
-                                :index="(index) => (currentPage - 1) * pageSize + index + 1">
-                            </el-table-column>
-                            <el-table-column prop="date" label="日期" min-width="150" align="center" sortable="custom">
-                                <template #default="{ row }">
-                                    <span v-text="row.date"></span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="amount" label="金额" min-width="100" align="center" sortable="custom">
-                                <template #default="{ row }">
-                                    <span :class="row.amount < 0 ? 'stats-amount-negative' : 'stats-amount-positive'">
-                                        <span v-text="formatAmount(row.amount)"></span>
-                                    </span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="category" label="类别" min-width="60" align="left" sortable="custom">
-                                <template #default="{ row }">
-                                    <span v-if="row.category" class="stats-inline-start">
-                                        <span :style="getCategoryIconTagStyle(row.category)">
-                                            <el-icon size="16">
-                                                <component :is="getCategoryIconComponent(row.category)" />
-                                            </el-icon>
+                        <div v-if="dbEncrypted" class="stats-encrypted-placeholder">
+                            <el-empty description="数据已加密"></el-empty>
+                        </div>
+                        <div v-else>
+                            <el-table :data="tableData" class="stats-table-full" stripe v-loading="loading"
+                                height="calc(100vh - 340px)" @sort-change="handleSortChange"
+                                :default-sort="{prop: 'date', order: 'descending'}">
+                                <el-table-column type="index" label="序号" width="60" align="center"
+                                    :index="(index) => (currentPage - 1) * pageSize + index + 1">
+                                </el-table-column>
+                                <el-table-column prop="date" label="日期" min-width="150" align="center"
+                                    sortable="custom">
+                                    <template #default="{ row }">
+                                        <span v-text="row.date"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="amount" label="金额" min-width="100" align="center"
+                                    sortable="custom">
+                                    <template #default="{ row }">
+                                        <span
+                                            :class="row.amount < 0 ? 'stats-amount-negative' : 'stats-amount-positive'">
+                                            <span v-text="formatAmount(row.amount)"></span>
                                         </span>
-                                        <span class="stats-text-primary" v-text="row.category"></span>
-                                    </span>
-                                    <span v-else class="stats-text-primary">-</span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="tag" label="标签" min-width="80" align="center" sortable="custom">
-                                <template #default="{ row }">
-                                    <el-tag v-if="row.tag" size="default" effect="plain"
-                                        :style="getCategoryTagStyle(row.category)">
-                                        <span v-text="row.tag"></span>
-                                    </el-tag>
-                                    <span v-else>-</span>
-                                </template>
-                            </el-table-column>
-                            <el-table-column prop="counter_party" label="交易对方" min-width="180" align="center"
-                                sortable="custom">
-                            </el-table-column>
-                            <el-table-column prop="goods_desc" label="商品说明" min-width="180" align="center"
-                                sortable="custom">
-                            </el-table-column>
-                            <el-table-column prop="remark" label="备注" min-width="80" align="center" sortable="custom">
-                            </el-table-column>
-                            <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
-                                <template #default="{ row }">
-                                    <el-tag v-if="row.book" size="default" effect="plain"
-                                        :style="getBookTagStyle(row.book)">
-                                        <span class="stats-inline-center">
-                                            <el-icon size="16">
-                                                <component :is="getBookIconComponent(row.book)" />
-                                            </el-icon>
-                                            <span v-text="row.book"></span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="category" label="类别" min-width="60" align="left"
+                                    sortable="custom">
+                                    <template #default="{ row }">
+                                        <span v-if="row.category" class="stats-inline-start">
+                                            <span :style="getCategoryIconTagStyle(row.category)">
+                                                <el-icon size="16">
+                                                    <component :is="getCategoryIconComponent(row.category)" />
+                                                </el-icon>
+                                            </span>
+                                            <span class="stats-text-primary" v-text="row.category"></span>
                                         </span>
-                                    </el-tag>
-                                    <span v-else>-</span>
-                                </template>
-                            </el-table-column>
-                        </el-table>
+                                        <span v-else class="stats-text-primary">-</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="tag" label="标签" min-width="80" align="center" sortable="custom">
+                                    <template #default="{ row }">
+                                        <el-tag v-if="row.tag" size="default" effect="plain"
+                                            :style="getCategoryTagStyle(row.category)">
+                                            <span v-text="row.tag"></span>
+                                        </el-tag>
+                                        <span v-else>-</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="counter_party" label="交易对方" min-width="180" align="center"
+                                    sortable="custom">
+                                </el-table-column>
+                                <el-table-column prop="goods_desc" label="商品说明" min-width="180" align="center"
+                                    sortable="custom">
+                                </el-table-column>
+                                <el-table-column prop="remark" label="备注" min-width="80" align="center"
+                                    sortable="custom">
+                                </el-table-column>
+                                <el-table-column prop="book" label="账本" min-width="80" align="center" sortable="custom">
+                                    <template #default="{ row }">
+                                        <el-tag v-if="row.book" size="default" effect="plain"
+                                            :style="getBookTagStyle(row.book)">
+                                            <span class="stats-inline-center">
+                                                <el-icon size="16">
+                                                    <component :is="getBookIconComponent(row.book)" />
+                                                </el-icon>
+                                                <span v-text="row.book"></span>
+                                            </span>
+                                        </el-tag>
+                                        <span v-else>-</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
 
-                        <div class="pagination-container">
-                            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-                                :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
-                                :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+                            <div class="pagination-container">
+                                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                                    :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+                                    :total="total" @size-change="handleSizeChange"
+                                    @current-change="handleCurrentChange" />
+                            </div>
                         </div>
                     </el-tab-pane>
 
@@ -419,7 +438,7 @@
 
 <script>
     const { createApp, onMounted, watch, nextTick, onBeforeUnmount } = Vue;
-    const { ElMessage } = ElementPlus;
+    const { ElMessage, ElMessageBox } = ElementPlus;
 
     // 中文配置
     const zhCn = {
@@ -443,6 +462,7 @@
                 categoryMeta,
                 filterTags,
                 loadData,
+                clearData,
                 handleFilter, handleCategoryChange, resetFilter, removeFilterTag
             } = useStatisticsData();
 
@@ -537,9 +557,153 @@
                 };
             };
 
+            const getDbLockIconComponent = () => {
+                const lockIcon = ElementPlusIconsVue.Lock || ElementPlusIconsVue.Unlock;
+                const unlockIcon = ElementPlusIconsVue.Unlock || ElementPlusIconsVue.Lock;
+
+                if (dbLockHovered.value) {
+                    return dbEncrypted.value ? unlockIcon : lockIcon;
+                }
+                return dbEncrypted.value ? lockIcon : unlockIcon;
+            };
+
+            const getDbLockIconClass = () => {
+                // 与图标显示逻辑保持一致：显示锁头时绿色，显示解锁时橙色
+                const showingLock = dbEncrypted.value !== dbLockHovered.value;
+                return showingLock ? 'stats-lock-icon-locked' : 'stats-lock-icon-unlocked';
+            };
+
             // --- Tab 状态管理 ---
             // 持久化用户最后选择的 Tab
             const activeTab = Vue.ref(localStorage.getItem('statistics_active_tab') || 'table');
+            const dbEncrypted = Vue.ref(false);
+            const dbEncryptionLoading = Vue.ref(false);
+            const dbLockHovered = Vue.ref(false);
+
+            const checkDbEncryptionStatus = async () => {
+                try {
+                    const response = await fetch('/api/statistics/db-encryption-status');
+                    const data = await response.json();
+                    if (data.success) {
+                        dbEncrypted.value = !!data.encrypted;
+                        return;
+                    }
+                } catch (error) {
+                    console.error('获取数据库加密状态失败:', error);
+                }
+                dbEncrypted.value = false;
+            };
+
+            const loadStatisticsDataIfNeeded = async () => {
+                if (dbEncrypted.value) {
+                    clearData();
+                    return;
+                }
+                const result = await loadData();
+                if (!result?.success && result?.code === 'DB_ENCRYPTED') {
+                    dbEncrypted.value = true;
+                    clearData();
+                }
+            };
+
+            const handleDbEncryptionAction = async () => {
+                const encrypting = !dbEncrypted.value;
+                const actionLabel = encrypting ? '加密' : '解密';
+
+                try {
+                    let password = '';
+                    if (encrypting) {
+                        while (true) {
+                            const firstPrompt = await ElMessageBox.prompt(
+                                '请输入用于加密数据的密码',
+                                '加密 DB 数据',
+                                {
+                                    confirmButtonText: '下一步',
+                                    cancelButtonText: '取消',
+                                    inputType: 'password',
+                                    inputPlaceholder: '请输入密码',
+                                    inputValidator: (value) => {
+                                        if (!value || !value.trim()) return '密码不能为空';
+                                        return true;
+                                    },
+                                }
+                            );
+                            const secondPrompt = await ElMessageBox.prompt(
+                                '请再次输入密码进行确认',
+                                '确认加密密码',
+                                {
+                                    confirmButtonText: '加密',
+                                    cancelButtonText: '取消',
+                                    inputType: 'password',
+                                    inputPlaceholder: '请再次输入密码',
+                                    inputValidator: (value) => {
+                                        if (!value || !value.trim()) return '密码不能为空';
+                                        return true;
+                                    },
+                                }
+                            );
+
+                            const first = (firstPrompt.value || '').trim();
+                            const second = (secondPrompt.value || '').trim();
+                            if (first !== second) {
+                                ElMessage.error('两次输入的密码不一致，请重新输入');
+                                continue;
+                            }
+                            password = first;
+                            break;
+                        }
+                    } else {
+                        const promptResult = await ElMessageBox.prompt(
+                            '请输入用于解密数据的密码',
+                            '解密 DB 数据',
+                            {
+                                confirmButtonText: '解密',
+                                cancelButtonText: '取消',
+                                inputType: 'password',
+                                inputPlaceholder: '请输入密码',
+                                inputValidator: (value) => {
+                                    if (!value || !value.trim()) return '密码不能为空';
+                                    return true;
+                                },
+                            }
+                        );
+                        password = (promptResult.value || '').trim();
+                    }
+
+                    const endpoint = encrypting
+                        ? '/api/statistics/db-encrypt'
+                        : '/api/statistics/db-decrypt';
+
+                    dbEncryptionLoading.value = true;
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password }),
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || `${actionLabel}失败`);
+                    }
+
+                    await checkDbEncryptionStatus();
+                    if (dbEncrypted.value) {
+                        clearData();
+                    } else {
+                        await loadStatisticsDataIfNeeded();
+                    }
+                    updateActiveTab();
+                    ElMessage.success(data.message || `${actionLabel}成功`);
+                } catch (error) {
+                    if (error === 'cancel' || error === 'close' || error?.action === 'cancel' || error?.action === 'close') {
+                        return;
+                    }
+                    ElMessage.error(error.message || `${actionLabel}失败`);
+                } finally {
+                    dbEncryptionLoading.value = false;
+                }
+            };
+
             watch(activeTab, (newTab) => {
                 localStorage.setItem('statistics_active_tab', newTab);
                 updateActiveTab(); // 切换 Tab 时更新视图
@@ -548,6 +712,12 @@
             // --- 各个 Tab 的 Composable ---
 
             const triggerUpdateTable = () => {
+                if (dbEncrypted.value) {
+                    tableData.value = [];
+                    total.value = 0;
+                    return;
+                }
+
                 // 1. 克隆数据 (数据已经是全局过滤后的了)
                 let data = [...rawFilteredData.value];
 
@@ -686,7 +856,9 @@
                 resetFilter();
                 tableFreqSortField.value = '';
                 tableFreqSortEmptyLast.value = false; // Reset to default (or keep logic if user wants)
-                handleTableSearch(); // Refresh table
+                if (!dbEncrypted.value) {
+                    handleTableSearch(); // Refresh table
+                }
             };
 
             // 监听筛选数据变化，自动更新当前 Tab
@@ -702,13 +874,14 @@
             // --- 生命周期 ---
             onMounted(async () => {
                 // 初始化加载数据
-                await Promise.all([loadData(), loadBookMeta()]).finally(() => {
-                    const loader = document.getElementById('page-loader');
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.style.display = 'none', 300);
-                    }
-                });
+                await Promise.all([checkDbEncryptionStatus(), loadBookMeta()]);
+                await loadStatisticsDataIfNeeded();
+
+                const loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 300);
+                }
 
                 // 深色模式监听：主题变化时强制重绘图表
                 const observer = new MutationObserver((mutations) => {
@@ -742,9 +915,15 @@
                 handleSizeChange, handleCurrentChange, handleSortChange, // Table
                 handleScroll, // Timeline
                 handleTimeUnitChange, handlePivotTimeUnitChange, // Chart & Pivot Updates
+                handleDbEncryptionAction,
 
                 // Tab State
                 activeTab,
+
+                // DB Encryption
+                dbEncrypted,
+                dbEncryptionLoading,
+                dbLockHovered,
 
                 // Valid for Template
                 tableData, currentPage, pageSize, total, sortBy, sortOrder, // Table
@@ -757,7 +936,7 @@
                 // Utils
                 formatDate, formatTime, formatAmount,
                 getCategoryColor, getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle,
-                getBookIconComponent, getBookTagStyle
+                getBookIconComponent, getBookTagStyle, getDbLockIconComponent, getDbLockIconClass
             };
         }
     });

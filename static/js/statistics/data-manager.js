@@ -234,15 +234,38 @@ const useStatisticsData = () => {
                 }
 
                 applyFilters();
+                return { success: true };
             } else {
-                ElementPlus.ElMessage.error(data.error || '加载数据失败');
+                if (data.code !== 'DB_ENCRYPTED') {
+                    ElementPlus.ElMessage.error(data.error || '加载数据失败');
+                }
+                return {
+                    success: false,
+                    code: data.code || '',
+                    message: data.error || '加载数据失败'
+                };
             }
         } catch (error) {
             console.error('加载数据失败:', error);
             ElementPlus.ElMessage.error('加载数据失败');
+            return { success: false, message: '加载数据失败' };
         } finally {
             loading.value = false;
         }
+    };
+
+    /**
+     * 清空当前已加载数据（用于数据库加密时）
+     */
+    const clearData = () => {
+        allData.value = [];
+        filteredAllData.value = [];
+        rawFilteredData.value = [];
+        bookOptions.value = [];
+        categoryOptions.value = [];
+        tagOptions.value = [];
+        allTags.value = [];
+        categoryTagMap.value = {};
     };
 
     return {
@@ -259,6 +282,7 @@ const useStatisticsData = () => {
         categoryMeta,
         filterTags,
         loadData,
+        clearData,
         handleFilter,
         resetFilter,
         removeFilterTag,
