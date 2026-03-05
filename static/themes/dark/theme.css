@@ -378,6 +378,20 @@ html[data-theme='dark'] .el-date-picker {
     color: var(--text-color) !important;
 }
 
+/* 账本管理: 图标/颜色弹层提高不透明度（仅 dark 主题） */
+html[data-theme='dark'] .books-icon-popover.el-popper,
+html[data-theme='dark'] .books-color-dropdown.el-color-dropdown {
+    background-color: rgba(21, 21, 21, 0.9) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme='dark'] .books-icon-dropdown.el-select-dropdown {
+    background-color: rgba(21, 21, 21, 0.1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 /* ==================== 组合输入框前后置内容覆盖 ==================== */
 html[data-theme='dark'] .el-input-group__prepend,
 html[data-theme='dark'] .el-input-group__append {

@@ -30,6 +30,7 @@
                             <template #default="scope">
                                 <div class="d-flex align-items-center justify-content-start gap-1">
                                     <el-popover trigger="click" placement="bottom-start" :width="200"
+                                        popper-class="books-icon-popover"
                                         @show="handleIconPopoverShow(scope.$index)">
                                         <template #reference>
                                             <el-button size="small" circle class="icon-picker-btn">
@@ -41,9 +42,11 @@
                                         </template>
                                         <div class="d-flex align-items-center gap-2">
                                             <el-color-picker v-model="scope.row.color" size="small" :teleported="false"
+                                                popper-class="books-color-dropdown"
                                                 :class="{ 'default-color': !scope.row.color }"></el-color-picker>
                                             <el-select v-model="scope.row.icon" placeholder="选择图标" filterable clearable
                                                 size="small" class="books-icon-select" :teleported="false"
+                                                popper-class="books-icon-dropdown"
                                                 :ref="el => setIconSelectRef(scope.$index, el)">
                                                 <el-option v-for="iconName in iconList" :key="iconName"
                                                     :label="iconName" :value="iconName">
