@@ -5,9 +5,16 @@ import pytest
 import os
 import sys
 import shutil
+import warnings
 
 # 将项目根目录添加到 Python 路径
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/..'))
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"builtin type .* has no __module__ attribute",
+    category=DeprecationWarning,
+)
 
 # 需要保护的数据目录（data/ 下的所有文件）
 DATA_DIR = 'data'

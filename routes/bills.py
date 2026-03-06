@@ -9,7 +9,16 @@ import io
 import pandas as pd
 from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
-from core.utils import Alipay, Wechat, apply_rules_to_bills, ai_tag_bills, load_rules, save_rules
+from core.utils import (
+    Alipay,
+    Wechat,
+    CmbPDF,
+    BillProcessError,
+    apply_rules_to_bills,
+    ai_tag_bills,
+    load_rules,
+    save_rules,
+)
 from core.config import PROGRESS_FILE, EXPORT_COLUMNS
 
 # ==================== Blueprint 配置 ====================
@@ -19,6 +28,13 @@ bills_bp = Blueprint("bills", __name__)
 BILL_PROCESSORS = {
     "alipay": (Alipay, "支付宝"),
     "wechat": (Wechat, "微信"),
+    "cmb": (CmbPDF, "招商银行"),
+}
+
+ALLOWED_EXTENSIONS = {
+    "alipay": (".csv", ".xlsx"),
+    "wechat": (".csv", ".xlsx"),
+    "cmb": (".pdf",),
 }
 
 
@@ -72,7 +88,7 @@ def get_bills():
 
 @bills_bp.route("/upload", methods=["POST"])
 def upload_file():
-    """上传账单文件（支持 CSV/XLSX，支付宝/微信）"""
+    """上传账单文件（支付宝/微信：CSV/XLSX，招商银行：PDF）"""
     # 验证文件
     if "file" not in request.files:
         return jsonify({"error": "没有文件"}), 400
@@ -80,9 +96,18 @@ def upload_file():
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"error": "没有选择文件"}), 400
-    
-    if not (file.filename.endswith(".xlsx") or file.filename.endswith(".csv")):
-        return jsonify({"error": "不支持的文件格式"}), 400
+
+    # 获取账单类型
+    bill_type = request.form.get("bill_type", "alipay")
+    if bill_type not in BILL_PROCESSORS:
+        return jsonify({"error": "不支持的账单类型"}), 400
+
+    # 验证文件扩展名（按账单类型）
+    filename_lower = file.filename.lower()
+    allowed_exts = ALLOWED_EXTENSIONS[bill_type]
+    if not filename_lower.endswith(allowed_exts):
+        ext_text = " / ".join(allowed_exts)
+        return jsonify({"error": f"文件格式不匹配：{bill_type} 仅支持 {ext_text}"}), 400
     
     # 保存上传文件
     filename = secure_filename(file.filename)
@@ -91,8 +116,8 @@ def upload_file():
 
     temp_files = [filepath]
     try:
-        # 转换 xlsx 为 csv
-        if file.filename.endswith(".xlsx"):
+        # 转换 xlsx 为 csv（仅支付宝/微信需要）
+        if bill_type in ("alipay", "wechat") and file.filename.lower().endswith(".xlsx"):
             df = pd.read_excel(filepath)
             csv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "temp.csv")
             df.to_csv(csv_path, index=False)
@@ -100,14 +125,13 @@ def upload_file():
         else:
             csv_path = filepath
 
-        # 获取账单类型
-        bill_type = request.form.get("bill_type", "alipay")
-        if bill_type not in BILL_PROCESSORS:
-            return jsonify({"error": "不支持的账单类型"}), 400
-
         # 解析账单
         ProcessorClass, book_name = BILL_PROCESSORS[bill_type]
-        processor = ProcessorClass(csv_path)
+        try:
+            processor = ProcessorClass(csv_path)
+        except BillProcessError as e:
+            return jsonify({"error": str(e)}), 400
+
         bills = processor.bill
 
         # 标记账本来源
@@ -117,7 +141,25 @@ def upload_file():
         save_to_progress(bills)
         set_current_bills(bills)
 
-        return jsonify({"success": True, "bills": list(bills.values())})
+        count_rows = getattr(processor, "count_rows", len(bills))
+        count_bills = getattr(processor, "count_bills", len(bills))
+
+        response = {
+            "success": True,
+            "bills": list(bills.values()),
+            "count_rows": count_rows,
+            "count_bills": count_bills,
+        }
+        if count_rows != count_bills:
+            diff = abs(count_rows - count_bills)
+            response["warning"] = f"检测到 {diff} 条记录未成功解析，请核对原始账单"
+            failed_rows = getattr(processor, "failed_rows", [])
+            if failed_rows:
+                response["failed_rows_total"] = len(failed_rows)
+                response["failed_rows"] = failed_rows[:200]
+                response["failed_rows_truncated"] = len(failed_rows) > 200
+
+        return jsonify(response)
     finally:
         cleanup_temp_files(temp_files)
 
@@ -360,4 +402,3 @@ def apply_ai_tags():
     
     except Exception as e:
         return jsonify({"success": False, "message": f"应用打标结果失败: {str(e)}"}), 500
-

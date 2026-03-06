@@ -25,10 +25,11 @@
                     <el-select v-model="billType" placeholder="选择账单类型" class="tagging-select-100">
                         <el-option label="支付宝" value="alipay"></el-option>
                         <el-option label="微信" value="wechat"></el-option>
+                        <el-option label="招商银行" value="cmb"></el-option>
                     </el-select>
                     <el-upload action="/upload" :on-success="handleUploadSuccess" :on-error="handleUploadError"
                         :before-upload="beforeUpload" :show-file-list="false" :data="{ bill_type: billType }"
-                        name="file" accept=".xlsx,text/csv">
+                        name="file" :accept="uploadAccept">
                         <el-button type="primary">
                             上传账单
                         </el-button>
@@ -41,7 +42,7 @@
         </template>
 
         <!-- 工具栏：统计信息 + 筛选控件 -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
 
             <div class="d-flex align-items-center gap-4">
 
@@ -263,6 +264,27 @@
         </template>
     </el-dialog>
 
+    <!-- 解析异常记录对话框 -->
+    <el-dialog v-model="parseIssueDialogVisible" title="解析异常记录" width="1000px" :close-on-click-modal="false">
+        <div class="mb-2 text-muted">
+            [[ parseIssueSummary ]]
+            <span v-if="parseIssueTruncated">（仅展示前 [[ parseIssueRows.length ]] 条）</span>
+        </div>
+        <el-table :data="parseIssueRows" border stripe max-height="420">
+            <el-table-column type="index" label="#" width="56" align="center"></el-table-column>
+            <el-table-column prop="记账日期" label="记账日期" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="货币" label="货币" width="80" align="center"></el-table-column>
+            <el-table-column prop="交易金额" label="交易金额" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="联机余额" label="联机余额" width="120" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="客户摘要" label="客户摘要" min-width="150" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="对手信息" label="对手信息" min-width="180" show-overflow-tooltip></el-table-column>
+            <el-table-column prop="原因" label="原因" width="140" align="center"></el-table-column>
+        </el-table>
+        <template #footer>
+            <el-button type="primary" @click="parseIssueDialogVisible = false">关闭</el-button>
+        </template>
+    </el-dialog>
+
     <!-- 快速创建规则弹框 -->
     <el-dialog v-model="quickRuleDialogVisible" title="快速创建规则" width="500px" :close-on-click-modal="false"
         class="quick-rule-dialog">
@@ -409,6 +431,11 @@
             const selectedAITags = ref([]);
             const selectedRules = ref([]);
             const saveSelectedRules = ref(true);
+            // 解析异常记录
+            const parseIssueDialogVisible = ref(false);
+            const parseIssueRows = ref([]);
+            const parseIssueSummary = ref('');
+            const parseIssueTruncated = ref(false);
 
             // 文本选中快速创建规则相关状态
             const textSelection = ref({ visible: false, x: 0, y: 0, text: '', field: '', row: null });
@@ -453,7 +480,11 @@
             const markModified = (row) => row && (row._modified = true);
 
             /** 生成唯一订单号 */
-            const generateOrderId = () => `${billType.value === 'wechat' ? 'WECHAT' : 'ALI'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const generateOrderId = () => {
+                const prefixMap = { alipay: 'ALI', wechat: 'WECHAT', cmb: 'CMB' };
+                const prefix = prefixMap[billType.value] || 'BILL';
+                return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            };
 
             /** 餐点时间判断 */
             const getMealTimeRange = (meal) => ({
@@ -618,6 +649,9 @@
                 const start = (currentPage.value - 1) * pageSize.value;
                 return filteredBillsData.value.slice(start, start + pageSize.value);
             });
+            const uploadAccept = computed(() => (
+                billType.value === 'cmb' ? '.pdf,application/pdf' : '.xlsx,.csv,text/csv'
+            ));
 
             // 空数据提示
             const emptyText = computed(() => bills.value.length ? '没有符合条件的数据' : '未上传文件');
@@ -1000,8 +1034,14 @@
 
             /** 上传前检查 */
             const beforeUpload = async (file) => {
-                if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
-                    ElMessage.error('只能上传 xlsx 或 csv 文件！');
+                const filename = (file.name || '').toLowerCase();
+                const allowedExts = billType.value === 'cmb' ? ['.pdf'] : ['.xlsx', '.csv'];
+                if (!allowedExts.some(ext => filename.endsWith(ext))) {
+                    ElMessage.error(
+                        billType.value === 'cmb'
+                            ? '招商银行账单只能上传 PDF 文件'
+                            : '支付宝/微信账单只能上传 xlsx 或 csv 文件'
+                    );
                     return false;
                 }
                 const data = await apiCall('get', '/api/check_progress');
@@ -1022,10 +1062,36 @@
             const handleUploadSuccess = async (response) => {
                 if (response.success) {
                     ElMessage.success('上传成功');
+                    parseIssueDialogVisible.value = false;
+                    parseIssueRows.value = [];
+                    parseIssueSummary.value = '';
+                    parseIssueTruncated.value = false;
+
+                    if (response.warning) {
+                        const failedRows = Array.isArray(response.failed_rows) ? response.failed_rows : [];
+                        if (failedRows.length > 0) {
+                            parseIssueRows.value = failedRows;
+                            parseIssueSummary.value = `${response.warning} 解析结果：${response.count_bills}/${response.count_rows}`;
+                            parseIssueTruncated.value = !!response.failed_rows_truncated;
+                        } else {
+                            await ElMessageBox.alert(
+                                `${response.warning}<br/>解析结果：${response.count_bills}/${response.count_rows}`,
+                                '解析提示',
+                                {
+                                    type: 'warning',
+                                    confirmButtonText: '我知道了',
+                                    dangerouslyUseHTMLString: true
+                                }
+                            );
+                        }
+                    }
                     await fetchBills();
                     // 自动打标
                     const resp = await apiCall('post', '/api/auto_tag');
                     if (resp) await fetchBills();
+                    if (parseIssueRows.value.length > 0) {
+                        parseIssueDialogVisible.value = true;
+                    }
                 } else {
                     ElMessage.error(response.message || '上传失败');
                 }
@@ -1081,6 +1147,12 @@
                 }
             });
 
+            watch(billType, (next, prev) => {
+                if (next === 'cmb' && prev && prev !== 'cmb') {
+                    ElMessage.info('招商银行账单会自动剔除微信支付与支付宝支付的订单');
+                }
+            });
+
 
             // ==================== 返回模板绑定 ====================
 
@@ -1093,11 +1165,12 @@
                 // AI 打标状态
                 aiTagLoading, aiTagDialogVisible, aiTagResults,
                 selectedAITags, selectedRules, saveSelectedRules,
+                parseIssueDialogVisible, parseIssueRows, parseIssueSummary, parseIssueTruncated,
                 // 快速规则状态
                 textSelection, quickRuleDialogVisible, quickRuleForm, TIME_OPTIONS,
                 // 计算属性
                 filteredBillsData, paginatedBills, emptyText,
-                categoryFilterOptions, tagFilterOptions,
+                categoryFilterOptions, tagFilterOptions, uploadAccept,
                 // 方法
                 handleFilterChange, handleSortChange, handleCategoryChange,
                 getTagsForCategory, handleSelectionChange, markModified,

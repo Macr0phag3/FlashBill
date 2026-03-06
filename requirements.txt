@@ -9,3 +9,4 @@ httpx
 python-dotenv
 XlsxWriter
 pycryptodome
+PyMuPDF

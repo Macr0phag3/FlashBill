@@ -7,6 +7,7 @@ import re
 import csv
 import json
 import time
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
@@ -120,6 +121,318 @@ class DuplicateBillError(BillProcessError):
 
 class RefundError(BillProcessError):
     """退款处理错误"""
+
+
+# ==================== 招商银行 PDF 解析辅助 ====================
+
+CMB_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+CMB_AMOUNT_RE = re.compile(r"-?\d[\d,]*\.\d+|-?\d[\d,]*")
+CMB_REQUIRED_HEADERS = ["记账日期", "货币", "交易金额", "联机余额", "交易摘要", "对手信息"]
+CMB_OPTIONAL_HEADERS = ["客户摘要"]
+CMB_HEADER_ORDER = CMB_REQUIRED_HEADERS + CMB_OPTIONAL_HEADERS
+CMB_HEADER_KEY_MAP = {
+    "记账日期": "date",
+    "货币": "currency",
+    "交易金额": "amount",
+    "联机余额": "balance",
+    "交易摘要": "summary",
+    "对手信息": "counterparty",
+    "客户摘要": "customer_summary",
+}
+CMB_ENGLISH_HEADER_TOKENS = {
+    "Date",
+    "Currency",
+    "Transaction",
+    "Amount",
+    "Balance",
+    "TransactionType",
+    "Type",
+    "Counter",
+    "Party",
+    "CounterParty",
+    "CustomerSummary",
+    "Customer",
+    "Summary",
+}
+
+
+def _cmb_parse_amount(text: str) -> Optional[float]:
+    """解析金额字符串。"""
+    if not text:
+        return None
+    match = CMB_AMOUNT_RE.search(text.replace(" ", ""))
+    if not match:
+        return None
+    try:
+        return float(match.group(0).replace(",", ""))
+    except ValueError:
+        return None
+
+
+def _cmb_normalize_text(text: str) -> str:
+    return re.sub(r"\s+", "", text or "")
+
+
+def _cmb_extract_char_items(page: Any) -> List[tuple]:
+    items: List[tuple] = []
+    raw = page.get_text("rawdict")
+    for block in raw.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                chars = span.get("chars")
+                if chars:
+                    for ch in chars:
+                        x0, y0, x1, y1 = ch["bbox"]
+                        c = ch.get("c", "")
+                        if c:
+                            items.append((float(x0), float(y0), float(x1), float(y1), str(c)))
+                    continue
+
+                text = span.get("text", "")
+                bbox = span.get("bbox")
+                if not text or not bbox:
+                    continue
+                x0, y0, x1, y1 = bbox
+                char_w = (x1 - x0) / max(len(text), 1)
+                for idx, ch in enumerate(text):
+                    cx0 = x0 + idx * char_w
+                    cx1 = cx0 + char_w
+                    items.append((float(cx0), float(y0), float(cx1), float(y1), str(ch)))
+    return items
+
+
+def _cmb_group_items_into_lines(items: List[tuple], y_tol: float = 1.2) -> List[dict]:
+    sorted_items = sorted(items, key=lambda item: (item[1], item[0]))
+    lines: List[dict] = []
+
+    for x0, y0, x1, _y1, text in sorted_items:
+        matched = None
+        for line in lines:
+            if abs(line["y"] - y0) <= y_tol:
+                matched = line
+                break
+        if matched is None:
+            matched = {"y": y0, "items": []}
+            lines.append(matched)
+
+        matched["items"].append((x0, x1, text))
+        matched["y"] = (matched["y"] + y0) / 2
+
+    for line in lines:
+        line["items"].sort(key=lambda item: item[0])
+        line["text"] = "".join(text for _, _, text in line["items"]).strip()
+
+    return sorted(lines, key=lambda item: item["y"])
+
+
+def _cmb_find_header(lines: List[dict]) -> tuple[int, Dict[str, float]]:
+    for idx, line in enumerate(lines):
+        text = _cmb_normalize_text(line["text"])
+        if not all(name in text for name in CMB_REQUIRED_HEADERS):
+            continue
+
+        compact_chars = [
+            _cmb_normalize_text(item_text)
+            for _x0, _x1, item_text in line["items"]
+            if _cmb_normalize_text(item_text)
+        ]
+        compact_xs = [
+            x0
+            for x0, _x1, item_text in line["items"]
+            if _cmb_normalize_text(item_text)
+        ]
+        compact_text = "".join(compact_chars)
+        anchors: Dict[str, float] = {}
+        for header in CMB_HEADER_ORDER:
+            pos = compact_text.find(header)
+            if pos >= 0 and pos < len(compact_xs):
+                anchors[CMB_HEADER_KEY_MAP[header]] = compact_xs[pos]
+
+        required_keys = {CMB_HEADER_KEY_MAP[name] for name in CMB_REQUIRED_HEADERS}
+        if required_keys.issubset(anchors.keys()):
+            return idx, anchors
+
+    raise ValueError("未找到中文表头")
+
+
+def _cmb_build_column_ranges(anchors: Dict[str, float], page_width: float) -> List[dict]:
+    ordered = sorted(anchors.items(), key=lambda item: item[1])
+    ranges: List[dict] = []
+    for idx, (name, x0) in enumerate(ordered):
+        x1 = ordered[idx + 1][1] if idx + 1 < len(ordered) else page_width + 1
+        ranges.append({"name": name, "x0": x0, "x1": x1})
+    return ranges
+
+
+def _cmb_pick_column(x0: float, x1: float, ranges: List[dict]) -> Optional[str]:
+    cx = (x0 + x1) / 2
+    for col in ranges:
+        if col["x0"] <= cx < col["x1"]:
+            return col["name"]
+    if ranges and cx >= ranges[-1]["x0"]:
+        return ranges[-1]["name"]
+    return None
+
+
+def _cmb_line_to_cells(line: dict, ranges: List[dict]) -> Dict[str, str]:
+    cells = {col["name"]: "" for col in ranges}
+    for x0, x1, text in line["items"]:
+        col = _cmb_pick_column(x0, x1, ranges)
+        if col is None:
+            continue
+        cells[col] += text
+    return {key: value.strip() for key, value in cells.items()}
+
+
+def _cmb_is_english_header_line(text: str) -> bool:
+    compact = _cmb_normalize_text(text)
+    if not compact:
+        return False
+    if re.search(r"[A-Za-z]", compact) and not re.search(r"[\u4e00-\u9fff]", compact):
+        return True
+    if compact in CMB_ENGLISH_HEADER_TOKENS:
+        return True
+    tokens = re.findall(r"[A-Za-z]+", text)
+    return bool(tokens) and all(token in CMB_ENGLISH_HEADER_TOKENS for token in tokens)
+
+
+def _cmb_is_footer_line(text: str) -> bool:
+    text = _cmb_normalize_text(text)
+    if not text:
+        return True
+    if "——————" in text:
+        return True
+    if re.fullmatch(r"\d+/\d+", text):
+        return True
+    if "温馨提示" in text or "交易流水验真" in text:
+        return True
+    return False
+
+
+def _cmb_extract_page_visual_rows(page: Any) -> List[dict]:
+    lines = _cmb_group_items_into_lines(_cmb_extract_char_items(page), y_tol=1.2)
+    try:
+        header_idx, anchors = _cmb_find_header(lines)
+    except ValueError:
+        return []
+
+    ranges = _cmb_build_column_ranges(anchors, page.rect.width)
+    rows: List[dict] = []
+    for line in lines[header_idx + 1 :]:
+        text = line["text"]
+        normalized = _cmb_normalize_text(text)
+
+        if not normalized:
+            continue
+        if any(header in normalized for header in CMB_HEADER_ORDER):
+            continue
+        if _cmb_is_english_header_line(text):
+            continue
+        if _cmb_is_footer_line(text):
+            break
+
+        cells = _cmb_line_to_cells(line, ranges)
+        if not any(cells.values()):
+            continue
+
+        row = {
+            "date": "",
+            "currency": "",
+            "amount": "",
+            "balance": "",
+            "summary": "",
+            "counterparty": "",
+            "customer_summary": "",
+            "page": "",
+            "y": "",
+        }
+        row.update(cells)
+        row["page"] = str(getattr(page, "number", 0) + 1)
+        row["y"] = f"{line['y']:.2f}"
+        rows.append(row)
+
+    return rows
+
+
+def _cmb_is_main_row(row: dict) -> bool:
+    return bool(CMB_DATE_RE.fullmatch(row.get("date", "")))
+
+
+def _cmb_row_y(row: dict) -> float:
+    try:
+        return float(row.get("y", "0") or 0)
+    except ValueError:
+        return 0.0
+
+
+def _cmb_merge_cells(base: dict, extra: dict, prepend: bool) -> None:
+    text_cols = {"summary", "counterparty", "customer_summary"}
+    fill_cols = {"currency", "amount", "balance"}
+
+    for key, value in extra.items():
+        if key in {"page", "y", "date"} or not value:
+            continue
+        if key in text_cols:
+            if not base.get(key):
+                base[key] = value
+            elif prepend:
+                base[key] = value + base[key]
+            else:
+                base[key] = base[key] + value
+        elif key in fill_cols:
+            if not base.get(key):
+                base[key] = value
+
+
+def _cmb_merge_rows(rows: List[dict], y_gap: float = 10.0) -> List[dict]:
+    merged: List[dict] = []
+    i = 0
+    total = len(rows)
+
+    while i < total:
+        first = rows[i]
+        if _cmb_is_main_row(first):
+            merged.append(dict(first))
+            i += 1
+            continue
+
+        j = i
+        pending_rows: List[dict] = []
+        while j < total and not _cmb_is_main_row(rows[j]):
+            pending_rows.append(rows[j])
+            j += 1
+
+        if j >= total:
+            merged.extend(dict(row) for row in pending_rows)
+            break
+
+        main = dict(rows[j])
+        main["page"] = pending_rows[0].get("page", main.get("page", ""))
+        main["y"] = pending_rows[0].get("y", main.get("y", ""))
+
+        for pending in pending_rows:
+            _cmb_merge_cells(main, pending, prepend=True)
+
+        k = j + 1
+        last_row = rows[j]
+        while k < total:
+            candidate = rows[k]
+            if _cmb_is_main_row(candidate):
+                break
+            if candidate.get("page") != last_row.get("page"):
+                break
+            if _cmb_row_y(candidate) - _cmb_row_y(last_row) > y_gap:
+                break
+            _cmb_merge_cells(main, candidate, prepend=False)
+            last_row = candidate
+            k += 1
+
+        merged.append(main)
+        i = k if k > j else j + 1
+
+    return merged
 
 
 # ==================== 时间处理函数 ====================
@@ -418,12 +731,12 @@ def process_bills(file_path: str, bill_type: str) -> Dict[str, Any]:
     
     Args:
         file_path: 账单文件路径
-        bill_type: 账单类型 "alipay" 或 "wechat"
+        bill_type: 账单类型 "alipay" / "wechat" / "cmb"
     
     Raises:
         ValueError: 不支持的账单类型
     """
-    processors = {"alipay": Alipay, "wechat": Wechat}
+    processors = {"alipay": Alipay, "wechat": Wechat, "cmb": CmbPDF}
     
     if bill_type not in processors:
         raise ValueError(f"不支持的账单类型: {bill_type}")
@@ -607,3 +920,119 @@ class Wechat(BaseBillProcessor):
             bill.setdefault("交易时间", "")
             
             self.bill[bill_id] = bill
+
+
+# ==================== 招商银行 PDF 账单处理器 ====================
+
+class CmbPDF(BaseBillProcessor):
+    """招商银行 PDF 账单处理器（基于 PyMuPDF 坐标提取）"""
+
+    def __init__(self, file_path: str):
+        self.count_rows: int = 0
+        self.count_bills: int = 0
+        self.raw_rows: List[dict] = []
+        self.failed_rows: List[dict] = []
+        super().__init__(file_path)
+
+    def _validate(self) -> None:
+        """读取并解析 PDF 表格行为 raw_rows。"""
+        try:
+            import fitz
+        except ImportError as exc:
+            raise FileFormatError("缺少依赖 PyMuPDF，请先安装后再上传招商银行 PDF 账单") from exc
+
+        try:
+            with fitz.open(self.file_path) as doc:
+                visual_rows = []
+                for page in doc:
+                    visual_rows.extend(_cmb_extract_page_visual_rows(page))
+                self.raw_rows = _cmb_merge_rows(visual_rows)
+                self.count_rows = len(self.raw_rows)
+        except Exception as exc:
+            raise FileFormatError(f"招商银行 PDF 解析失败: {exc}") from exc
+
+    def _preprocess(self) -> None:
+        """将 raw_rows 转换为标准账单结构。"""
+        self.bill = {}
+        self.failed_rows = []
+
+        for idx, row in enumerate(self.raw_rows, start=1):
+            date = row.get("date", "").strip()
+            customer_summary = row.get("customer_summary", "").strip()
+            if not CMB_DATE_RE.fullmatch(date):
+                self.failed_rows.append(
+                    {
+                        "记账日期": row.get("date", ""),
+                        "货币": row.get("currency", ""),
+                        "交易金额": row.get("amount", ""),
+                        "联机余额": row.get("balance", ""),
+                        "对手信息": row.get("counterparty", ""),
+                        "客户摘要": customer_summary,
+                        "原因": "日期格式异常",
+                    }
+                )
+                continue
+
+            raw_amount = _cmb_parse_amount(row.get("amount", ""))
+            if raw_amount is None:
+                self.failed_rows.append(
+                    {
+                        "记账日期": row.get("date", ""),
+                        "货币": row.get("currency", ""),
+                        "交易金额": row.get("amount", ""),
+                        "联机余额": row.get("balance", ""),
+                        "对手信息": row.get("counterparty", ""),
+                        "客户摘要": customer_summary,
+                        "原因": "金额解析失败",
+                    }
+                )
+                continue
+
+            if abs(raw_amount) <= MIN_AMOUNT:
+                self.failed_rows.append(
+                    {
+                        "记账日期": row.get("date", ""),
+                        "货币": row.get("currency", ""),
+                        "交易金额": row.get("amount", ""),
+                        "联机余额": row.get("balance", ""),
+                        "对手信息": row.get("counterparty", ""),
+                        "客户摘要": customer_summary,
+                        "原因": "金额过小",
+                    }
+                )
+                continue
+
+            sign = f"{raw_amount:+.2f}"
+            goods_desc = customer_summary
+            counter_party = row.get("counterparty", "").strip()
+            digest = hashlib.sha1(f"{date}|{sign}|{goods_desc}|{counter_party}|{idx}".encode("utf-8")).hexdigest()
+            bill_id = f"CMB_{digest[:16]}"
+
+            if bill_id in self.bill:
+                raise DuplicateBillError(f"招商银行账单ID重复: {bill_id}")
+
+            self.bill[bill_id] = {
+                "交易时间": f"{date} 00:00:00",
+                "金额": abs(raw_amount),
+                "收/支": "收入" if raw_amount > 0 else ("支出" if raw_amount < 0 else "不计收支"),
+                "交易对方": counter_party,
+                "商品说明": goods_desc,
+            }
+
+        self.count_bills = len(self.bill)
+
+    def _filter(self) -> None:
+        self.bill = {
+            bid: bill for bid, bill in self.bill.items()
+            if not (
+                bill.get("收/支") == "收入" or
+                # "支付宝" in bill.get("交易对方", "") or
+                # "微信" in bill.get("交易对方", "") or
+                "财付通" in bill.get("商品说明", "") or
+                "支付宝-" in bill.get("商品说明", "") or
+                "网商银行" in bill.get("交易对方", "") or
+                "基金销售" in bill.get("交易对方", "") or
+                "蚂蚁基金" in bill.get("交易对方", "") or
+                "基金管理" in bill.get("交易对方", "")
+            )
+        }

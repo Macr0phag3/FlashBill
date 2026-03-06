@@ -574,6 +574,83 @@ class TestRealFileUpload:
         assert response.status_code == 200
         assert result['success'] == True
         assert 'bills' in result
+
+    def test_upload_cmb_pdf(self, client):
+        """测试上传招商银行 PDF 账单"""
+        pdf_path = 'data/test.pdf'
+        if not os.path.exists(pdf_path):
+            pytest.skip(f"测试文件不存在: {pdf_path}")
+
+        with open(pdf_path, 'rb') as f:
+            data = {
+                'file': (f, 'cmb-test.pdf'),
+                'bill_type': 'cmb'
+            }
+            response = client.post('/upload', data=data, content_type='multipart/form-data')
+
+        result = response.get_json()
+        assert response.status_code == 200
+        assert result['success'] == True
+        assert 'bills' in result
+        assert 'count_rows' in result
+        assert 'count_bills' in result
+        assert result['count_rows'] >= result['count_bills'] > 0
+
+        expected_fields = {"交易时间", "金额", "交易对方", "商品说明", "收/支", "类别", "标签", "备注", "命中规则", "账本"}
+        for bill in result['bills']:
+            assert set(bill.keys()) == expected_fields
+
+    def test_upload_cmb_warning_when_count_mismatch(self, client, monkeypatch):
+        """测试招商银行解析数量不一致时返回 warning"""
+        from routes import bills as bills_route
+
+        class FakeCmbProcessor:
+            def __init__(self, _path):
+                self.bill = {
+                    "fake1": {
+                        "交易时间": "2020-01-01 00:00:00",
+                        "金额": 10.0,
+                        "收/支": "支出",
+                        "交易对方": "测试商户",
+                        "商品说明": "测试交易",
+                        "类别": "",
+                        "标签": "",
+                        "备注": "",
+                        "命中规则": "",
+                    }
+                }
+                self.count_rows = 3
+                self.count_bills = 1
+                self.failed_rows = [
+                    {
+                        "记账日期": "2020-01-01",
+                        "货币": "CNY",
+                        "交易金额": "",
+                        "联机余额": "10.00",
+                        "交易摘要": "测试摘要",
+                        "对手信息": "测试对手",
+                        "原因": "金额解析失败",
+                    }
+                ]
+
+        monkeypatch.setitem(bills_route.BILL_PROCESSORS, "cmb", (FakeCmbProcessor, "招商银行"))
+
+        data = {
+            'file': (io.BytesIO(b'%PDF-1.4\\n%fake\\n'), 'fake.pdf'),
+            'bill_type': 'cmb'
+        }
+        response = client.post('/upload', data=data, content_type='multipart/form-data')
+        result = response.get_json()
+
+        assert response.status_code == 200
+        assert result['success'] is True
+        assert result['count_rows'] == 3
+        assert result['count_bills'] == 1
+        assert 'warning' in result
+        assert '未成功解析' in result['warning']
+        assert result['failed_rows_total'] == 1
+        assert len(result['failed_rows']) == 1
+        assert result['failed_rows'][0]['原因'] == '金额解析失败'
     
     def test_upload_unsupported_bill_type(self, client):
         """测试不支持的账单类型"""
