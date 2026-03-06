@@ -1194,6 +1194,32 @@ html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
     gap: 8px;
 }
 
+.tagging-parse-issue-dialog .el-dialog__body {
+    padding-top: 8px;
+    padding-bottom: 10px;
+}
+
+.tagging-parse-issue-table td.el-table__cell {
+    height: auto;
+    padding: 4px 0;
+    vertical-align: middle;
+}
+
+.tagging-parse-issue-table .cell {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 2;
+    align-items: center;
+    min-height: 100%;
+}
+
+.tagging-parse-issue-summary {
+    white-space: pre-line;
+    margin-bottom: 4px;
+}
+
 .rule-tags .el-tag {
     flex-shrink: 0;
     margin-right: 0px;

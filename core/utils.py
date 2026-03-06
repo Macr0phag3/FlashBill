@@ -8,6 +8,7 @@ import csv
 import json
 import time
 import hashlib
+from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
@@ -154,6 +155,7 @@ CMB_ENGLISH_HEADER_TOKENS = {
     "Customer",
     "Summary",
 }
+CMB_REFUND_SUMMARY_KEYWORDS = ("退款",)
 
 
 def _cmb_parse_amount(text: str) -> Optional[float]:
@@ -171,6 +173,102 @@ def _cmb_parse_amount(text: str) -> Optional[float]:
 
 def _cmb_normalize_text(text: str) -> str:
     return re.sub(r"\s+", "", text or "")
+
+
+def _cmb_parse_bill_date(text: str) -> Optional[datetime]:
+    """解析标准账单时间。"""
+    if not text:
+        return None
+
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text.strip(), fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _cmb_build_refund_key(bill: dict) -> tuple:
+    """构建招商银行退款匹配键。"""
+    return (
+        round(float(bill.get("金额", 0)), 2),
+        _cmb_normalize_text(bill.get("交易对方", "")),
+        _cmb_normalize_text(bill.get("商品说明", "")),
+    )
+
+
+def _cmb_has_refund_keyword(text: str) -> bool:
+    normalized = _cmb_normalize_text(text)
+    return any(keyword in normalized for keyword in CMB_REFUND_SUMMARY_KEYWORDS)
+
+
+def _cmb_reconcile_refunds_with_issues(bills: Dict[str, dict]) -> tuple[Dict[str, dict], set[str]]:
+    """
+    按招商银行账单特征匹配退款。
+
+    匹配条件：
+    1. 金额相同（仅正负不同，标准化后均取绝对值）
+    2. 交易对方一致
+    3. 商品说明/客户摘要一致
+    4. 退款发生在原始支出之后，且不超过 3 天
+    """
+    if not bills:
+        return bills, set()
+
+    sorted_bills = sorted(
+        bills.items(),
+        key=lambda item: (item[1].get("交易时间", ""), item[0]),
+    )
+    pending_expenses: Dict[tuple, List[tuple]] = {}
+    matched_ids = set()
+    unmatched_refund_ids = set()
+
+    for bill_id, bill in sorted_bills:
+        trade_type = bill.get("收/支")
+        bill_date = _cmb_parse_bill_date(bill.get("交易时间", ""))
+        if bill_date is None:
+            continue
+
+        refund_key = _cmb_build_refund_key(bill)
+        if trade_type == "支出":
+            pending_expenses.setdefault(refund_key, []).append((bill_date, bill_id))
+            continue
+
+        if trade_type != "收入":
+            continue
+
+        if not bill.get("__is_refund_candidate"):
+            continue
+
+        candidates = pending_expenses.get(refund_key, [])
+        for idx in range(len(candidates) - 1, -1, -1):
+            expense_date, expense_id = candidates[idx]
+            day_diff = (bill_date.date() - expense_date.date()).days
+            if 0 <= day_diff <= 3:
+                matched_ids.add(expense_id)
+                matched_ids.add(bill_id)
+                candidates.pop(idx)
+                break
+        else:
+            unmatched_refund_ids.add(bill_id)
+
+        if not candidates:
+            pending_expenses.pop(refund_key, None)
+
+    remaining_bills = {}
+    for bill_id, bill in bills.items():
+        if bill_id in matched_ids or bill_id in unmatched_refund_ids:
+            continue
+        remaining_bills[bill_id] = {
+            key: value for key, value in bill.items()
+            if not key.startswith("__")
+        }
+
+    return remaining_bills, unmatched_refund_ids
+
+
+def _cmb_reconcile_refunds(bills: Dict[str, dict]) -> Dict[str, dict]:
+    return _cmb_reconcile_refunds_with_issues(bills)[0]
 
 
 def _cmb_extract_char_items(page: Any) -> List[tuple]:
@@ -953,11 +1051,13 @@ class CmbPDF(BaseBillProcessor):
 
     def _preprocess(self) -> None:
         """将 raw_rows 转换为标准账单结构。"""
-        self.bill = {}
+        bills = {}
+        source_rows = {}
         self.failed_rows = []
 
         for idx, row in enumerate(self.raw_rows, start=1):
             date = row.get("date", "").strip()
+            summary = row.get("summary", "").strip()
             customer_summary = row.get("customer_summary", "").strip()
             if not CMB_DATE_RE.fullmatch(date):
                 self.failed_rows.append(
@@ -1008,18 +1108,34 @@ class CmbPDF(BaseBillProcessor):
             digest = hashlib.sha1(f"{date}|{sign}|{goods_desc}|{counter_party}|{idx}".encode("utf-8")).hexdigest()
             bill_id = f"CMB_{digest[:16]}"
 
-            if bill_id in self.bill:
+            if bill_id in bills:
                 raise DuplicateBillError(f"招商银行账单ID重复: {bill_id}")
 
-            self.bill[bill_id] = {
-                "交易时间": f"{date} 00:00:00",
+            bills[bill_id] = {
+                "交易时间": f"{date} 08:00:00",
                 "金额": abs(raw_amount),
                 "收/支": "收入" if raw_amount > 0 else ("支出" if raw_amount < 0 else "不计收支"),
                 "交易对方": counter_party,
                 "商品说明": goods_desc,
+                "__is_refund_candidate": raw_amount > 0 and _cmb_has_refund_keyword(summary),
             }
 
-        self.count_bills = len(self.bill)
+            source_rows[bill_id] = {
+                "记账日期": date,
+                "货币": row.get("currency", ""),
+                "交易金额": row.get("amount", ""),
+                "联机余额": row.get("balance", ""),
+                "对手信息": counter_party,
+                "客户摘要": customer_summary,
+            }
+
+        self.bill, unmatched_refund_ids = _cmb_reconcile_refunds_with_issues(bills)
+        self.count_bills = len(bills) - len(unmatched_refund_ids)
+
+        for bill_id in sorted(unmatched_refund_ids):
+            failed_row = dict(source_rows.get(bill_id, {}))
+            failed_row["原因"] = "退款未匹配到支付记录"
+            self.failed_rows.append(failed_row)
 
     def _filter(self) -> None:
         self.bill = {

@@ -265,20 +265,19 @@
     </el-dialog>
 
     <!-- 解析异常记录对话框 -->
-    <el-dialog v-model="parseIssueDialogVisible" title="解析异常记录" width="1000px" :close-on-click-modal="false">
-        <div class="mb-2 text-muted">
+    <el-dialog v-model="parseIssueDialogVisible" title="解析异常记录" width="1000px" :close-on-click-modal="false"
+        class="tagging-parse-issue-dialog">
+        <div class="text-muted tagging-parse-issue-summary">
             [[ parseIssueSummary ]]
             <span v-if="parseIssueTruncated">（仅展示前 [[ parseIssueRows.length ]] 条）</span>
         </div>
-        <el-table :data="parseIssueRows" border stripe max-height="420">
-            <el-table-column type="index" label="#" width="56" align="center"></el-table-column>
-            <el-table-column prop="记账日期" label="记账日期" width="120" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="货币" label="货币" width="80" align="center"></el-table-column>
-            <el-table-column prop="交易金额" label="交易金额" width="120" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="联机余额" label="联机余额" width="120" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="客户摘要" label="客户摘要" min-width="150" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="对手信息" label="对手信息" min-width="180" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="原因" label="原因" width="140" align="center"></el-table-column>
+        <el-table :data="parseIssueRows" border stripe max-height="420" class="tagging-parse-issue-table">
+            <el-table-column type="index" label="#" width="56" align="center" header-align="center"></el-table-column>
+            <el-table-column prop="记账日期" label="日期" width="96" align="center" header-align="center"></el-table-column>
+            <el-table-column prop="交易金额" label="交易金额" width="100" align="center" header-align="center"></el-table-column>
+            <el-table-column prop="客户摘要" label="客户摘要" min-width="150" header-align="center"></el-table-column>
+            <el-table-column prop="对手信息" label="对手信息" min-width="150" header-align="center"></el-table-column>
+            <el-table-column prop="原因" label="原因" width="170" align="center" header-align="center"></el-table-column>
         </el-table>
         <template #footer>
             <el-button type="primary" @click="parseIssueDialogVisible = false">关闭</el-button>
@@ -1071,7 +1070,7 @@
                         const failedRows = Array.isArray(response.failed_rows) ? response.failed_rows : [];
                         if (failedRows.length > 0) {
                             parseIssueRows.value = failedRows;
-                            parseIssueSummary.value = `${response.warning} 解析结果：${response.count_bills}/${response.count_rows}`;
+                            parseIssueSummary.value = `${String(response.warning || '').replace(/<br\s*\/?>/gi, '\n')}\n解析结果：${response.count_bills}/${response.count_rows}`;
                             parseIssueTruncated.value = !!response.failed_rows_truncated;
                         } else {
                             await ElMessageBox.alert(
