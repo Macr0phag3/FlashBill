@@ -1087,7 +1087,10 @@ class CmbPDF(BaseBillProcessor):
         for idx, row in enumerate(self.raw_rows, start=1):
             date = row.get("date", "").strip()
             summary = row.get("summary", "").strip()
+            counter_party = row.get("counterparty", "").strip()
             customer_summary = row.get("customer_summary", "").strip()
+            if not counter_party and not customer_summary:
+                customer_summary = summary
             if not CMB_DATE_RE.fullmatch(date):
                 self.failed_rows.append(
                     {
@@ -1095,7 +1098,7 @@ class CmbPDF(BaseBillProcessor):
                         "货币": row.get("currency", ""),
                         "交易金额": row.get("amount", ""),
                         "联机余额": row.get("balance", ""),
-                        "对手信息": row.get("counterparty", ""),
+                        "对手信息": counter_party,
                         "客户摘要": customer_summary,
                         "原因": "日期格式异常",
                     }
@@ -1110,7 +1113,7 @@ class CmbPDF(BaseBillProcessor):
                         "货币": row.get("currency", ""),
                         "交易金额": row.get("amount", ""),
                         "联机余额": row.get("balance", ""),
-                        "对手信息": row.get("counterparty", ""),
+                        "对手信息": counter_party,
                         "客户摘要": customer_summary,
                         "原因": "金额解析失败",
                     }
@@ -1124,7 +1127,7 @@ class CmbPDF(BaseBillProcessor):
                         "货币": row.get("currency", ""),
                         "交易金额": row.get("amount", ""),
                         "联机余额": row.get("balance", ""),
-                        "对手信息": row.get("counterparty", ""),
+                        "对手信息": counter_party,
                         "客户摘要": customer_summary,
                         "原因": "金额过小",
                     }
@@ -1133,7 +1136,6 @@ class CmbPDF(BaseBillProcessor):
 
             sign = f"{raw_amount:+.2f}"
             goods_desc = customer_summary
-            counter_party = row.get("counterparty", "").strip()
             digest = hashlib.sha1(f"{date}|{sign}|{goods_desc}|{counter_party}|{idx}".encode("utf-8")).hexdigest()
             bill_id = f"CMB_{digest[:16]}"
 

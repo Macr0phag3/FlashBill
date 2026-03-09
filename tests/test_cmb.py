@@ -210,3 +210,29 @@ def test_cmb_normal_income_without_refund_keyword_is_not_reported():
     assert processor.count_bills == 1
     assert len(processor.failed_rows) == 0
     assert len(processor.bill) == 1
+
+
+def test_cmb_falls_back_to_summary_when_counterparty_and_customer_summary_missing():
+    processor = CmbPDF.__new__(CmbPDF)
+    processor.raw_rows = [
+        {
+            "date": "2026-03-03",
+            "currency": "CNY",
+            "amount": "-18.80",
+            "balance": "1088.00",
+            "summary": "便利店消费",
+            "counterparty": "",
+            "customer_summary": "",
+        },
+    ]
+    processor.failed_rows = []
+    processor.bill = {}
+    processor.count_bills = 0
+
+    CmbPDF._preprocess(processor)
+
+    assert processor.count_bills == 1
+    assert len(processor.bill) == 1
+    bill = next(iter(processor.bill.values()))
+    assert bill["交易对方"] == ""
+    assert bill["商品说明"] == "便利店消费"
