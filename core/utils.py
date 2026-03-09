@@ -854,6 +854,22 @@ def process_bills(file_path: str, bill_type: str) -> Dict[str, Any]:
 
 class Alipay(BaseBillProcessor):
     """支付宝账单处理器"""
+
+    def __init__(self, file_path: str):
+        self.count_rows: int = 0
+        self.count_bills: int = 0
+        self.failed_rows: List[dict] = []
+        super().__init__(file_path)
+
+    def _build_failed_row(self, bill: dict, reason: str) -> dict:
+        transaction_time = str(bill.get("交易时间", "")).strip()
+        return {
+            "记账日期": transaction_time.split(" ")[0],
+            "交易金额": bill.get("金额", ""),
+            "客户摘要": bill.get("商品说明", ""),
+            "对手信息": bill.get("交易对方", ""),
+            "原因": reason,
+        }
     
     def _validate(self) -> None:
         """验证支付宝账单格式并读取数据（单次读取优化）"""
@@ -892,6 +908,7 @@ class Alipay(BaseBillProcessor):
     def _preprocess(self) -> None:
         """预处理支付宝账单"""
         bills = {}
+        self.failed_rows = []
         
         # 第一轮：结构化数据
         for data in self.raw_data:
@@ -933,6 +950,7 @@ class Alipay(BaseBillProcessor):
                 processed.add(bill_id)
                 if original_id not in bills:
                     if bill.get("交易分类") != "收入":
+                        self.failed_rows.append(self._build_failed_row(bill, "退款未匹配到支付记录"))
                         print(f"退款订单 {bill_id} 找不到原订单 {original_id}")
                     continue
 
@@ -943,6 +961,9 @@ class Alipay(BaseBillProcessor):
                     self.bill[original_id] = dict(bills[original_id])
                     self.bill[original_id]["金额"] = real_amount
                     processed.add(original_id)
+
+        self.count_bills = len(self.bill)
+        self.count_rows = self.count_bills + len(self.failed_rows)
     
     def _filter(self) -> None:
         """过滤不需要的交易"""

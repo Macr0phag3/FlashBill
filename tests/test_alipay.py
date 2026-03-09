@@ -4,7 +4,16 @@
 测试 Alipay 类的账单解析、退款处理、金额计算等核心功能
 """
 import os
+from pathlib import Path
 from core.utils import Alipay
+
+
+def write_alipay_csv(path: Path, rows: list[str]) -> None:
+    prelude = ['\n'] * 23
+    marker = '------------------------支付宝支付科技有限公司  电子客户回单------------------------\n'
+    header = '交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注\n'
+    content = ''.join(prelude + [marker, header] + [f'{row}\n' for row in rows])
+    path.write_text(content, encoding='utf-8')
 
 
 class TestAlipayParsing:
@@ -190,3 +199,20 @@ class TestAlipayRefund:
         bill_id = "2025122022001414551404160508"
         assert bill_id not in processor.bill
 
+    def test_unmatched_refund_goes_to_failed_rows(self, tmp_path):
+        """测试退款找不到原记录时进入异常记录"""
+        csv_path = tmp_path / "alipay-unmatched-refund.csv"
+        write_alipay_csv(
+            csv_path,
+            [
+                "2025/01/02 10:00,退款,测试商户,test@example.com,退款-测试商品,不计收支,1.00,余额,退款成功,2025010100000000000000000001_refund,MERCHANT_1,"
+            ],
+        )
+
+        processor = Alipay(str(csv_path))
+
+        assert processor.count_bills == 0
+        assert processor.count_rows == 1
+        assert len(processor.failed_rows) == 1
+        assert processor.failed_rows[0]["原因"] == "退款未匹配到支付记录"
+        assert processor.failed_rows[0]["客户摘要"] == "退款-测试商品"

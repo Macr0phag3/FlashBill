@@ -10,6 +10,14 @@ import os
 from app import app
 
 
+def write_alipay_csv(path, rows):
+    prelude = ['\n'] * 23
+    marker = '------------------------支付宝支付科技有限公司  电子客户回单------------------------\n'
+    header = '交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注\n'
+    content = ''.join(prelude + [marker, header] + [f'{row}\n' for row in rows])
+    path.write_text(content, encoding='utf-8')
+
+
 @pytest.fixture
 def client():
     """Flask 测试客户端"""
@@ -556,6 +564,32 @@ class TestRealFileUpload:
         assert result['success'] == True
         assert 'bills' in result
         assert len(result['bills']) > 0
+
+    def test_upload_alipay_unmatched_refund_returns_failed_rows(self, client, tmp_path):
+        """测试支付宝退款找不到原记录时返回异常记录"""
+        csv_path = tmp_path / 'alipay-unmatched-refund.csv'
+        write_alipay_csv(
+            csv_path,
+            [
+                '2025/01/02 10:00,退款,测试商户,test@example.com,退款-测试商品,不计收支,1.00,余额,退款成功,2025010100000000000000000001_refund,MERCHANT_1,'
+            ]
+        )
+
+        with open(csv_path, 'rb') as f:
+            data = {
+                'file': (f, 'alipay-unmatched-refund.csv'),
+                'bill_type': 'alipay'
+            }
+            response = client.post('/upload', data=data, content_type='multipart/form-data')
+
+        result = response.get_json()
+        assert response.status_code == 200
+        assert result['success'] is True
+        assert result['count_rows'] == 1
+        assert result['count_bills'] == 0
+        assert 'warning' in result
+        assert result['failed_rows_total'] == 1
+        assert result['failed_rows'][0]['原因'] == '退款未匹配到支付记录'
     
     def test_upload_wechat_xlsx(self, client):
         """测试上传真实的微信 XLSX 账单"""
