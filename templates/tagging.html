@@ -280,7 +280,8 @@
             <el-table-column prop="原因" label="原因" width="170" align="center" header-align="center"></el-table-column>
         </el-table>
         <template #footer>
-            <el-button type="primary" @click="parseIssueDialogVisible = false">关闭</el-button>
+            <el-button @click="parseIssueDialogVisible = false">关闭</el-button>
+            <el-button type="primary" @click="handleExportParseIssues">导出异常记录</el-button>
         </template>
     </el-dialog>
 
@@ -790,10 +791,10 @@
             /** 开始/保存打标 */
             const handleStartTagging = async () => {
                 if (isEditing.value) {
-                    // 保存进度
                     const billsToSave = bills.value.map(b => b.交易订单号 ? b : { ...b, 交易订单号: generateOrderId() });
                     const resp = await apiCall('post', '/api/save_progress', { bills: billsToSave });
                     if (resp) {
+                        bills.value = billsToSave;
                         const categorySyncOk = await syncCategoriesFromBills();
                         if (!categorySyncOk) {
                             ElMessage.warning('进度已保存，但分类标签同步失败，请稍后重试');
@@ -823,6 +824,34 @@
                     );
                     ElMessage.warning('对 “交易对方” 和“商品说明” 划词可以快速新增打标规则');
                 }
+            };
+
+            const handleExportParseIssues = () => {
+                if (!parseIssueRows.value.length) {
+                    ElMessage.warning('没有可导出的异常记录');
+                    return;
+                }
+
+                const columns = ['记账日期', '交易金额', '客户摘要', '对手信息', '原因'];
+                const escapeCsv = (value) => {
+                    const text = String(value ?? '');
+                    return `"${text.replace(/"/g, '""')}"`;
+                };
+                const rows = [
+                    columns.join(','),
+                    ...parseIssueRows.value.map(row => columns.map(col => escapeCsv(row[col])).join(','))
+                ];
+
+                const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `异常记录_${new Date().toLocaleDateString()}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                ElMessage.success('导出成功');
             };
 
             /** AI 打标 */
@@ -1173,7 +1202,7 @@
                 // 方法
                 handleFilterChange, handleSortChange, handleCategoryChange,
                 getTagsForCategory, handleSelectionChange, markModified,
-                handleStartTagging, handleBatchTag, applyBatchTag,
+                handleStartTagging, handleExportParseIssues, handleBatchTag, applyBatchTag,
                 // AI 打标方法
                 handleAITag, handleAITagSelection, handleRuleSelection, applyAITagResults,
                 // 快速规则方法

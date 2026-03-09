@@ -27,7 +27,7 @@ temp_uploads/*
 *.bak
 data/
 TODO.md
-test*.py
+tmp*.py
 
 # ==================== 日志 ====================
 *.log

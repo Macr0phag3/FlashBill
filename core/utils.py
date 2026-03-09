@@ -155,6 +155,9 @@ CMB_ENGLISH_HEADER_TOKENS = {
     "Customer",
     "Summary",
 }
+CMB_ENGLISH_HEADER_COMPACT_TOKENS = tuple(
+    sorted({token.replace(" ", "") for token in CMB_ENGLISH_HEADER_TOKENS}, key=len, reverse=True)
+)
 CMB_REFUND_SUMMARY_KEYWORDS = ("退款",)
 
 
@@ -388,10 +391,15 @@ def _cmb_is_english_header_line(text: str) -> bool:
     compact = _cmb_normalize_text(text)
     if not compact:
         return False
-    if re.search(r"[A-Za-z]", compact) and not re.search(r"[\u4e00-\u9fff]", compact):
-        return True
+    if re.search(r"[\u4e00-\u9fff\d]", compact):
+        return False
     if compact in CMB_ENGLISH_HEADER_TOKENS:
         return True
+    compact_letters = re.sub(r"[^A-Za-z]", "", compact)
+    if compact_letters:
+        matched = sum(1 for token in CMB_ENGLISH_HEADER_COMPACT_TOKENS if token in compact_letters)
+        if matched >= 2:
+            return True
     tokens = re.findall(r"[A-Za-z]+", text)
     return bool(tokens) and all(token in CMB_ENGLISH_HEADER_TOKENS for token in tokens)
 
