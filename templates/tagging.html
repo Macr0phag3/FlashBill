@@ -85,12 +85,22 @@
         </div>
 
         <!-- 账单表格 -->
-        <div class="table-container">
+        <div class="table-container tagging-table-container">
             <el-table :data="paginatedBills" class="tagging-table-full" stripe :max-height="560"
                 @sort-change="handleSortChange" :empty-text="emptyText" :row-key="row => row.交易订单号"
                 :default-sort="{ prop: '交易时间', order: 'ascending' }" @selection-change="handleSelectionChange"
                 @filter-change="handleColumnFilterChange" ref="billTableRef" v-loading="loading"
                 :virtual-scrolling="true" :scrollbar-always-on="true">
+                <!-- 删除列（编辑模式） -->
+                <el-table-column label="" width="56" align="center" v-if="isEditing">
+                    <template #default="scope">
+                        <el-button type="danger" link @click="handleDeleteBill(scope.row)">
+                            <el-icon>
+                                <component :is="Delete" />
+                            </el-icon>
+                        </el-button>
+                    </template>
+                </el-table-column>
                 <!-- 序号列（非编辑模式） -->
                 <el-table-column type="index" label="序号" width="60" align="center" v-if="!isEditing">
                     <template #default="scope">[[ (currentPage - 1) * pageSize + scope.$index + 1 ]]</template>
@@ -168,7 +178,7 @@
                         <span v-else>[[ scope.row.备注 ]]</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="命中规则" label="命中规则" min-width="150" header-align="center">
+                <el-table-column prop="命中规则" label="命中规则" min-width="94" header-align="center">
                     <template #default="scope">
                         <el-input v-if="isEditing" v-model="scope.row.命中规则" size="small"
                             @change="markModified(scope.row)" class="tagging-field-full"></el-input>
@@ -179,6 +189,16 @@
 
             <!-- 分页器 -->
             <div class="pagination-container pagination-container-compact">
+                <div class="tagging-amount-summary">
+                    <template v-if="isEditing && selectedBills.length">
+                        <span class="tagging-amount-summary-label">已选 [[ selectedBills.length ]] 条，总金额 </span>
+                        <span class="tagging-amount-summary-value">[[ formatAmount(selectedBillsAmount) ]]</span>
+                    </template>
+                    <template v-else>
+                        <span class="tagging-amount-summary-label">总金额</span>
+                        <span class="tagging-amount-summary-value">[[ formatAmount(tableBillsAmount) ]]</span>
+                    </template>
+                </div>
                 <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
                     :page-sizes="[100, 500, 1000, 5000, 10000]" layout="total, sizes, prev, pager, next, jumper"
                     :total="filteredBillsData.length" @size-change="val => { pageSize = val; currentPage = 1; }"
@@ -274,7 +294,8 @@
         <el-table :data="parseIssueRows" border stripe max-height="420" class="tagging-parse-issue-table">
             <el-table-column type="index" label="#" width="56" align="center" header-align="center"></el-table-column>
             <el-table-column prop="记账日期" label="日期" width="96" align="center" header-align="center"></el-table-column>
-            <el-table-column prop="交易金额" label="交易金额" width="100" align="center" header-align="center"></el-table-column>
+            <el-table-column prop="交易金额" label="交易金额" width="100" align="center"
+                header-align="center"></el-table-column>
             <el-table-column prop="客户摘要" label="客户摘要" min-width="150" header-align="center"></el-table-column>
             <el-table-column prop="对手信息" label="对手信息" min-width="150" header-align="center"></el-table-column>
             <el-table-column prop="原因" label="原因" width="170" align="center" header-align="center"></el-table-column>
@@ -373,7 +394,7 @@
 <script>
     const { createApp, ref, computed, onMounted, watch } = Vue;
     const { ElMessage, ElMessageBox } = ElementPlus;
-    const { UploadFilled, Plus, WarningFilled } = ElementPlusIconsVue;
+    const { Delete, UploadFilled, Plus, WarningFilled } = ElementPlusIconsVue;
 
     // Element Plus 中文配置
     const zhCn = {
@@ -649,6 +670,12 @@
                 const start = (currentPage.value - 1) * pageSize.value;
                 return filteredBillsData.value.slice(start, start + pageSize.value);
             });
+            const tableBillsAmount = computed(() => (
+                filteredBillsData.value.reduce((sum, bill) => sum + (parseFloat(bill?.金额) || 0), 0)
+            ));
+            const selectedBillsAmount = computed(() => (
+                selectedBills.value.reduce((sum, bill) => sum + (parseFloat(bill?.金额) || 0), 0)
+            ));
             const uploadAccept = computed(() => (
                 billType.value === 'cmb' ? '.pdf,application/pdf' : '.xlsx,.csv,text/csv'
             ));
@@ -785,6 +812,28 @@
 
             /** 表格选择变化 */
             const handleSelectionChange = (selection) => selectedBills.value = selection;
+
+            /** 删除单条账单 */
+            const handleDeleteBill = async (row) => {
+                const targetOrderId = row?.交易订单号;
+                if (!targetOrderId) return;
+
+                try {
+                    await ElMessageBox.confirm('确认删除这条账单吗？', '提示', {
+                        confirmButtonText: '删除',
+                        cancelButtonText: '取消',
+                        type: 'warning',
+                    });
+                } catch {
+                    return;
+                }
+
+                bills.value = bills.value.filter(bill => bill.交易订单号 !== targetOrderId);
+                selectedBills.value = selectedBills.value.filter(bill => bill.交易订单号 !== targetOrderId);
+
+                const totalPages = Math.max(1, Math.ceil(filteredBillsData.value.length / pageSize.value));
+                if (currentPage.value > totalPages) currentPage.value = totalPages;
+            };
 
             // ==================== 打标操作 ====================
 
@@ -1197,12 +1246,12 @@
                 // 快速规则状态
                 textSelection, quickRuleDialogVisible, quickRuleForm, TIME_OPTIONS,
                 // 计算属性
-                filteredBillsData, paginatedBills, emptyText,
+                filteredBillsData, paginatedBills, tableBillsAmount, selectedBillsAmount, emptyText,
                 categoryFilterOptions, tagFilterOptions, uploadAccept,
                 // 方法
                 handleFilterChange, handleSortChange, handleCategoryChange,
                 getTagsForCategory, handleSelectionChange, markModified,
-                handleStartTagging, handleExportParseIssues, handleBatchTag, applyBatchTag,
+                handleStartTagging, handleDeleteBill, handleExportParseIssues, handleBatchTag, applyBatchTag,
                 // AI 打标方法
                 handleAITag, handleAITagSelection, handleRuleSelection, applyAITagResults,
                 // 快速规则方法
@@ -1213,7 +1262,7 @@
                 resetFilters, frequencySortField, // 导出
                 handleColumnFilterChange, billTableRef, formatAmount,
                 getCategoryTagStyle, getCategoryIconComponent, getCategoryIconTagStyle,
-                UploadFilled, Plus, WarningFilled
+                Delete, UploadFilled, Plus, WarningFilled
             };
         }
     });

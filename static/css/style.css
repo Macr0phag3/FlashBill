@@ -853,6 +853,10 @@ html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
     width: 100%;
 }
 
+.tagging-table-container {
+    margin-top: 12px;
+}
+
 .tagging-input-number-90 {
     width: 90px;
 }
@@ -874,6 +878,27 @@ html.disable-anim-glitch .island-settings:hover .settings-gear-icon {
 
 .pagination-container-compact {
     margin-top: 10px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.tagging-amount-summary {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--el-text-color-regular);
+    flex-shrink: 0;
+}
+
+.tagging-amount-summary-label {
+    font-size: 13px;
+}
+
+.tagging-amount-summary-value {
+    font-size: 15px;
+    color: var(--el-text-color-primary);
+    font-variant-numeric: tabular-nums;
 }
 
 .tagging-select-full {
